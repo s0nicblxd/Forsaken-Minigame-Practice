@@ -1,5 +1,5 @@
 # Forsaken Minigame Practice!
-## Train yourself to become the BEST guest main ever! (satire)
+## Train yourself to become the BEST Guest 1337 main ever! (satire)
 
 This is a simple website to train for Forsaken's minigames! This website ***CURRENTLY*** contains:
 ### - Generators!:
