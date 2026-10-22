@@ -17,7 +17,7 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 50;
-    width: min(70.4vw, 256px);
+    width: clamp(280px, 15.8vw, 360px);
     margin: 0;
     user-select: none;
     container-type: inline-size;
@@ -36,21 +36,21 @@
     position: absolute; top: 67.4%; left: 50%;
     transform: translate(-50%, -50%);
     font-family: 'Accanthis', serif; color: #fff;
-    letter-spacing: 1px;
+    letter-spacing: 0;
     white-space: nowrap;
     font-size: clamp(7px, 4.5vw, 15px);
   }
   @supports (container-type: inline-size) {
-    #timerLabel { font-size: 8.5cqw; }
-    #timerValue { font-size: 5.8cqw; }
+    #timerLabel { font-size: 7.9cqw; }
+    #timerValue { font-size: 7.3cqw; }
   }
 
   #statPanel {
     position: fixed;
-    top: 14px;
-    right: 16px;
+    top: 6vh;
+    right: 8px;
     z-index: 50;
-    width: min(62.5vw, 250px);
+    width: clamp(300px, 22.5vw, 480px);
     user-select: none;
     display: none;
   }
@@ -59,7 +59,7 @@
   .statRow {
     position: absolute; left: 0; width: 100%;
     display: grid; grid-template-columns: 1fr;
-    padding: 0 9%;
+    padding: 0 5%;
     box-sizing: border-box;
     font-family: 'Accanthis', serif; color: #fff;
     text-shadow: 0 2px 6px rgba(0,0,0,0.9);
@@ -69,27 +69,25 @@
   .statRow > * { text-align: left; }
   .statRow-label {
     top: 21%; transform: translateY(-50%);
-    font-size: clamp(11px, 4.5vw, 16.25px);
+    font-size: clamp(19px, 1.15vw, 25px);
     letter-spacing: 0.5px;
   }
   .statRow-value {
     top: 70%; transform: translateY(-50%);
-    font-size: clamp(15px, 6.25vw, 22.5px);
+    font-size: clamp(20px, 1.2vw, 26px);
     letter-spacing: 1px;
   }
   @media (max-width: 700px) {
-    /* Keep the two HUD elements side-by-side on narrow screens instead of
-       letting the centered timer cover the leaderboard. */
-    #timerBanner { width: min(55vw, 256px); }
-    #statPanel {
-      top: 8px;
-      right: auto;
-      left: calc(50% + min(27.5vw, 128px) + 4px);
-      width: 21vw;
-    }
-    .statRow { padding: 0 8%; }
-    .statRow-label { font-size: clamp(8px, 3.2vw, 13px); }
-    .statRow-value { font-size: clamp(12px, 4.8vw, 18px); }
+    #timerBanner { width: min(72vw, 300px); }
+    #statPanel { top: 106px; right: 10px; left: auto; width: 140px; }
+    .statRow { padding: 0 7%; }
+    .statRow-label { font-size: 14px; }
+    .statRow-value { font-size: 17px; }
+    #menuNavBtn { top: 10px; left: 8px; padding: 6px 8px; }
+  }
+  @media (max-height: 500px) and (min-width: 701px) {
+    #statPanel { top: 12px; width: 220px; }
+    .statRow-label, .statRow-value { font-size: 16px; }
   }
 
   #puzzleToast {
@@ -177,8 +175,8 @@
   }
 
   #newBtn, .sizeBtn {
-    border-image: url("https://media.base44.com/images/public/user_6a907771b5726211fb94b95e/e47eeb62d_Crationsanstitre15.png") 6 / 2px stretch;
-    border-image-source: url("https://media.base44.com/images/public/user_6a907771b5726211fb94b95e/e47eeb62d_Crationsanstitre15.png");
+    border-image: url("data:image/png;base64,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") 6 / 2px stretch;
+    border-image-source: url("data:image/png;base64,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");
     border-image-slice: 6;
     border-image-width: 2px;
     border-image-repeat: stretch;
@@ -464,9 +462,21 @@
     will-change: transform, opacity;
   }
 </style><style>
+  #canvas { filter: drop-shadow(0 5px 12px #000); }
   #flowLayout { position: relative; transform: translateY(0); transition: transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
   #flowLayout.tutorial-pending { transform: translateY(5vh); transform: translateY(5dvh); }
-  #flowTutorial { position: absolute; bottom: calc(100% + 12px); left: 50%; transform: translateX(-50%); width: min(94vw, 560px); text-align: center; font: clamp(11px, 2.8vw, 16px)/1.35 'Accanthis', serif; color: #fff; pointer-events: none; }
+  #flowTutorial { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: min(94vw, 1000px); text-align: center; font: italic bold clamp(18px, 2.85vh, 44px)/1.48 'Accanthis', Georgia, serif; color: #fff; pointer-events: none; }
+  @media (max-width: 700px) {
+    #flowTutorial { font-size: clamp(14px, 3.7vw, 22px); line-height: 1.4; }
+  }
+  @media (max-height: 500px) {
+    #timerBanner { width: 180px; }
+    #statPanel { top: 8px; right: 8px; width: 160px; }
+    .statRow-label, .statRow-value { font-size: 14px; }
+    #flowTutorial { font-size: 14px; line-height: 1.2; }
+    #screen-generator #flowLayout #controls { flex-direction: row; width: max-content; max-width: 96vw; left: 50%; transform: translateX(-50%); margin-top: 10px; gap: 12px; }
+    #flowLayout #newBtn { padding: 6px 12px; }
+  }
   #flowTutorial[hidden] { display: none; }
   #flowLayout #controls { position: absolute; top: 100%; width: 100%; }
 </style></head>
@@ -552,14 +562,14 @@
 
 
 
-  const INNER_X0 = 21, INNER_X1 = 455;
-  const INNER_Y0 = 24, INNER_Y1 = 457;
+  const INNER_X0 = 19, INNER_X1 = 461;
+  const INNER_Y0 = 19, INNER_Y1 = 461;
   const CELL_GAP = 1;
 
   const BOARD_SRC = 480;
 
 
-  const BANNER_MAX_W = 256;
+  const BANNER_MAX_W = 360;
   const BANNER_ASPECT = 267 / 846;
   const canvas = document.getElementById('canvas');
   const ctx    = canvas.getContext('2d');
@@ -583,15 +593,21 @@
     }
     const viewportW = window.visualViewport ? window.visualViewport.width : window.innerWidth;
     const viewportH = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    const bannerWidth = viewportW <= 700
-      ? Math.min(viewportW * 0.55, BANNER_MAX_W)
-      : Math.min(viewportW * 0.704, BANNER_MAX_W);
+    const bannerWidth = viewportH <= 500 ? 180 : viewportW <= 700
+      ? Math.min(viewportW * 0.72, 300)
+      : Math.min(Math.max(280, viewportW * 0.158), BANNER_MAX_W);
     const bannerHeightEstimate = bannerWidth * BANNER_ASPECT;
-    const reservedH = 2 * Math.max(bannerHeightEstimate + 86 - viewportH * 0.05, 118 + viewportH * 0.05);
-    const fit = Math.max(1, Math.min(viewportW - 24, viewportH - reservedH, 560));
+    // Match the reference's board height (~52% of the viewport), while
+    // reserving room for the three-line tutorial and practice controls.
+    const tutorialFont = viewportH <= 500 ? 14 : viewportW <= 700
+      ? Math.min(22, Math.max(14, viewportW * 0.037))
+      : Math.min(44, Math.max(18, viewportH * 0.0285));
+    const tutorialHeight = Math.max(tutorialFont * 4.5, document.getElementById('flowTutorial').offsetHeight);
+    const reservedH = 2 * Math.max(bannerHeightEstimate + tutorialHeight + 20 - viewportH * 0.05, (viewportH <= 500 ? 52 : 118) + viewportH * 0.05);
+    const fit = Math.max(1, Math.min(viewportW - 24, viewportH - reservedH, viewportH * 0.52));
     const scale = fit / BOARD_SRC;
     const cellPx = cellSize * scale;
-    const dotR = Math.round(cellPx * 0.36);
+    const dotR = Math.round(cellPx * 0.33);
     return {
       size, cellSize, scale, cellPx,
       pipeW: Math.round(cellPx * 0.40),
@@ -718,7 +734,7 @@
     const mm = Math.floor(totalSec / 60);
     const ss = Math.floor(totalSec % 60);
     const tenths = Math.floor((totalSec * 10) % 10);
-    return String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0') + '.' + tenths;
+    return String(mm) + ':' + String(ss).padStart(2,'0') + '.' + tenths;
   }
   setInterval(() => {
     if (!timerPaused) {
