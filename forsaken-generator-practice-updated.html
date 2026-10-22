@@ -465,7 +465,7 @@
   #canvas { filter: drop-shadow(0 5px 12px #000); }
   #flowLayout { position: relative; transform: translateY(0); transition: transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
   #flowLayout.tutorial-pending { transform: translateY(5vh); transform: translateY(5dvh); }
-  #flowTutorial { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: min(94vw, 1000px); text-align: center; font: italic bold clamp(18px, 2.85vh, 44px)/1.48 'Accanthis', Georgia, serif; color: #fff; pointer-events: none; }
+  #flowTutorial { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); width: min(94vw, 1000px); text-align: center; font: italic bold clamp(18px, 1.603vw, 44px)/1.48 'Accanthis', Georgia, serif; color: #fff; pointer-events: none; }
   @media (max-width: 700px) {
     #flowTutorial { font-size: clamp(14px, 3.7vw, 22px); line-height: 1.4; }
   }
@@ -597,14 +597,15 @@
       ? Math.min(viewportW * 0.72, 300)
       : Math.min(Math.max(280, viewportW * 0.158), BANNER_MAX_W);
     const bannerHeightEstimate = bannerWidth * BANNER_ASPECT;
-    // Match the reference's board height (~52% of the viewport), while
-    // reserving room for the three-line tutorial and practice controls.
+    // Scale the desktop board with viewport width, like the reference.
+    // Browser toolbars must not shrink it; height is only a fit constraint.
     const tutorialFont = viewportH <= 500 ? 14 : viewportW <= 700
       ? Math.min(22, Math.max(14, viewportW * 0.037))
-      : Math.min(44, Math.max(18, viewportH * 0.0285));
+      : Math.min(44, Math.max(18, viewportW * 0.01603));
     const tutorialHeight = Math.max(tutorialFont * 4.5, document.getElementById('flowTutorial').offsetHeight);
-    const reservedH = 2 * Math.max(bannerHeightEstimate + tutorialHeight + 20 - viewportH * 0.05, (viewportH <= 500 ? 52 : 118) + viewportH * 0.05);
-    const fit = Math.max(1, Math.min(viewportW - 24, viewportH - reservedH, viewportH * 0.52));
+    const reservedH = 2 * Math.max(bannerHeightEstimate + tutorialHeight + 8 - viewportH * 0.05, (viewportH <= 500 ? 52 : 118) + viewportH * 0.05);
+    const preferredBoardSize = viewportW <= 700 ? viewportW - 24 : viewportW * (560 / 1920);
+    const fit = Math.max(1, Math.min(viewportW - 24, viewportH - reservedH, preferredBoardSize));
     const scale = fit / BOARD_SRC;
     const cellPx = cellSize * scale;
     const dotR = Math.round(cellPx * 0.33);
