@@ -3,14 +3,14 @@
 Located in the supplied place file at:
 `ReplicatedStorage/Assets/Killers/Azure/Config/cl_WorkaroundModules/cl_QTEUI/QTE`
 
-This catalog contains visual references. The HTML now includes a practice port of cl_ConstructQTE with temporary CSS artwork; the original PNGs still need to be embedded.
+This catalog contains visual references. The HTML now includes a practice port of cl_ConstructQTE with both original PNGs embedded from the supplied ZIP.
 
 | Visual | Original image download | Instance |
 | --- | --- | --- |
 | Outer QTE bar artwork | [76906278748627](https://assetdelivery.roblox.com/v1/asset/?id=76906278748627) | `QTE/ImageLabel` |
 | Target-zone artwork | [103219386078445](https://assetdelivery.roblox.com/v1/asset/?id=103219386078445) | `QTE/Zone/ImageLabel` |
 
-Open the links in a browser logged into Roblox. The place file stores image references, not the PNG bytes; these downloads have not been previewed here.
+Open the links in a browser logged into Roblox. The place file stores image references, not the PNG bytes; the supplied PNGs have now been embedded and checked in desktop and mobile browser previews.
 
 ## Visual settings from the template
 
