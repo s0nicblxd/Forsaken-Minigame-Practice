@@ -557,6 +557,21 @@
 .sizeBtn.forsakenBtn.active .button-outline { border-image-width:3.35px 3.015px 2.814px 4.02px; }
 /* Keep the decorative layers inside the button bounds. */
 .forsakenBtn { overflow: hidden; }
+</style><style>
+#screen-azure.active { display:block; position:fixed; inset:0; touch-action:manipulation; }
+#azurePractice { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:36px; padding:120px 24px 40px; }
+#azureInstructions { font:italic 22px 'Accanthis',serif; text-align:center; max-width:650px; margin:0; }
+#azureBar { position:relative; width:min(calc(30vw + 75px), calc(100vw - 60px)); height:calc(5vh + 15px); background:linear-gradient(110deg,#18091b,#320c36,#18091b); border:3px solid #861595; box-shadow:0 0 0 3px #18091b,inset 0 0 18px #000; }
+#azureZones { position:absolute; inset:0; }
+.azureZone { position:absolute; top:-5%; height:110%; background:linear-gradient(125deg,#99159d 15%,#dddd16 16%,#dddd16 28%,#85118c 29%,#411146 75%,#dadd16 76%); border:3px solid #dadd16; transform:translateX(-50%); pointer-events:none; }
+#azureMarker { position:absolute; top:50%; height:120%; width:1%; min-width:2px; transform:translateY(-50%); background:red; z-index:2; pointer-events:none; }
+#azureStatus { min-height:1.4em; font:20px 'Accanthis',serif; text-align:center; margin:0; }
+#azureRetry { font:20px 'Accanthis',serif; color:#ddd; background:#171117; border:1px solid #81348a; padding:10px 28px; cursor:pointer; }
+#azureRetry[hidden] { display:none; }
+#azureBar.azureMiss { animation:azureMiss .19s ease-out; }
+@keyframes azureMiss { 0%,45% { border-color:#ff3c3c; transform:translateX(8px); } 65% { transform:translateX(-8px); } 100% { transform:none; } }
+@media(max-width:700px) { #azureBar { width:calc(100vw - 60px); } #azureInstructions { font-size:19px; } }
+@media(prefers-reduced-motion:reduce) { #azureBar.azureMiss { animation:none; border-color:#ff3c3c; } }
 </style></head>
 <body>
 <div id="bgGrain"></div>
@@ -589,7 +604,7 @@
     <button class="menuBtn" id="generatorsMenuBtn">Generators</button>
     <button class="menuBtn" data-game="entanglement">Entanglement Popup (Old)</button>
     <button class="menuBtn locked" disabled>Bloodhook QTE</button>
-    <button class="menuBtn locked" disabled>Plant Disarming</button>
+    <button class="menuBtn" data-game="azure">Plant Disarming</button>
   </div>
 </div>
 <div id="generatorMenuScreen" aria-labelledby="generatorMenuTitle">
@@ -639,6 +654,16 @@
     </div>
   </div>
 </div>
+</div>
+<div id="screen-azure" class="gameScreen">
+  <div id="azurePractice">
+    <p id="azureInstructions">Click, tap, or press Space when the red marker overlaps a target.</p>
+    <div id="azureBar" aria-label="Plant disarming timing bar">
+      <div id="azureZones"></div><div id="azureMarker"></div>
+    </div>
+    <p id="azureStatus" role="status" aria-live="polite"></p>
+    <button id="azureRetry" hidden>Try again</button>
+  </div>
 </div>
 <div id="screen-entanglement" class="gameScreen">
   <div id="entangleField"></div>
@@ -927,8 +952,8 @@
       const gain = context.createGain();
       oscillator.type = 'square';
       oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.035 * 0.65, context.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001 * 0.65, context.currentTime + duration);
+      gain.gain.setValueAtTime(0.035 * 0.4225, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001 * 0.4225, context.currentTime + duration);
       oscillator.connect(gain);
       gain.connect(context.destination);
       oscillator.start();
@@ -937,7 +962,7 @@
   }
   function playEntangleCue(audio, frequency, duration) {
     const cue = audio.cloneNode();
-    cue.volume = 0.65;
+    cue.volume = 0.4225;
     const result = cue.play();
     if (result && typeof result.catch === 'function') {
       result.catch(() => playEntangleFallbackTone(frequency, duration));
@@ -2714,6 +2739,92 @@
   window.addEventListener('resize', handleOldGenResize);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', handleOldGenResize);
 
+  // Port of Azure cl_ConstructQTE: three zones, three sets, two misses per attempt.
+  const azureBar = document.getElementById('azureBar');
+  const azureZones = document.getElementById('azureZones');
+  const azureMarker = document.getElementById('azureMarker');
+  const azureStatus = document.getElementById('azureStatus');
+  const azureRetry = document.getElementById('azureRetry');
+  let azure = null, azureFrame = 0, azureLastTime = 0, azureTriggerHeld = false;
+  function azureBounds() {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const zones = Array.from({length:3}, () => { const min = .05 + Math.random() * .75; return {min,max:min+.15,done:false}; }).sort((a,b)=>a.min-b.min);
+      if (zones.slice(1).every((z,i)=>z.min-zones[i].max >= .09)) return zones;
+    }
+    return [.16,.46,.76].map(min=>({min,max:min+.15,done:false}));
+  }
+  function stopAzure() { cancelAnimationFrame(azureFrame); azureFrame=0; azure=null; azureTriggerHeld=false; }
+  function renderAzureZones() {
+    azureZones.replaceChildren();
+    azure.zones.forEach(z=>{
+      const el=document.createElement('div'); el.className='azureZone';
+      el.style.left=((z.min+z.max)/2*100)+'%'; el.style.width=((z.max-z.min-.01)*100)+'%';
+      el.hidden=z.done; azureZones.appendChild(el);
+    });
+  }
+  function azureMessage(prefix='') {
+    azureStatus.textContent=prefix+`Set ${azure.sets+1} of 3 · Targets ${azure.zones.filter(z=>z.done).length}/3 · Misses ${azure.misses}/2`;
+  }
+  function startAzure() {
+    stopAzure();
+    const phase=performance.now()/1000*2.2;
+    azure={phase,value:Math.sin(phase)/2+.5,boost:0,zones:azureBounds(),sets:0,misses:0,ended:false};
+    azureRetry.hidden=true; azureBar.classList.remove('azureMiss');
+    puzzleStartTime=performance.now();timerPaused=false;
+    timerValueEl.classList.remove('timer-done','timer-flash-green');timerValueEl.textContent=fmtTime(0);
+    renderAzureZones();azureMessage();azureMarker.style.left=(azure.value*100)+'%';
+    azureLastTime=performance.now();azureFrame=requestAnimationFrame(tickAzure);
+  }
+  function finishAzure(won) {
+    if (!azure || azure.ended) return;
+    azure.ended=true;timerPaused=true;cancelAnimationFrame(azureFrame);azureFrame=0;
+    if(won) {
+      puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;
+      localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));
+      azureStatus.textContent='Plant disarmed!';azureRetry.textContent='Next plant';
+    } else {azureStatus.textContent='Disarming failed — two misses.';azureRetry.textContent='Try again';}
+    azureRetry.hidden=false;
+  }
+  function hitAzure() {
+    if(activeScreen!=='azure' || menuTransitioning || !azure || azure.ended) return;
+    const zone=azure.zones.find(z=>!z.done && azure.value>=z.min && azure.value<=z.max);
+    if(zone) {
+      zone.done=true;azure.boost=4;
+      if(azure.zones.every(z=>z.done)) {
+        azure.sets++;azure.boost=0;
+        if(azure.sets===3) {renderAzureZones();finishAzure(true);return;}
+        azure.zones=azureBounds();
+      }
+      renderAzureZones();azureMessage();
+    } else {
+      azure.misses++;
+      if(azure.misses>=2) {finishAzure(false);return;}
+      azureBar.classList.remove('azureMiss');void azureBar.offsetWidth;azureBar.classList.add('azureMiss');
+      azureMessage('Miss! ');
+    }
+  }
+  function tickAzure(now) {
+    azureFrame=0;
+    if(!azure || azure.ended || activeScreen!=='azure') return;
+    const dt=Math.min((now-azureLastTime)/1000,.1);azureLastTime=now;
+    azure.boost=Math.max(0,azure.boost-10*dt);
+    azure.phase+=(2.2+azure.boost)*dt;azure.value=Math.sin(azure.phase)/2+.5;
+    azureMarker.style.left=(azure.value*100)+'%';
+    const pressed=Array.from(navigator.getGamepads?.() || []).some(p=>p?.buttons[7]?.pressed);
+    if(pressed&&!azureTriggerHeld) hitAzure();azureTriggerHeld=pressed;
+    if(azure && !azure.ended) azureFrame=requestAnimationFrame(tickAzure);
+  }
+  document.getElementById('screen-azure').addEventListener('pointerdown',event=>{
+    if(event.target.closest('button') || !event.isPrimary || event.button!==0) return;
+    event.preventDefault();hitAzure();
+  });
+  document.addEventListener('keydown',event=>{
+    if(activeScreen==='azure' && event.code==='Space' && !event.repeat && !event.target.closest('button')) {
+      event.preventDefault();hitAzure();
+    }
+  });
+  azureRetry.addEventListener('click',()=>{if(activeScreen==='azure'){startAzure();azureRetry.blur();}});
+
   const fadeOverlayEl = document.getElementById('fadeOverlay');
   const menuNavBtnEl = document.getElementById('menuNavBtn');
   const statPanelEl = document.getElementById('statPanel');
@@ -2725,9 +2836,11 @@
     'generator': document.getElementById('screen-generator'),
     'generator-old': document.getElementById('screen-generator-old'),
     'entanglement': document.getElementById('screen-entanglement'),
+    'azure': document.getElementById('screen-azure'),
   };
 
   function showScreen(name) {
+    stopAzure();
     stopFakeGenAudio();
     // Invalidate any pending board transition before changing screens.
     flowTransitionId++;
@@ -2785,6 +2898,9 @@
       } else if (id === 'generator-old') {
         playStart();
         oldGenNewPuzzle();
+      } else if (id === 'azure') {
+        document.activeElement?.blur();
+        startAzure();
       } else if (id === 'entanglement') {
         // wait until the black fade has lifted, so the glitch burst is seen at full brightness
         setTimeout(() => { if (document.getElementById('screen-entanglement').classList.contains('active')) entangleNewPuzzle(); }, 420);

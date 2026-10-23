@@ -3,7 +3,7 @@
 Located in the supplied place file at:
 `ReplicatedStorage/Assets/Killers/Azure/Config/cl_WorkaroundModules/cl_QTEUI/QTE`
 
-This catalog contains visual references only. No Azure gameplay was added to the HTML.
+This catalog contains visual references. The HTML now includes a practice port of cl_ConstructQTE with temporary CSS artwork; the original PNGs still need to be embedded.
 
 | Visual | Original image download | Instance |
 | --- | --- | --- |
