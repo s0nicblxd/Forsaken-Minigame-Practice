@@ -1706,7 +1706,7 @@
     const fieldH = Math.max(1, entangleFieldEl.clientHeight);
     if (!popup.naturalWidth || !popup.naturalHeight) return;
     const uiScale = Math.max(0.6, Math.min(2.6, window.innerHeight / 720)); // measured: popups are drawn at native size on a 720px-tall screen
-    const fit = Math.min(uiScale, fieldW / popup.naturalWidth, fieldH / popup.naturalHeight);
+    const fit = Math.min(uiScale * Number(popup.dataset.sizeVariation || 1), fieldW / popup.naturalWidth, fieldH / popup.naturalHeight);
     popup.style.width = Math.max(1, Math.round(popup.naturalWidth * fit)) + 'px';
     popup.style.height = Math.max(1, Math.round(popup.naturalHeight * fit)) + 'px';
   }
@@ -1752,110 +1752,94 @@
     });
   }
 
+  // Source-based VFX, adapted to the existing five-popup click-to-dismiss practice mode.
+  const entangleReducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let entangleFrame = 0, entangleNextRound = 0, entangleRound = 0;
+  let entangleRoundCompleted = false;
   function clearEntanglePopups() {
-    Array.from(entangleFieldEl.children).forEach(el => {
-      if (!el.classList.contains('entanglePopup--fading')) el.remove(); // popups already fading finish their fade
-    });
-    entanglePopups = entanglePopups.filter(pp => pp.isConnected);
+    ++entangleRound;
+    cancelAnimationFrame(entangleFrame);
+    entangleFrame = 0;
+    clearTimeout(entangleNextRound);
+    entangleNextRound = 0;
+    entangleFieldEl.replaceChildren();
+    entanglePopups = [];
     entangleRemaining = 0;
+    entangleRoundCompleted = false;
   }
 
-  // ---- Entanglement popup effects (numbers measured from real gameplay footage, 60fps) ------------------
-  // Glitch burst: ~8 video frames (133 ms) of bright green (#1cf01c) and black rectangles that cover
-  // each popup's spot, re-randomised about every 33 ms, and then the popup is simply there.
-  const ENTANGLE_GLITCH_TICKS = 4, ENTANGLE_GLITCH_TICK_MS = 33;
-  // Shake: every popup jitters on its own (not in sync), a new random offset about every 33 ms.
-  // Measured spread: 3.8 percent of the popup's width, 3.6 percent of its height, about 0.9 degrees of tilt.
-  // 1 = same as the real game; lower it if it still feels too strong (0 = no shake).
-  const ENTANGLE_SHAKE_STRENGTH = 1;
-  // Fade-out after a click: opacity from start (0) to end (1) of the fade, averaged over the real popups.
-  // Real fades took 0.67 to 1.27 s, so each popup gets a random length in that range.
-  const ENTANGLE_FADE_CURVE = [0.965, 0.951, 0.919, 0.886, 0.832, 0.758, 0.648, 0.524, 0.373, 0.204, 0.003];
-  const ENTANGLE_FADE_MIN_S = 0.67, ENTANGLE_FADE_MAX_S = 1.27;
+  const ENTANGLE_FADE_MIN_S = 1, ENTANGLE_FADE_MAX_S = 2.4;
+  function entangleFadeAlpha(t) { return 1 - Math.pow(Math.max(0, Math.min(1, t)), 4); }
 
-  function entangleFadeAlpha(t) {
-    if (t <= 0) return 1;
-    if (t >= 1) return 0;
-    const x = t * (ENTANGLE_FADE_CURVE.length - 1), i = Math.floor(x);
-    return ENTANGLE_FADE_CURVE[i] + (ENTANGLE_FADE_CURVE[i + 1] - ENTANGLE_FADE_CURVE[i]) * (x - i);
-  }
-  function entangleGauss() { // roughly normal, limited to +-2 sigma
-    let v = 0; for (let k = 0; k < 6; k++) v += Math.random(); v = (v - 3) / 0.7071;
-    return Math.max(-2, Math.min(2, v));
-  }
-
-  let entangleLoopRunning = false, entangleLastShake = 0;
   function entangleLoop(now) {
-    const scr = document.getElementById('screen-entanglement');
-    const popups = entangleFieldEl.querySelectorAll('.entanglePopup');
-    if (!scr.classList.contains('active') || !popups.length) { entangleLoopRunning = false; return; }
-    const reshake = now - entangleLastShake >= 33;
-    if (reshake) entangleLastShake = now;
-    popups.forEach(popup => {
-      if (reshake) {
-        const w = popup.offsetWidth, h = popup.offsetHeight, k = ENTANGLE_SHAKE_STRENGTH;
-        popup.style.transform = k > 0
-          ? 'translate(' + (entangleGauss() * 0.038 * w * k).toFixed(1) + 'px,' + (entangleGauss() * 0.036 * h * k).toFixed(1) + 'px) rotate(' + (entangleGauss() * 0.9 * k).toFixed(2) + 'deg)'
-          : '';
+    entangleFrame = 0;
+    if (!document.getElementById('screen-entanglement').classList.contains('active')) return;
+    const reduced = entangleReducedMotion.matches;
+    entanglePopups = entanglePopups.filter(p => p.isConnected);
+    for (const popup of entanglePopups) {
+      if (!popup.dataset.born) continue;
+      const elapsed = (now - Number(popup.dataset.born)) / 1000;
+      const denom = 10000 + elapsed * 12000;
+      const x = parseFloat(popup.style.left) || 0, y = parseFloat(popup.style.top) || 0;
+      const dx = reduced ? 0 : (Math.random() * 200 - 100) / denom * entangleFieldEl.clientWidth;
+      const dy = reduced ? 0 : (Math.random() * 200 - 100) / denom * entangleFieldEl.clientHeight;
+      // Clamp shake so the click target remains inside the available field.
+      const sx = Math.max(-x, Math.min(dx, entangleFieldEl.clientWidth - popup.offsetWidth - x));
+      const sy = Math.max(-y, Math.min(dy, entangleFieldEl.clientHeight - popup.offsetHeight - y));
+      popup.style.transform = `translate(${sx}px, ${sy}px)`;
+      if (popup._glitch) {
+        const cv = popup._glitch;
+        if (elapsed >= .15 || reduced) {
+          cv.remove(); popup._glitch = null; popup.style.visibility = '';
+        } else {
+          const w = popup.offsetWidth, h = popup.offsetHeight;
+          cv.width = Math.ceil(w * 1.7); cv.height = Math.ceil(h * 1.5);
+          cv.style.left = (x - w * .35 + sx) + 'px';
+          cv.style.top = (y - h * .25 + sy) + 'px';
+          const g = cv.getContext('2d');
+          for (let i = 0; i < 18; i++) {
+            const bright = Math.random() < .5 ? 0 : 1;
+            const bw = (Math.random() / 2 + .2) * w;
+            const bh = (Math.random() / 3 + .15) * h;
+            g.fillStyle = `rgb(${bright * 255 / 8},${Math.max(0, bright - Math.random() * .1) * 255},${bright * 255 / 8})`;
+            g.fillRect(w * .35 + Math.random() * w - bw / 2, h * .25 + Math.random() * h - bh / 2, bw, bh);
+          }
+        }
       }
       if (popup.dataset.fadeStart) {
-        const t = (now - parseFloat(popup.dataset.fadeStart)) / (parseFloat(popup.dataset.fadeDur) * 1000);
-        if (t >= 1) { popup.remove(); return; }
+        const t = (now - Number(popup.dataset.fadeStart)) / (Number(popup.dataset.fadeDur) * 1000);
         popup.style.opacity = String(entangleFadeAlpha(t));
+        if (t >= 1) { popup._glitch?.remove(); popup.remove(); }
       }
-    });
-    requestAnimationFrame(entangleLoop);
+    }
+    if (entanglePopups.some(p => p.isConnected)) entangleFrame = requestAnimationFrame(entangleLoop);
   }
   function startEntangleLoop() {
-    if (entangleLoopRunning) return;
-    entangleLoopRunning = true;
-    requestAnimationFrame(entangleLoop);
+    if (!entangleFrame) entangleFrame = requestAnimationFrame(entangleLoop);
   }
-
   function playEntangleGlitchIntro(popup) {
-    popup.style.visibility = 'hidden';
-    const pw = popup.offsetWidth, ph = popup.offsetHeight;
-    const cw = Math.round(pw * 1.45), ch = Math.round(ph * 1.45);
-    const cv = document.createElement('canvas');
-    cv.className = 'entangleGlitch';
-    cv.width = cw; cv.height = ch;
-    cv.style.left = (parseFloat(popup.style.left) - (cw - pw) / 2) + 'px';
-    cv.style.top = (parseFloat(popup.style.top) - (ch - ph) / 2) + 'px';
-    cv.style.width = cw + 'px'; cv.style.height = ch + 'px';
-    entangleFieldEl.appendChild(cv);
-    const g = cv.getContext('2d');
-    const rnd = (a, b) => a + Math.random() * (b - a);
-    let tick = 0;
-    function draw() {
-      if (!popup.isConnected) { cv.remove(); return; }
-      if (tick >= ENTANGLE_GLITCH_TICKS) {
-        cv.remove();
-        popup.style.visibility = '';
-        return;
-      }
-      g.clearRect(0, 0, cw, ch);
-      const n = 12 + Math.floor(Math.random() * 7);
-      for (let i = 0; i < n; i++) {
-        const bw = Math.round(rnd(0.12, 0.62) * pw), bh = Math.round(rnd(0.12, 0.55) * ph);
-        const bx = Math.round(rnd(0, cw - bw)), by = Math.round(rnd(0, ch - bh));
-        g.fillStyle = (i & 1) ? '#1cf01c' : '#000';
-        g.fillRect(bx, by, bw, bh);
-      }
-      tick++;
-      setTimeout(draw, ENTANGLE_GLITCH_TICK_MS);
+    popup.dataset.born = String(performance.now());
+    if (!entangleReducedMotion.matches) {
+      popup.style.visibility = 'hidden';
+      const cv = document.createElement('canvas');
+      cv.className = 'entangleGlitch'; cv.setAttribute('aria-hidden', 'true');
+      popup._glitch = cv;
+      entangleFieldEl.appendChild(cv);
     }
-    draw();
     startEntangleLoop();
   }
 
   function entangleComplete(delayMs) {
+    if (entangleRoundCompleted) return;
+    entangleRoundCompleted = true;
+    const round = entangleRound;
     timerPaused = true;
     puzzlesFinished++;
     puzzlesValueEl.textContent = puzzlesFinished;
     localStorage.setItem(PUZZLES_KEY, String(puzzlesFinished));
 
-    setTimeout(() => {
-      if (document.getElementById('screen-entanglement').classList.contains('active')) {
+    entangleNextRound = setTimeout(() => {
+      if (round === entangleRound && document.getElementById('screen-entanglement').classList.contains('active')) {
         entangleNewPuzzle();
       }
     }, delayMs);
@@ -1863,16 +1847,17 @@
 
   function dismissEntanglePopup(event) {
     const popup = event.currentTarget;
-    if (popup.dataset.dismissed) return;
+    if (!popup.isConnected || popup.dataset.dismissed || entangleRoundCompleted) return;
     popup.dataset.dismissed = 'true';
+    popup.tabIndex = -1;
     playEntangleHit();
-    const dur = ENTANGLE_FADE_MIN_S + Math.random() * (ENTANGLE_FADE_MAX_S - ENTANGLE_FADE_MIN_S);
+    const dur = entangleReducedMotion.matches ? .15 : ENTANGLE_FADE_MIN_S + Math.random() * (ENTANGLE_FADE_MAX_S - ENTANGLE_FADE_MIN_S);
     popup.dataset.fadeStart = String(performance.now());
     popup.dataset.fadeDur = String(dur);
     popup.classList.add('entanglePopup--fading');
     startEntangleLoop();
     entangleRemaining--;
-    if (entangleRemaining <= 0) entangleComplete(dur * 600 + 120); // next set appears while the last popup is mostly gone
+    if (entangleRemaining <= 0) entangleComplete(Math.max(...entanglePopups.map(p => p.dataset.fadeStart ? Number(p.dataset.fadeStart) + Number(p.dataset.fadeDur) * 1000 - performance.now() : 0)) + 100);
   }
 
   function makeEntangleFallback(popup, popupNumber, placed) {
@@ -1908,7 +1893,13 @@
       const popup = document.createElement('img');
       popup.className = 'entanglePopup';
       popup.draggable = false;
-      popup.alt = '';
+      popup.alt = 'Dismiss popup ' + (popupIndex + 1);
+      popup.setAttribute('role', 'button');
+      popup.tabIndex = 0;
+      popup.dataset.sizeVariation = String(.9 + Math.random() * .4);
+      popup.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); dismissEntanglePopup(event); }
+      });
       popup.addEventListener('click', dismissEntanglePopup);
       popup.addEventListener('load', () => {
         if (!popup.isConnected) return;
