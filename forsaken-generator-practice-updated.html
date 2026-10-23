@@ -554,6 +554,8 @@
 .forsakenBtn .button-highlight { background-image:var(--asset-button-highlight); opacity:0; }
 .forsakenBtn:not(:disabled):hover .button-highlight, .forsakenBtn:focus-visible .button-highlight { opacity:.12; }
 .sizeBtn.forsakenBtn.active .button-outline { border-image-width:3.35px 3.015px 2.814px 4.02px; }
+/* Keep the decorative layers inside the button bounds. */
+.forsakenBtn { overflow: hidden; }
 </style></head>
 <body>
 <div id="bgGrain"></div>
