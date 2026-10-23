@@ -513,7 +513,8 @@
   .forsakenBtn:not(:disabled):hover { color: #fff; filter: brightness(1.2); }
   .forsakenBtn:not(:disabled):hover .button-highlight, .forsakenBtn:focus-visible .button-highlight { opacity: 1; }
   .forsakenBtn:not(:disabled):active { filter: brightness(.85); }
-  .forsakenBtn:focus-visible { outline: 2px solid #c8c8c8; outline-offset: 7px; }
+  .forsakenBtn:focus-visible { outline: none; }
+  .forsakenBtn:focus-visible .buttonLabel { text-decoration: underline; text-underline-offset: 4px; }
   .forsakenBtn:disabled { opacity: .4; cursor: default; }
   .sizeBtn.forsakenBtn.active .button-outline { filter: brightness(1.8); border-image-width: 3px; }
   .lockedLabel { display: block; margin-top: 5px; font-size: 12px; font-weight: 400; letter-spacing: 1px; color: #aaa; }
