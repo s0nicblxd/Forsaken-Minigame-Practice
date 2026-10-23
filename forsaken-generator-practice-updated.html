@@ -2745,7 +2745,7 @@
   const azureMarker = document.getElementById('azureMarker');
   const azureStatus = document.getElementById('azureStatus');
   const azureRetry = document.getElementById('azureRetry');
-  let azure = null, azureFrame = 0, azureLastTime = 0, azureTriggerHeld = false;
+  let azure = null, azureFrame = 0, azureLastTime = 0, azureTriggerHeld = false, azureRestart = 0;
   function azureBounds() {
     for (let attempt = 0; attempt < 30; attempt++) {
       const zones = Array.from({length:3}, () => { const min = .05 + Math.random() * .75; return {min,max:min+.15,done:false}; }).sort((a,b)=>a.min-b.min);
@@ -2753,7 +2753,7 @@
     }
     return [.16,.46,.76].map(min=>({min,max:min+.15,done:false}));
   }
-  function stopAzure() { cancelAnimationFrame(azureFrame); azureFrame=0; azure=null; azureTriggerHeld=false; }
+  function stopAzure() { clearTimeout(azureRestart); azureRestart=0; cancelAnimationFrame(azureFrame); azureFrame=0; azure=null; azureTriggerHeld=false; }
   function renderAzureZones() {
     azureZones.replaceChildren();
     azure.zones.forEach(z=>{
@@ -2781,9 +2781,14 @@
     if(won) {
       puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;
       localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));
-      azureStatus.textContent='Plant disarmed!';azureRetry.textContent='Next plant';
-    } else {azureStatus.textContent='Disarming failed — two misses.';azureRetry.textContent='Try again';}
-    azureRetry.hidden=false;
+      azureStatus.textContent='Plant disarmed!';
+    } else {azureStatus.textContent='Disarming failed — trying again…';}
+    azureRetry.hidden=true;
+    const finishedAttempt = azure;
+    azureRestart = setTimeout(() => {
+      azureRestart=0;
+      if(activeScreen==='azure' && !menuTransitioning && azure===finishedAttempt) startAzure();
+    }, 650);
   }
   function hitAzure() {
     if(activeScreen!=='azure' || menuTransitioning || !azure || azure.ended) return;
