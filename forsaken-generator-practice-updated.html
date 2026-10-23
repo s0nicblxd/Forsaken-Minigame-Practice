@@ -927,8 +927,8 @@
       const gain = context.createGain();
       oscillator.type = 'square';
       oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.035, context.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
+      gain.gain.setValueAtTime(0.035 * 0.65, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001 * 0.65, context.currentTime + duration);
       oscillator.connect(gain);
       gain.connect(context.destination);
       oscillator.start();
@@ -937,6 +937,7 @@
   }
   function playEntangleCue(audio, frequency, duration) {
     const cue = audio.cloneNode();
+    cue.volume = 0.65;
     const result = cue.play();
     if (result && typeof result.catch === 'function') {
       result.catch(() => playEntangleFallbackTone(frequency, duration));
@@ -1706,7 +1707,7 @@
     const fieldH = Math.max(1, entangleFieldEl.clientHeight);
     if (!popup.naturalWidth || !popup.naturalHeight) return;
     const uiScale = Math.max(0.6, Math.min(2.6, window.innerHeight / 720)); // measured: popups are drawn at native size on a 720px-tall screen
-    const fit = Math.min(uiScale * Number(popup.dataset.sizeVariation || 1), fieldW / popup.naturalWidth, fieldH / popup.naturalHeight);
+    const fit = Math.min(uiScale, fieldW / popup.naturalWidth, fieldH / popup.naturalHeight);
     popup.style.width = Math.max(1, Math.round(popup.naturalWidth * fit)) + 'px';
     popup.style.height = Math.max(1, Math.round(popup.naturalHeight * fit)) + 'px';
   }
@@ -1768,7 +1769,7 @@
     entangleRoundCompleted = false;
   }
 
-  const ENTANGLE_FADE_MIN_S = 1, ENTANGLE_FADE_MAX_S = 2.4;
+  const ENTANGLE_FADE_MIN_S = .18, ENTANGLE_FADE_MAX_S = .3;
   function entangleFadeAlpha(t) { return 1 - Math.pow(Math.max(0, Math.min(1, t)), 4); }
 
   function entangleLoop(now) {
@@ -1896,7 +1897,6 @@
       popup.alt = 'Dismiss popup ' + (popupIndex + 1);
       popup.setAttribute('role', 'button');
       popup.tabIndex = 0;
-      popup.dataset.sizeVariation = String(.9 + Math.random() * .4);
       popup.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); dismissEntanglePopup(event); }
       });
