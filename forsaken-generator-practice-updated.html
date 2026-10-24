@@ -583,7 +583,27 @@
 .azureSnapshot { pointer-events:none; }
 
 @media(max-width:700px) { #azureStage { width:calc(100vw - 80px); } #azureBar { width:100%; } }
-</style><style>#azureInstructions[hidden] { display:none; }</style></head>
+</style><style>#azureInstructions[hidden] { display:none; }</style><style>
+#screen-bloodhook.active { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:120px 24px 20px; }
+#bloodPanel { width:min(520px,100%); text-align:center; color:#eee; }
+#bloodDifficulty { display:flex; justify-content:center; gap:12px; margin-bottom:24px; }
+#bloodDifficulty button { color:#aaa; background:#151015; border:1px solid #55414b; font:18px 'Accanthis',serif; padding:8px 20px; cursor:pointer; }
+#bloodDifficulty button[aria-pressed="true"] { color:white; border-color:#c3a7b4; background:#38202b; }
+#bloodHelp { font:italic 19px 'Accanthis',serif; }
+#bloodTitle { font:32px 'Accanthis',serif; margin:24px 0 10px; }
+#bloodMeter { height:18px; padding:3px; border:1px solid #aaa; background:#141014; }
+#bloodFill { height:100%; width:50%; background:linear-gradient(#f6f6f6,#b8acb4); transition:width .05s linear; }
+.bloodEnds { display:flex; justify-content:space-between; color:#aaa; font:14px 'Accanthis',serif; margin-top:5px; }
+#bloodPrompts { height:180px; display:flex; align-items:center; justify-content:center; gap:45px; }
+.bloodKey { display:grid; place-items:center; width:90px; height:90px; border:3px solid #c7c7c7; border-radius:12px; box-shadow:inset 0 -7px #424242; background:linear-gradient(#222,#111); font:bold 48px Arial,sans-serif; }
+#bloodNext { width:50px; height:50px; font-size:26px; border-width:2px; opacity:.5; }
+#bloodPreview small { display:block; margin-bottom:8px; color:#aaa; }
+#bloodResult { min-height:24px; font:20px 'Accanthis',serif; }
+#bloodTouchField { height:240px; position:relative; margin-top:20px; }
+#bloodTap { position:absolute; border:3px solid #ddd; border-radius:50%; width:76px; height:76px; background:#2b1722; color:white; font:bold 18px Arial; touch-action:manipulation; cursor:pointer; }
+#bloodTouchField[hidden], #bloodPrompts[hidden] { display:none; }
+@media(max-height:560px) { #screen-bloodhook.active { padding-top:85px; overflow:auto; align-items:flex-start; } #bloodDifficulty { margin-bottom:8px; } #bloodTitle { margin:8px 0; } #bloodPrompts { height:100px; } #bloodTouchField { height:110px; } }
+</style></head>
 <body>
 <div id="bgGrain"></div>
 <div id="bgStains"></div>
@@ -614,18 +634,18 @@
   <div id="menuList">
     <button class="menuBtn" id="generatorsMenuBtn">Generators</button>
     <button class="menuBtn" data-game="entanglement">Entanglement Popup (Old)</button>
-    <button class="menuBtn locked" disabled>Bloodhook QTE</button>
+    <button class="menuBtn" data-game="bloodhook">Bloodhook QTE</button>
     <button class="menuBtn" data-game="azure">Plant Disarming</button>
   </div>
 </div>
 <div id="generatorMenuScreen" aria-labelledby="generatorMenuTitle">
   <h1 id="generatorMenuTitle">Generators</h1>
   <div id="generatorMenuList">
-    <button class="menuBtn" data-game="generator-old">Generator (Old)</button>
-    <button class="menuBtn" data-game="generator">Flow Board</button>
+    <button class="menuBtn" data-game="generator">Flow Puzzle</button>
     <button class="menuBtn locked" disabled>Connect The Wires <span class="lockedLabel">Locked</span></button>
     <button class="menuBtn locked" disabled>Pop The Lock <span class="lockedLabel">Locked</span></button>
     <button class="menuBtn locked" disabled>Gear Puzzle <span class="lockedLabel">Locked</span></button>
+    <button class="menuBtn" data-game="generator-old">Legacy Puzzle</button>
   </div>
   <button id="generatorBackBtn">Back</button>
 </div>
@@ -665,6 +685,18 @@
     </div>
   </div>
 </div>
+</div>
+<div id="screen-bloodhook" class="gameScreen">
+  <section id="bloodPanel" aria-label="Bloodhook practice">
+    <div id="bloodDifficulty" aria-label="Bot difficulty"><button data-level="easy" aria-pressed="true">Easy</button><button data-level="medium" aria-pressed="false">Medium</button><button data-level="hard" aria-pressed="false">Hard</button></div>
+    <p id="bloodHelp">Press the shown W, A, S or D key to escape the bot’s hook.</p>
+    <h2 id="bloodTitle">Escape</h2>
+    <div id="bloodMeter" role="progressbar" aria-label="Escape progress" aria-valuemin="0" aria-valuemax="100"><div id="bloodFill"></div></div>
+    <div class="bloodEnds"><span>Hooked</span><span>Free</span></div>
+    <div id="bloodPrompts"><div id="bloodCurrent" class="bloodKey"></div><div id="bloodPreview"><small>Next</small><div id="bloodNext" class="bloodKey"></div></div></div>
+    <div id="bloodTouchField" hidden><button id="bloodTap" aria-label="Tap to escape">TAP</button></div>
+    <p id="bloodResult" role="status" aria-live="polite"></p>
+  </section>
 </div>
 <div id="screen-azure" class="gameScreen">
   <div id="azurePractice">
@@ -2888,6 +2920,67 @@
   });
   azureRetry.addEventListener('click',()=>{if(activeScreen==='azure'){startAzure();azureRetry.blur();}});
 
+  // Client prompt behavior comes from Nosferatu; bot/contest balance is local practice tuning.
+  const BLOOD_BOTS={easy:{delay:1200,accuracy:.65},medium:{delay:800,accuracy:.82},hard:{delay:480,accuracy:.96}};
+  const bloodKeys=['W','A','S','D'];
+  const bloodPanel=document.getElementById('bloodPanel'),bloodTap=document.getElementById('bloodTap');
+  let blood=null,bloodFrame=0,bloodRestart=0,bloodLevel='easy';
+  function bloodPick(except) {const keys=bloodKeys.filter(k=>k!==except);return keys[Math.floor(Math.random()*keys.length)];}
+  function stopBlood() {cancelAnimationFrame(bloodFrame);clearTimeout(bloodRestart);bloodFrame=0;bloodRestart=0;blood=null;bloodPanel.getAnimations().forEach(a=>a.cancel());}
+  function bloodPrompt(now) {
+    blood.current=blood.next || bloodPick();blood.next=bloodPick(blood.current);blood.promptAt=now;
+    document.getElementById('bloodCurrent').textContent=blood.current;document.getElementById('bloodNext').textContent=blood.next;
+    if(blood.mobile) {
+      const field=document.getElementById('bloodTouchField');
+      bloodTap.style.left=(Math.random()*Math.max(0,field.clientWidth-76))+'px';
+      bloodTap.style.top=(Math.random()*Math.max(0,field.clientHeight-76))+'px';bloodTap.style.transform='scale(.87)';
+    }
+  }
+  function drawBlood() {
+    document.getElementById('bloodFill').style.width=blood.favor+'%';
+    document.getElementById('bloodMeter').setAttribute('aria-valuenow',String(Math.round(blood.favor)));
+  }
+  function startBlood() {
+    stopBlood();const now=performance.now();const mobile=matchMedia('(pointer:coarse)').matches;
+    blood={favor:50,current:null,next:null,ended:false,mobile,lastInput:-Infinity,botAt:now+BLOOD_BOTS[bloodLevel].delay,lastFrame:now};
+    document.getElementById('bloodPrompts').hidden=mobile;document.getElementById('bloodTouchField').hidden=!mobile;
+    document.getElementById('bloodHelp').textContent=mobile?'Tap the moving target before it disappears to escape.':'Press the shown W, A, S or D key to escape the bot’s hook.';
+    document.getElementById('bloodResult').textContent='';document.getElementById('bloodTitle').textContent='Escape';
+    document.querySelectorAll('#bloodDifficulty button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===bloodLevel)));
+    puzzleStartTime=now;timerPaused=false;timerValueEl.classList.remove('timer-done','timer-flash-green');timerValueEl.textContent=fmtTime(0);
+    bloodPrompt(now);drawBlood();bloodFrame=requestAnimationFrame(tickBlood);
+  }
+  function bloodFinish(won) {
+    if(!blood || blood.ended)return;blood.ended=true;timerPaused=true;cancelAnimationFrame(bloodFrame);bloodFrame=0;
+    document.getElementById('bloodResult').textContent=won?'Escaped!':'The hook pulled you in.';
+    if(won){puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));}
+    const attempt=blood;bloodRestart=setTimeout(()=>{if(activeScreen==='bloodhook'&&blood===attempt)startBlood();},650);
+  }
+  function bloodChange(amount) {if(!blood||blood.ended)return;blood.favor=Math.max(0,Math.min(100,blood.favor+amount));drawBlood();if(blood.favor>=100)bloodFinish(true);else if(blood.favor<=0)bloodFinish(false);}
+  function bloodAnswer(key,now=performance.now()) {
+    if(activeScreen!=='bloodhook'||menuTransitioning||!blood||blood.ended||now-blood.lastInput<100)return;
+    if(!blood.mobile&&!bloodKeys.includes(key))return;
+    blood.lastInput=now;const correct=blood.mobile?key==='tap':key===blood.current;
+    if(!matchMedia('(prefers-reduced-motion:reduce)').matches) {
+      document.getElementById('bloodCurrent').animate([{color:correct?'#75db80':'#ef6372',transform:'scale(.8)'},{color:'#eee',transform:'scale(1)'}],{duration:220,easing:'ease-out'});
+      if(!correct)bloodPanel.animate([{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'none'}],{duration:180});
+    }
+    bloodChange(correct?8:-10);if(blood&&!blood.ended)bloodPrompt(now);
+  }
+  function tickBlood(now) {
+    bloodFrame=0;if(!blood||blood.ended||activeScreen!=='bloodhook')return;
+    if(document.hidden){blood.botAt=now+BLOOD_BOTS[bloodLevel].delay;blood.promptAt=now;bloodFrame=requestAnimationFrame(tickBlood);return;}
+    // A backgrounded tab must not replay missed bot actions or expire a mobile prompt on return.
+    if(now-blood.lastFrame>500){blood.botAt=now+BLOOD_BOTS[bloodLevel].delay;blood.promptAt=now;}blood.lastFrame=now;
+    if(now>=blood.botAt){const bot=BLOOD_BOTS[bloodLevel];blood.botAt=now+bot.delay*(.85+Math.random()*.3);bloodChange(Math.random()<bot.accuracy?-6:4);}
+    if(!blood||blood.ended)return;
+    if(blood.mobile){const age=now-blood.promptAt;bloodTap.style.transform=`scale(${age<220?.87+.13*age/220:age<550?1:Math.max(0,1-((age-550)/800)**2)})`;if(age>=1350)bloodAnswer('timeout',now);}
+    if(blood&&!blood.ended)bloodFrame=requestAnimationFrame(tickBlood);
+  }
+  document.querySelectorAll('#bloodDifficulty button').forEach(button=>button.addEventListener('click',()=>{bloodLevel=button.dataset.level;if(activeScreen==='bloodhook')startBlood();button.blur();}));
+  document.addEventListener('keydown',event=>{if(activeScreen==='bloodhook'&&!event.repeat&&bloodKeys.includes(event.key.toUpperCase())){event.preventDefault();bloodAnswer(event.key.toUpperCase());}});
+  bloodTap.addEventListener('pointerdown',event=>{if(event.isPrimary&&event.button===0){event.preventDefault();bloodAnswer('tap');}});
+
   const fadeOverlayEl = document.getElementById('fadeOverlay');
   const menuNavBtnEl = document.getElementById('menuNavBtn');
   const statPanelEl = document.getElementById('statPanel');
@@ -2900,9 +2993,11 @@
     'generator-old': document.getElementById('screen-generator-old'),
     'entanglement': document.getElementById('screen-entanglement'),
     'azure': document.getElementById('screen-azure'),
+    'bloodhook': document.getElementById('screen-bloodhook'),
   };
 
   function showScreen(name) {
+    stopBlood();
     stopAzureSounds();
     stopAzure();
     stopFakeGenAudio();
@@ -2962,6 +3057,8 @@
       } else if (id === 'generator-old') {
         playStart();
         oldGenNewPuzzle();
+      } else if (id === 'bloodhook') {
+        document.activeElement?.blur();startBlood();
       } else if (id === 'azure') {
         document.activeElement?.blur();
         startAzure();
