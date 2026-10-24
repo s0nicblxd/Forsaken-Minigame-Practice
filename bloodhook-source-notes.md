@@ -6,13 +6,13 @@ Recovered client behavior: W/A/S/D prompts with the next key visible; adjacent p
 
 ## Practice bot tuning
 
-The user plays the escaping survivor against a Nosferatu bot. This local contest balance is custom, not a claim of exact server behavior. Starts at 50/100 escape progress; correct player input +8, wrong input -10; correct bot input -6, bot error +4. Reaching 100 wins, reaching zero loses. Only wins increment the shared counter. Results restart after 0.65 seconds. Repeated keydown events and inputs within 100 ms are ignored.
+The user plays the escaping survivor against a Nosferatu bot. This local contest balance is custom, not a claim of exact server behavior. Starts at 50/100 escape progress; correct player input +8, wrong input -10; correct bot input -6, bot error +4. Reaching 100 wins, reaching zero loses. Only wins increment the shared counter. Each result fades out over 0.5 seconds, then the next round fades in over 0.5 seconds. Inputs and the round timer wait for the entrance fade. Repeated keydown events and inputs within 100 ms are ignored.
 
 | Difficulty | Average reaction interval | Accuracy |
 | --- | --- | --- |
-| Easy (initial default) | 1.20 seconds | 65% |
-| Medium | 0.80 seconds | 82% |
-| Hard | 0.48 seconds | 96% |
+| Easy (initial default) | 1.12 seconds | 68% |
+| Medium | 0.75 seconds | 85% |
+| Hard | 0.45 seconds | 97% |
 
 Bot intervals vary by ±15%. Changing difficulty starts a fresh contest. Background tab time does not replay missed bot actions.
 
@@ -31,4 +31,4 @@ These IDs are from Config.Sounds.QTESucceed/QTEFail. Audio is not embedded yet; 
 
 The PC keycap is changed at runtime to the built-in `rbxasset://textures/ui/Controls/key_single@3x.png`. Controller D-pad images also use built-in Roblox textures. The saved PC template lists 13045815791; the mobile template lists 180084495. The practice version now embeds the actual built-in PC keycap from https://raw.githubusercontent.com/MaximumADHD/Roblox-Client-Tracker/roblox/textures/ui/Controls/key_single%403x.png. It uses the original Inconsolata title font and Source Sans 3 (successor to Source Sans Pro) for key labels. The mobile image remains a CSS approximation. Both fonts and the keycap work offline. It does not yet implement the source controller D-pad variant.
 
-Visual refinement follows the recovered 1.59 root aspect ratio, title/meter colors and relative placements, 0.22-second prompt movement, and continuous jitter with stronger shake after wrong input. The supplied recording is the killer perspective (Reel it in); practice remains survivor-side (Escape). Minimum sizes are adapted for small browser windows.
+Visual refinement follows the recovered 1.59 root aspect ratio, title/meter colors and relative placements, 0.22-second prompt movement, and brief decaying shake only after wrong input. The supplied recording is the killer perspective (Reel it in); practice remains survivor-side (Escape). Minimum sizes are adapted for small browser windows.

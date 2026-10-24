@@ -488,7 +488,7 @@
   #generatorMenuList { display: flex; flex-direction: column; gap: 16px; width: min(84vw, 350px); }
   #menuList { gap: 16px; width: min(84vw, 350px); }
   #menuScreen { overflow-y: auto; padding: 28px 16px; }
-  :is(#newBtn, #oldGenNewBtn, #menuNavBtn, #generatorBackBtn, .menuBtn, .sizeBtn, .oldGenStepBtn).forsakenBtn {
+  :is(#newBtn, #oldGenNewBtn, #menuNavBtn, #generatorBackBtn, .menuBtn, .sizeBtn, .oldGenStepBtn, #bloodDifficulty button).forsakenBtn {
     isolation: isolate; background: transparent; border: 0; border-image: none; border-radius: 0;
     color: #c8c8c8; font-family: 'Accanthis', Georgia, serif; font-weight: 600; font-style: normal;
     letter-spacing: 0; cursor: pointer; transition: color .15s, filter .15s;
@@ -824,7 +824,24 @@ FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
 
 -->
-</head>
+<style id="roundPolish">
+#bloodPanel { width:clamp(270px,min(25vw,39.75vh),500px); }
+#azureStage { width:min(calc(37.5vw + 90px),calc(100vw - 80px)); height:calc(6.25vh + 18px); }
+#bloodHelp, #azureInstructions { font:italic 600 clamp(20px,2.1vw,32px)/1.4 'Accanthis',serif; color:white; }
+#bloodHelp { width:min(900px,92vw); bottom:calc(100% + 40px); }
+#bloodHelp[hidden] { display:none; }
+#bloodDifficulty button.forsakenBtn { background:transparent; border:0; padding:8px 18px; min-width:84px; color:#aaa; }
+#bloodDifficulty button.forsakenBtn[aria-pressed="true"] { color:white; filter:brightness(1.3); }
+#oldGenStage { position:relative; }
+.oldGenSnapshot { position:absolute; left:50%; top:50%; translate:-50% -50%; pointer-events:none; }
+#loadingPercent.complete { animation:loadingNumberExit 1s cubic-bezier(.64,0,.78,0) forwards; }
+#loadingPercent.complete::after { content:'100%'; position:absolute; inset:0; color:transparent; -webkit-text-stroke:1px white; animation:loadingStrokeExit .666s ease-out forwards; }
+@keyframes loadingNumberExit { to { opacity:0; } }
+@keyframes loadingStrokeExit { to { -webkit-text-stroke-width:20px; opacity:0; } }
+#loadingScreen.complete #loadingSubtext { opacity:0; transition:opacity .666s; }
+@media(max-width:700px) { #azureStage { width:calc(100vw - 80px); } #bloodPanel { width:min(290px,76vw); } #bloodHelp { font-size:21px; } }
+@media(max-height:560px) { #bloodPanel { width:220px; } #bloodHelp,#azureInstructions { font-size:17px; } }
+</style></head>
 <body>
 <div id="bgGrain"></div>
 <div id="bgStains"></div>
@@ -889,7 +906,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 </div>
 <div id="screen-generator-old" class="gameScreen">
 <div id="oldGenWrap">
-  <div id="oldGenGrid"></div>
+  <div id="oldGenStage"><div id="oldGenGrid"></div></div>
   <div id="oldGenControls">
     <button id="oldGenNewBtn">New Puzzle</button>
     <div class="oldGenStepper">
@@ -944,7 +961,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   document.getElementById('bannerImg').src = EMBEDDED_UI_ASSETS.timer;
   document.getElementById('statStripImg').src = EMBEDDED_UI_ASSETS.leaderboard;
 
-  document.querySelectorAll('#newBtn, #oldGenNewBtn, #menuNavBtn, #generatorBackBtn, .menuBtn, .sizeBtn, .oldGenStepBtn').forEach(button => {
+  document.querySelectorAll('#newBtn, #oldGenNewBtn, #menuNavBtn, #generatorBackBtn, .menuBtn, .sizeBtn, .oldGenStepBtn, #bloodDifficulty button').forEach(button => {
     button.classList.add('forsakenBtn');
     const label = document.createElement('span'); label.className = 'buttonLabel';
     while (button.firstChild) label.appendChild(button.firstChild);
@@ -2643,7 +2660,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     isDragging=false; dragColor=null;
     var wasFake = currentPuzzleIsFake;
     currentPuzzleIsFake = false; // this puzzle is solved: it can no longer be "skipped" for credit
-    if (!wasFake) {
+    if (!wasFake && SIZE !== 5) {
       puzzlesFinished++; // a fake generator gives no puzzle credit
       puzzlesValueEl.textContent = puzzlesFinished;
       localStorage.setItem(PUZZLES_KEY, String(puzzlesFinished));
@@ -2727,7 +2744,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if (transitioning) return;
     if (currentPuzzleIsFake) {
       showMsg('Avoided a fake generator puzzle');
-      puzzlesFinished += 2; // skipping a fake generator is worth 2 puzzles
+      if (SIZE !== 5) puzzlesFinished += 2; // 5x5 is unscored practice, including fake skips
       puzzlesValueEl.textContent = puzzlesFinished;
       localStorage.setItem(PUZZLES_KEY, String(puzzlesFinished));
     }
@@ -2821,39 +2838,30 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   }
   const shuffledBanners = LOADING_BANNERS.slice().sort(() => Math.random() - 0.5);
 
-  const assetsReady = Promise.all([
-    setLoadingBackground(shuffledBanners.slice(0, 4)),
-    waitForImg(boardImg),
-    waitForImg(bannerImgEl),
-    (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve(),
-  ]);
-
-  let assetsSettled = false;
-  Promise.race([assetsReady, new Promise(r => setTimeout(r, 10000))]).then(() => { assetsSettled = true; });
-
-  let loadingReady = false;
-  let loadingProgress = 0;
-  function tickLoading() {
-    if (loadingReady) return;
-    const target = assetsSettled ? 100 : 92;
-    loadingProgress += (target - loadingProgress) * 0.06 + (assetsSettled ? 0.6 : 0.05);
-    if (loadingProgress >= 99.3) loadingProgress = 100;
-    loadingPercentEl.textContent = Math.floor(loadingProgress) + '%';
-    if (loadingProgress >= 100) {
-      loadingReady = true;
-      loadingPercentEl.textContent = 'Click to start';
-      loadingPercentEl.dataset.pulseText = 'Click to start';
-      loadingPercentEl.classList.add('pulse');
-      loadingPercentEl.addEventListener('animationend', () => loadingPercentEl.classList.remove('pulse'), { once: true });
-      loadingSubtextEl.style.opacity = '0';
-      loadingScreenEl.classList.add('ready');
-    } else {
-      requestAnimationFrame(tickLoading);
-    }
+  let loadingDone=0;
+  const loadingStarted=performance.now();
+  const loadingTasks=[setLoadingBackground(shuffledBanners.slice(0,4)),waitForImg(boardImg),waitForImg(bannerImgEl),document.fonts?.ready||Promise.resolve()];
+  const assetsReady=Promise.allSettled(loadingTasks.map(task=>Promise.resolve(task).finally(()=>loadingDone++)));
+  let assetsSettled=false;
+  Promise.race([assetsReady,new Promise(r=>setTimeout(r,10000))]).then(()=>{assetsSettled=true;});
+  let loadingReady=false,loadingProgress=0,loadingPrevious=performance.now();
+  function tickLoading(now) {
+    const target=assetsSettled?100:loadingDone/loadingTasks.length*95;
+    const dt=Math.min(100,now-loadingPrevious);loadingPrevious=now;
+    loadingProgress+=(target-loadingProgress)*(1-Math.pow(.84,dt/(1000/60)));
+    if(Math.abs(target-loadingProgress)<.1)loadingProgress=target;
+    loadingPercentEl.textContent=Math.round(loadingProgress)+'%';
+    const elapsed=((now-loadingStarted)/1000).toFixed(1);
+    loadingSubtextEl.textContent=(assetsSettled?'Finalizing setup...':'Loading artwork and fonts...')+' ('+elapsed+'s)';
+    if(loadingProgress===100) {
+      loadingPercentEl.classList.add('complete');loadingScreenEl.classList.add('complete');
+      setTimeout(()=>{
+        loadingPercentEl.classList.remove('complete');loadingPercentEl.textContent='Click or tap to start';
+        loadingReady=true;loadingScreenEl.classList.add('ready');
+      },1000);
+    } else requestAnimationFrame(tickLoading);
   }
   requestAnimationFrame(tickLoading);
-
-
 
 
 
@@ -2939,14 +2947,29 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     });
   }
 
-  function oldGenNewPuzzle() {
+  let oldGenTransitionTimer=0,oldGenAnimating=false,oldGenAnimations=[];
+  function stopOldGenTransition() {
+    clearTimeout(oldGenTransitionTimer);oldGenTransitionTimer=0;oldGenAnimating=false;
+    oldGenAnimations.forEach(a=>a.cancel());oldGenAnimations=[];
+    document.querySelectorAll('.oldGenSnapshot').forEach(el=>el.remove());
+  }
+  function legacyCounts(cols,rows) {return (cols>=3&&rows>=3)||(cols===4&&rows===2)||(cols===2&&rows===4);}
+  function oldGenNewPuzzle(withOld=true) {
+    if(oldGenAnimating)return;
+    const snapshot=withOld&&oldGenGridEl.children.length?oldGenGridEl.cloneNode(true):null;
+    if(snapshot){
+      const st=getComputedStyle(oldGenGridEl);
+      for(const key of ['display','gap','padding','border','borderImage','background','gridTemplateColumns','gridTemplateRows','width','height','boxSizing'])snapshot.style[key]=st[key];
+      snapshot.removeAttribute('id');snapshot.classList.add('oldGenSnapshot');snapshot.setAttribute('aria-hidden','true');
+    }
+    stopOldGenTransition();
     if (oldGenWinTimer1) { clearTimeout(oldGenWinTimer1); oldGenWinTimer1 = null; }
     if (oldGenWinTimer2) { clearTimeout(oldGenWinTimer2); oldGenWinTimer2 = null; }
     oldGenCols = oldGenPendingCols;
     oldGenRows = oldGenPendingRows;
     oldGenBuildTiles();
     oldGenLayoutGrid();
-    oldGenLocked = false;
+    oldGenLocked = true;
     const total = oldGenCols * oldGenRows;
     oldGenState = new Array(total).fill(true);
     const moves = Math.max(5, Math.round(total * 0.7)) + Math.floor(Math.random() * 3);
@@ -2956,23 +2979,28 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if (oldGenState.every(v => v)) {
       oldGenApplyMove(Math.floor(Math.random() * total));
     }
-    oldGenRender();
-    puzzleStartTime = performance.now();
-    timerPaused = false;
-    timerValueEl.classList.remove('timer-flash-green');
-    timerValueEl.textContent = fmtTime(0);
+    oldGenRender();timerPaused=true;oldGenAnimating=true;
+    timerValueEl.classList.remove('timer-flash-green');timerValueEl.textContent=fmtTime(0);
+    if(snapshot)document.getElementById('oldGenStage').prepend(snapshot);
+    const options={duration:BOARD_GROW_MS,easing:'cubic-bezier(.25,.46,.45,.94)',fill:'both'};
+    oldGenAnimations.push(oldGenGridEl.animate([{transform:'scale(0)'},{transform:'scale(1)'}],options));
+    if(snapshot)oldGenAnimations.push(snapshot.animate([{transform:'scale(1)'},{transform:'scale(0)'}],{...options,duration:BOARD_SHRINK_MS}));
+    oldGenTransitionTimer=setTimeout(()=>{
+      if(activeScreen!=='generator-old')return;
+      stopOldGenTransition();oldGenLocked=false;puzzleStartTime=performance.now();timerPaused=false;
+    },Math.max(BOARD_GROW_MS,snapshot?BOARD_SHRINK_MS:0));
   }
 
   function oldGenWin() {
+    if(oldGenLocked)return;
+    const counts=legacyCounts(oldGenCols,oldGenRows);
     oldGenLocked = true;
     timerPaused = true;
     oldGenWinTimer1 = setTimeout(() => {
       oldGenTileEls.forEach(el => { el.style.background = '#F1F050'; });
       timerValueEl.classList.add('timer-flash-green');
       playOldGenComplete();
-      puzzlesFinished++;
-      puzzlesValueEl.textContent = puzzlesFinished;
-      localStorage.setItem(PUZZLES_KEY, String(puzzlesFinished));
+      if(counts){puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));}
       oldGenWinTimer2 = setTimeout(() => { oldGenNewPuzzle(); }, 1250);
     }, 500);
   }
@@ -3142,12 +3170,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   azureRetry.addEventListener('click',()=>{if(activeScreen==='azure'){startAzure();azureRetry.blur();}});
 
   // Client prompt behavior comes from Nosferatu; bot/contest balance is local practice tuning.
-  const BLOOD_BOTS={easy:{delay:1200,accuracy:.65},medium:{delay:800,accuracy:.82},hard:{delay:480,accuracy:.96}};
+  const BLOOD_BOTS={easy:{delay:1120,accuracy:.68},medium:{delay:750,accuracy:.85},hard:{delay:450,accuracy:.97}};
   const bloodKeys=['W','A','S','D'];
   const bloodPanel=document.getElementById('bloodPanel'),bloodTap=document.getElementById('bloodTap');
-  let blood=null,bloodFrame=0,bloodRestart=0,bloodLevel='easy';
+  let blood=null,bloodFrame=0,bloodRestart=0,bloodLevel='easy',bloodFade=null,bloodLearned=false;
   function bloodPick(except) {const keys=bloodKeys.filter(k=>k!==except);return keys[Math.floor(Math.random()*keys.length)];}
-  function stopBlood() {cancelAnimationFrame(bloodFrame);clearTimeout(bloodRestart);bloodFrame=0;bloodRestart=0;blood=null;bloodPanel.getAnimations().forEach(a=>a.cancel());bloodPanel.style.transform='';bloodPanel.querySelectorAll('.bloodDeparting').forEach(el=>el.remove());}
+  function stopBlood() {bloodFade?.cancel();bloodFade=null;bloodPanel.style.opacity="1";cancelAnimationFrame(bloodFrame);clearTimeout(bloodRestart);bloodFrame=0;bloodRestart=0;blood=null;bloodPanel.getAnimations().forEach(a=>a.cancel());bloodPanel.style.transform='';bloodPanel.querySelectorAll('.bloodDeparting').forEach(el=>el.remove());}
   function bloodPrompt(now) {
     blood.current=blood.next || bloodPick();blood.next=bloodPick(blood.current);blood.promptAt=now;
     document.getElementById('bloodCurrent').textContent=blood.current;document.getElementById('bloodNext').textContent=blood.next;
@@ -3169,24 +3197,34 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   }
   function startBlood() {
     stopBlood();const now=performance.now();const mobile=matchMedia('(pointer:coarse)').matches;
-    blood={favor:50,current:null,next:null,ended:false,mobile,shake:1,lastInput:-Infinity,botAt:now+BLOOD_BOTS[bloodLevel].delay,lastFrame:now};
+    blood={favor:50,current:null,next:null,ended:false,entering:true,mobile,shake:0,lastInput:-Infinity,botAt:now+BLOOD_BOTS[bloodLevel].delay,lastFrame:now};
     bloodPanel.classList.toggle('bloodMobile',mobile);
     document.getElementById('bloodPrompts').hidden=mobile;document.getElementById('bloodTouchField').hidden=!mobile;
     document.getElementById('bloodHelp').textContent=mobile?'Tap the moving target before it disappears to escape.':'Press the shown W, A, S or D key to escape the bot’s hook.';
+    document.getElementById('bloodHelp').hidden=bloodLearned;
     document.getElementById('bloodResult').textContent='';document.getElementById('bloodTitle').textContent='Escape';
     document.querySelectorAll('#bloodDifficulty button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===bloodLevel)));
     puzzleStartTime=now;timerPaused=false;timerValueEl.classList.remove('timer-done','timer-flash-green');timerValueEl.textContent=fmtTime(0);
-    bloodPrompt(now);drawBlood();bloodFrame=requestAnimationFrame(tickBlood);
+    bloodPrompt(now);drawBlood();timerPaused=true;
+    const attempt=blood;
+    bloodFade=bloodPanel.animate([{opacity:0},{opacity:1}],{duration:500,easing:'ease-in',fill:'both'});
+    bloodFade.onfinish=()=>{
+      if(blood!==attempt||activeScreen!=='bloodhook')return;
+      bloodFade.cancel();bloodFade=null;blood.entering=false;
+      const ready=performance.now();blood.promptAt=ready;blood.botAt=ready+BLOOD_BOTS[bloodLevel].delay;blood.lastFrame=ready;
+      puzzleStartTime=ready;timerPaused=false;bloodFrame=requestAnimationFrame(tickBlood);
+    };
   }
   function bloodFinish(won) {
     if(!blood || blood.ended)return;blood.ended=true;timerPaused=true;cancelAnimationFrame(bloodFrame);bloodFrame=0;
-    document.getElementById('bloodResult').textContent=won?'Escaped!':'The hook pulled you in.';
+    document.getElementById('bloodResult').textContent='';
+    if(won)bloodLearned=true;
     if(won){puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));}
-    const attempt=blood;bloodRestart=setTimeout(()=>{if(activeScreen==='bloodhook'&&blood===attempt)startBlood();},650);
+    const attempt=blood;bloodFade=bloodPanel.animate([{opacity:1},{opacity:0}],{duration:500,easing:'ease-out',fill:'both'});bloodFade.onfinish=()=>{if(activeScreen==='bloodhook'&&blood===attempt)startBlood();};
   }
   function bloodChange(amount) {if(!blood||blood.ended)return;blood.favor=Math.max(0,Math.min(100,blood.favor+amount));drawBlood();if(blood.favor>=100)bloodFinish(true);else if(blood.favor<=0)bloodFinish(false);}
   function bloodAnswer(key,now=performance.now()) {
-    if(activeScreen!=='bloodhook'||menuTransitioning||!blood||blood.ended||now-blood.lastInput<100)return;
+    if(activeScreen!=='bloodhook'||menuTransitioning||!blood||blood.ended||blood.entering||now-blood.lastInput<100)return;
     if(!blood.mobile&&!bloodKeys.includes(key))return;
     blood.lastInput=now;const correct=blood.mobile?key==='tap':key===blood.current;
     if(!correct)blood.shake=7;
@@ -3206,7 +3244,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     // A backgrounded tab must not replay missed bot actions or expire a mobile prompt on return.
     if(now-blood.lastFrame>500){blood.botAt=now+BLOOD_BOTS[bloodLevel].delay;blood.promptAt=now;}blood.lastFrame=now;
     const shakeDt=Math.min((now-(blood.shakeAt||now))/1000,.1);blood.shakeAt=now;
-    blood.shake=Math.max(1,blood.shake-shakeDt*7);
+    blood.shake=Math.max(0,blood.shake-shakeDt*14);
     if(!matchMedia('(prefers-reduced-motion:reduce)').matches)bloodPanel.style.transform=`translate(${(Math.random()*2-1)*blood.shake/1200*innerWidth}px,${(Math.random()*2-1)*blood.shake/1200*innerHeight}px)`;
     if(now>=blood.botAt){const bot=BLOOD_BOTS[bloodLevel];blood.botAt=now+bot.delay*(.85+Math.random()*.3);bloodChange(Math.random()<bot.accuracy?-6:4);}
     if(!blood||blood.ended)return;
@@ -3233,6 +3271,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   };
 
   function showScreen(name) {
+    stopOldGenTransition();
     stopBlood();
     stopAzureSounds();
     stopAzure();
@@ -3292,7 +3331,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         firstTransition();
       } else if (id === 'generator-old') {
         playStart();
-        oldGenNewPuzzle();
+        oldGenNewPuzzle(false);
       } else if (id === 'bloodhook') {
         document.activeElement?.blur();startBlood();
       } else if (id === 'azure') {
