@@ -16,3 +16,9 @@ The loading percentage now switches directly to the clickable start prompt; it d
 | Noise texture | 15344951630 | Repeated at 512 × 512, red (#7e0000) and black layers, initial opacity 0.07 |
 
 These assets are referenced by ID in the place, not embedded media. Uploaded audio/image copies are still needed. No guessed sound is substituted: TITLE_ASSETS sound slots are null until supplied. The current visual fallbacks are the site's existing loading artwork, a FORSAKEN text title, and procedurally generated noise. The original background is a live 3D lobby camera at Map/Lobby/POIs/TitleScreenCamPos; the browser uses a moving image approximation. This is a recreation of the source sequence, not a pixel-identical rendering of the original lobby.
+
+## Video-reference corrections
+
+Compared against the supplied 20.52-second recording. Loading percentage is above the italic status line at the lower-right edge. The title prompt uses the source 3.8764%-of-height sizing and approximately 40% white opacity; automatic focus glow is removed. Both noise layers start at zero opacity at the user's request and ramp only after continuation. “Minigame Practice” is a separate subtitle that follows the title's drift and fade. No warning screen is added.
+
+The inline logo preview was visible in chat but was not supplied to the execution workspace as downloadable image bytes. A PNG/WebP upload is needed to replace the temporary text logo with that exact asset.
