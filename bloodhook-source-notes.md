@@ -29,4 +29,6 @@ These IDs are from Config.Sounds.QTESucceed/QTEFail. Audio is not embedded yet; 
 
 ## UI image references
 
-The PC keycap is changed at runtime to the built-in `rbxasset://textures/ui/Controls/key_single@3x.png`. Controller D-pad images also use built-in Roblox textures. The saved PC template lists 13045815791; the mobile template lists 180084495. The practice version draws keycaps and tap targets with CSS, with no external image dependency. It does not yet implement the source controller D-pad variant.
+The PC keycap is changed at runtime to the built-in `rbxasset://textures/ui/Controls/key_single@3x.png`. Controller D-pad images also use built-in Roblox textures. The saved PC template lists 13045815791; the mobile template lists 180084495. The practice version now embeds the actual built-in PC keycap from https://raw.githubusercontent.com/MaximumADHD/Roblox-Client-Tracker/roblox/textures/ui/Controls/key_single%403x.png. It uses the original Inconsolata title font and Source Sans 3 (successor to Source Sans Pro) for key labels. The mobile image remains a CSS approximation. Both fonts and the keycap work offline. It does not yet implement the source controller D-pad variant.
+
+Visual refinement follows the recovered 1.59 root aspect ratio, title/meter colors and relative placements, 0.22-second prompt movement, and continuous jitter with stronger shake after wrong input. The supplied recording is the killer perspective (Reel it in); practice remains survivor-side (Escape). Minimum sizes are adapted for small browser windows.
