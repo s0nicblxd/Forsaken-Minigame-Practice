@@ -6,7 +6,7 @@ Recovered client behavior: W/A/S/D prompts with the next key visible; adjacent p
 
 ## Practice bot tuning
 
-The user plays the escaping survivor against a Nosferatu bot. This local contest balance is custom, not a claim of exact server behavior. Starts at 50/100 escape progress; correct player input +8, wrong input -10; correct bot input -6, bot error +4. Reaching 100 wins, reaching zero loses. Only wins increment the shared counter. Each result fades out over 0.5 seconds, then the next round fades in over 0.5 seconds. Inputs and the round timer wait for the entrance fade. Repeated keydown events and inputs within 100 ms are ignored.
+The user plays the escaping survivor against a Nosferatu bot. This local contest balance is custom, not a claim of exact server behavior. Starts at 50/100 escape progress; correct player input +8, wrong input -10; correct bot input -6, bot error +4. Reaching 100 wins, reaching zero loses. Only wins increment the shared counter. Each result shrinks over 0.5 seconds while the next round grows over 0.45 seconds. Inputs and the round timer wait for the transition. The first successful escape hides the tutorial and smoothly moves the UI toward center over one second. Repeated keydown events and inputs within 100 ms are ignored.
 
 | Difficulty | Average reaction interval | Accuracy |
 | --- | --- | --- |
