@@ -849,7 +849,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 @keyframes loadingNumberExit { to { opacity:0; } }
 @keyframes loadingStrokeGrow { to { -webkit-text-stroke-width:20px; } }
 #loadingScreen.complete #loadingSubtext { opacity:0; transition:opacity .666s cubic-bezier(.25,.46,.45,.94); }
-#loadingScreen.ready { background:#000; }
+#loadingScreen.ready:not(.complete) { background-color:#000; }
 
 @media(max-width:700px) { #azureStage { width:calc(100vw - 80px); } #bloodPanel { width:min(290px,76vw); } #bloodHelp { font-size:21px; } }
 @media(max-height:560px) { #bloodPanel { width:220px; } #bloodHelp,#azureInstructions { font-size:17px; } }
@@ -2895,7 +2895,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     loadingPhase('Finalizing setup...',95);
     await new Promise(resolve=>setTimeout(resolve,150));
     loadingComplete=true;loadingTarget=100;loadingPercentEl.textContent='100%';
-    loadingPercentEl.classList.add('complete');loadingScreenEl.classList.add('complete');
+    loadingPercentEl.classList.add('complete');
     setTimeout(()=>{
       loadingPercentEl.classList.remove('complete');loadingPercentEl.textContent='Click or tap to start';
       loadingReady=true;loadingScreenEl.classList.add('ready');
@@ -3260,15 +3260,28 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     document.getElementById('bloodFill').style.width=blood.favor+'%';
     document.getElementById('bloodMeter').setAttribute('aria-valuenow',String(Math.round(blood.favor)));
   }
+  // Reuse CSS for snapshots instead of copying hundreds of computed properties per element.
+  const bloodSnapshotStyles=document.createElement('style');
+  bloodSnapshotStyles.textContent=Array.from(document.styleSheets).flatMap(sheet=>{
+    try{return Array.from(sheet.cssRules).filter(rule=>/#blood/.test(rule.cssText)).map(rule=>rule.cssText.replace(/#(blood[\w-]*)/g,'[data-blood-id="$1"]'));}catch{return [];}
+  }).join('\n');
+  document.head.appendChild(bloodSnapshotStyles);
+  const bloodDifficulty=document.getElementById('bloodDifficulty');
+  document.getElementById('screen-bloodhook').appendChild(bloodDifficulty);
+  function placeBloodDifficulty() {
+    const center=bloodLearned?50:55;
+    const gap=innerHeight<=560?38:bloodPanel.classList.contains('bloodMobile')?105:70;
+    bloodDifficulty.style.top=`calc(${center}% + ${bloodPanel.offsetHeight/2+gap}px)`;
+  }
+  bloodDifficulty.style.transition='top 1s cubic-bezier(.25,.46,.45,.94)';
+  addEventListener('resize',placeBloodDifficulty);
   function snapshotBlood() {
-    const clone=bloodPanel.cloneNode(true),originals=[bloodPanel,...bloodPanel.querySelectorAll('*')],copies=[clone,...clone.querySelectorAll('*')];
-    originals.forEach((el,i)=>{
-      const style=getComputedStyle(el),copy=copies[i];
-      for(const prop of style)copy.style.setProperty(prop,style.getPropertyValue(prop));
-      copy.removeAttribute('id');copy.removeAttribute('aria-live');copy.style.animation='none';copy.style.transition='none';
-    });
+    const clone=bloodPanel.cloneNode(true);
+    for(const copy of [clone,...clone.querySelectorAll('[id]')]){
+      copy.dataset.bloodId=copy.id;copy.removeAttribute('id');copy.removeAttribute('aria-live');
+    }
     const rect=bloodPanel.getBoundingClientRect();
-    Object.assign(clone.style,{position:'fixed',left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px',translate:'none',transform:'none',scale:'1',pointerEvents:'none'});
+    Object.assign(clone.style,{position:'fixed',left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px',translate:'none',transform:'none',scale:'1',pointerEvents:'none',transition:'none'});
     clone.classList.add('bloodSnapshot');clone.setAttribute('aria-hidden','true');clone.inert=true;
     return clone;
   }
@@ -3281,6 +3294,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     document.getElementById('bloodPrompts').hidden=mobile;document.getElementById('bloodTouchField').hidden=!mobile;
     document.getElementById('bloodHelp').textContent=mobile?'Tap the moving target before it disappears to escape.':'Press the shown W, A, S or D key to escape the bot’s hook.';
     bloodPanel.classList.toggle('tutorial-pending',!bloodLearned);
+    placeBloodDifficulty();
     document.getElementById('bloodResult').textContent='';document.getElementById('bloodTitle').textContent='Escape';
     document.querySelectorAll('#bloodDifficulty button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===bloodLevel)));
     puzzleStartTime=now;timerPaused=false;timerValueEl.classList.remove('timer-done','timer-flash-green');timerValueEl.textContent=fmtTime(0);
@@ -3452,8 +3466,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   function tryStartGame() {
     if (!loadingReady || gameStarted) return;
     gameStarted = true;
-    loadingScreenEl.classList.add('fading');
-    setTimeout(() => { loadingScreenEl.style.display = 'none'; }, 950);
+    loadingScreenEl.classList.add('complete');
+    loadingPercentEl.textContent='';
+    loadingScreenEl.style.pointerEvents='none';
+    setTimeout(() => { loadingScreenEl.style.display = 'none'; }, 1500);
     loadingScreenEl.removeEventListener('click', tryStartGame);
     showScreen('menu');
   }
