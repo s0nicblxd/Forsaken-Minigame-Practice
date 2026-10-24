@@ -90,31 +90,9 @@
     .statRow-label, .statRow-value { font-size: 16px; }
   }
 
-  #puzzleToast {
-    position: fixed;
-    top: 0;
-    left: 50%;
-    z-index: 49;
-    font-family: 'Accanthis', serif;
-    color: #fff;
-    font-size: clamp(11px, 3.6vw, 17px);
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-
-    transform: translate(-50%, -60vh);
-  }
-  #puzzleToast.show {
-    opacity: 1;
-    transform: translate(-50%, 0);
-
-    transition: transform 0.32s linear, opacity 0.18s linear;
-  }
-  #puzzleToast.hide {
-    opacity: 0;
-    transform: translate(-50%, 0);
-    transition: opacity 1s ease;
-  }
+  #puzzleToast { position:fixed; top:0; left:50%; width:80vw; translate:-50% 0; z-index:100000; pointer-events:none; }
+  .gameNotification { position:absolute; top:0; width:100%; min-height:32px; text-align:center; color:white; font:24px/32px 'Bodoni MT','Accanthis',serif; text-shadow:0 0 2px #0008; overflow-wrap:anywhere; transition:top .2s cubic-bezier(.25,.46,.45,.94); }
+  @media(max-width:600px) { .gameNotification { font-size:18px;line-height:24px; } }
   #gameArea {
     display: flex;
     flex-direction: column;
@@ -838,6 +816,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #loadingArtwork { position:absolute; inset:0; background-size:cover; background-position:center; opacity:1; }
 #loadingScreen::before { z-index:1; }
 #loadingInfo { z-index:2; }
+#loadingReadiness { position:relative; }
+#loadingStart { display:block; font:inherit; font-size:clamp(26px,6vw,54px); color:white; border:0; background:none; padding:0; margin-top:6px; cursor:pointer; text-shadow:0 2px 10px #000; animation:loadingPromptEnter 1s cubic-bezier(.755,.05,.855,.06) both; }
+#loadingStart[hidden] { display:none; }
+#loadingScreen.ready #loadingPercent { position:absolute; right:0; bottom:0; pointer-events:none; }
+@keyframes loadingPromptEnter { from { opacity:0; } to { opacity:1; } }
 #loadingScreen.complete { background-color:transparent; transition:background-color .75s cubic-bezier(.25,.46,.45,.94); }
 #loadingScreen.complete #loadingArtwork { animation:loadingArtworkExit .666s cubic-bezier(.25,.46,.45,.94) forwards; }
 #loadingScreen.complete::before { transform:translateY(115%); transition:transform 1.5s cubic-bezier(.25,.46,.45,.94); }
@@ -877,7 +860,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   <div id="loadingArtwork"></div>
   <div id="loadingInfo">
     <div id="loadingSubtext">Loading assets...</div>
-    <div id="loadingPercent">0%</div>
+    <div id="loadingReadiness"><div id="loadingPercent">0%</div><button id="loadingStart" hidden>Click or tap to start</button></div>
   </div>
 </div>
 <div id="fadeOverlay"></div>
@@ -917,7 +900,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   <button id="generatorBackBtn">Back</button>
 </div>
 <div id="screen-generator" class="gameScreen">
-<div id="puzzleToast"></div>
+<div id="puzzleToast" role="status" aria-live="polite" aria-relevant="additions"></div>
 <div id="gameArea">
 <div id="flowLayout" class="tutorial-pending">
 <div id="flowTutorial">Connect all of the dots below to complete the puzzle.<br>There’s an infinite amount of puzzles you can complete.<br>Click the menu button to close out of the puzzle UI.</div>
@@ -1043,14 +1026,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       ? Math.min(viewportW * 0.72, 300)
       : Math.min(Math.max(280, viewportW * 0.158), BANNER_MAX_W);
     const bannerHeightEstimate = bannerWidth * BANNER_ASPECT;
-    // Scale the desktop board with viewport width, like the reference.
-    // Browser toolbars must not shrink it; height is only a fit constraint.
+    // Keep the board usable in narrow desktop windows; constrain by available space.
     const tutorialFont = viewportH <= 500 ? 14 : viewportW <= 700
       ? Math.min(22, Math.max(14, viewportW * 0.037))
       : Math.min(44, Math.max(18, viewportW * 0.01603));
     const tutorialHeight = Math.max(tutorialFont * 4.5, document.getElementById('flowTutorial').offsetHeight);
     const reservedH = 2 * Math.max(bannerHeightEstimate + tutorialHeight + 8 - viewportH * 0.05, (viewportH <= 500 ? 52 : 118) + viewportH * 0.05);
-    const preferredBoardSize = viewportW <= 700 ? viewportW - 24 : viewportW * (560 / 1920);
+    const preferredBoardSize = Math.min(560, viewportW - 24);
     const fit = Math.max(1, Math.min(viewportW - 24, viewportH - reservedH, preferredBoardSize));
     const scale = fit / BOARD_SRC;
     const cellPx = cellSize * scale;
@@ -1150,7 +1132,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
   if (bannerImgEl.complete) fixBannerOffset();
   else bannerImgEl.addEventListener('load', fixBannerOffset);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fixBannerOffset);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(handleViewportResize);
 
   const PUZZLES_KEY = 'forsakenGenPractice.puzzlesFinished';
 
@@ -1160,19 +1142,32 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     return Number.isFinite(n) && n >= 0 ? n : 0;
   }
 
-  let toastTimer = null, toastHideTimer = null;
-  function showMsg(html) {
-    clearTimeout(toastTimer); clearTimeout(toastHideTimer);
-    puzzleToastEl.innerHTML = html;
-    puzzleToastEl.classList.remove('hide');
-
-    requestAnimationFrame(() => puzzleToastEl.classList.add('show'));
-    toastTimer = setTimeout(() => {
-      puzzleToastEl.classList.remove('show');
-      puzzleToastEl.classList.add('hide');
-      toastHideTimer = setTimeout(() => { puzzleToastEl.classList.remove('hide'); }, 1000);
-    }, 2000);
+  // NotificationDisplay: newest first, at most three, 0.2s entry, 7s hold + 3s Quad In fade.
+  const activeNotifications=[];
+  function layoutNotifications() {
+    let top=0;
+    for(const notification of activeNotifications){
+      notification.el.style.top=top+'px';top+=Math.max(32,notification.el.offsetHeight)+20;
+    }
   }
+  function removeNotification(notification) {
+    clearTimeout(notification.hold);clearTimeout(notification.cleanup);
+    notification.el.remove();const index=activeNotifications.indexOf(notification);
+    if(index>=0)activeNotifications.splice(index,1);
+    layoutNotifications();
+  }
+  function showMsg(html) {
+    if(activeNotifications.length===3)removeNotification(activeNotifications[2]);
+    const el=document.createElement('div');el.className='gameNotification';el.innerHTML=html;
+    puzzleToastEl.prepend(el);
+    const notification={el,hold:0,cleanup:0};activeNotifications.unshift(notification);layoutNotifications();
+    el.animate([{transform:'translateY(-100vh)'},{transform:'translateY(0)'}],{duration:200,easing:'cubic-bezier(.25,.46,.45,.94)'});
+    notification.hold=setTimeout(()=>{
+      el.animate([{opacity:1},{opacity:0}],{duration:3000,easing:'cubic-bezier(.55,.085,.68,.53)',fill:'forwards'});
+      notification.cleanup=setTimeout(()=>removeNotification(notification),3000);
+    },7000);
+  }
+  addEventListener('resize',layoutNotifications);
 
   let puzzleStartTime = performance.now();
   let timerPaused = false;
@@ -2896,10 +2891,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     loadingComplete=true;loadingTarget=100;loadingPercentEl.textContent='100%';
     loadingPercentEl.classList.add('complete');
     loadingSubtextEl.hidden=true;
-    setTimeout(()=>{
-      loadingPercentEl.classList.remove('complete');loadingPercentEl.textContent='Click or tap to start';
-      loadingReady=true;loadingScreenEl.classList.add('ready');
-    },1500);
+    document.getElementById('loadingStart').hidden=false;
+    loadingReady=true;loadingScreenEl.classList.add('ready');
   }
   function tickLoading(now) {
     if(loadingComplete)return;
@@ -3468,6 +3461,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     gameStarted = true;
     loadingScreenEl.classList.add('complete');
     loadingPercentEl.textContent='';
+    loadingPercentEl.classList.remove('complete');
+    document.getElementById('loadingStart').hidden=true;
     loadingScreenEl.style.pointerEvents='none';
     setTimeout(() => { loadingScreenEl.style.display = 'none'; }, 1500);
     loadingScreenEl.removeEventListener('click', tryStartGame);
