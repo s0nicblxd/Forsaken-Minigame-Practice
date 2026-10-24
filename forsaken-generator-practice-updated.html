@@ -817,8 +817,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #loadingScreen::before { z-index:1; }
 #loadingInfo { z-index:2; }
 #loadingReadiness { position:relative; }
-#loadingStart { display:block; font:inherit; font-size:clamp(26px,6vw,54px); color:white; border:0; background:none; padding:0; margin-top:6px; cursor:pointer; text-shadow:0 2px 10px #000; animation:loadingPromptEnter 1s cubic-bezier(.755,.05,.855,.06) both; }
-#loadingStart[hidden] { display:none; }
+#loadingStart { display:block; font:inherit; font-size:clamp(26px,6vw,54px); color:white; border:0; background:none; padding:0; margin-top:6px; cursor:pointer; text-shadow:0 2px 10px #000; }
+#loadingStart[hidden],#loadingPercent[hidden] { display:none; }
 #loadingScreen.ready #loadingPercent { position:absolute; right:0; bottom:0; pointer-events:none; }
 @keyframes loadingPromptEnter { from { opacity:0; } to { opacity:1; } }
 #loadingScreen.complete { background-color:transparent; transition:background-color .75s cubic-bezier(.25,.46,.45,.94); }
@@ -852,8 +852,30 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .bloodSnapshot { pointer-events:none!important; z-index:1; }
 @media(max-width:700px) { .practiceTutorial { font-size:19px; } #azureInstructions { font-size:21px; } }
 @media(max-height:560px) { .practiceTutorial,#azureInstructions { font-size:14px;line-height:1.2; } #legacyTutorial { bottom:calc(100% + 8px); } #entangleTutorial { top:90px; } }
+
+#titleExperience { position:fixed; inset:0; z-index:99998; overflow:hidden; background:#000; isolation:isolate; }
+#titleExperience[hidden],#titleExperience [hidden] { display:none!important; }
+#titleBackdrop { position:absolute; inset:-8%; background-position:center; background-size:cover; filter:brightness(.45) saturate(.65); will-change:transform; }
+#titleExperience::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at center,transparent,#0009); z-index:1; }
+#forsakenTitle { position:absolute; left:49.9753%; top:22.6767%; translate:-50% -50%; width:30vw; aspect-ratio:2.28; display:flex; align-items:center; justify-content:center; color:#e7e4df; font:700 clamp(42px,5.4vw,130px)/1 'Accanthis',serif; letter-spacing:-.05em; text-shadow:0 3px 2px #000,0 0 30px #000; opacity:0; z-index:2; will-change:transform; }
+#titleContinue { position:absolute; left:50%; top:60%; translate:-50% -100%; width:45%; min-height:3.8764vh; margin:0; padding:0; border:0; background:transparent; font:700 clamp(18px,2.7vh,38px)/1.1 'Accanthis',serif; color:#fff9; text-shadow:0 0 2px #0006; cursor:pointer; opacity:0; z-index:3; }
+#titleContinue:focus { outline:none; }
+#titleContinue:focus-visible { text-shadow:0 0 6px #fff8; }
+.titleNoise { position:absolute; inset:-100%; width:300%; height:300%; z-index:4; pointer-events:none; opacity:.07; background-repeat:repeat; background-size:512px 512px; }
+#titleVeil { position:absolute; inset:0; background:#000; z-index:5; pointer-events:none; }
+.titleShutter { position:absolute; width:100%; height:50%; background:#000; z-index:6; }
+.titleShutter.top { top:0; } .titleShutter.bottom { bottom:0; }
+#titleRevealFlash { position:fixed; inset:0; background:white; z-index:99997; pointer-events:none; }
+@media(max-width:700px) { #forsakenTitle { width:76vw; font-size:clamp(42px,11vw,80px); } #titleContinue { width:92%; } }
+
 </style></head>
 <body>
+<div id="titleExperience" hidden role="dialog" aria-modal="true" aria-label="Forsaken title screen">
+ <div id="titleBackdrop"></div><div id="forsakenTitle">FORSAKEN</div>
+ <button id="titleContinue" disabled>[ Press anything to continue ]</button>
+ <div class="titleNoise" id="titleNoiseRed"></div><div class="titleNoise" id="titleNoiseBlack"></div>
+ <div id="titleVeil"></div>
+</div>
 <div id="bgGrain"></div>
 <div id="bgStains"></div>
 <div id="loadingScreen">
@@ -2889,7 +2911,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     loadingPhase('Finalizing setup...',95);
     await new Promise(resolve=>setTimeout(resolve,150));
     loadingComplete=true;loadingTarget=100;loadingPercentEl.textContent='100%';
-    loadingPercentEl.classList.add('complete');
+    loadingPercentEl.hidden=true;
     loadingSubtextEl.hidden=true;
     document.getElementById('loadingStart').hidden=false;
     loadingReady=true;loadingScreenEl.classList.add('ready');
@@ -3455,6 +3477,81 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if (e.key === 'Escape' || (gameScreens.generator.classList.contains('active') && ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(e.key.toLowerCase()))) exitToMenu();
   });
 
+  // TitleScreen.lua timings and motion. External logo/noise/audio assets are documented separately.
+  const TITLE_ASSETS={staticSound:null,revealSound:null};
+  let titleState=null;
+  function startTitleScreen() {
+    if(titleState)return;
+    const root=document.getElementById('titleExperience'),logo=document.getElementById('forsakenTitle'),prompt=document.getElementById('titleContinue');
+    const backdrop=document.getElementById('titleBackdrop'),veil=document.getElementById('titleVeil');
+    const noise=[document.getElementById('titleNoiseRed'),document.getElementById('titleNoiseBlack')];
+    const reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
+    const state=titleState={ready:false,leaving:false,raf:0,timers:[],sounds:[],x:.5,y:.5,sx:.5,sy:.5};
+    const later=(fn,ms)=>state.timers.push(setTimeout(()=>{if(titleState===state)fn();},ms));
+    const move=e=>{state.x=e.clientX/innerWidth;state.y=e.clientY/innerHeight;};
+    root.hidden=false;backdrop.style.backgroundImage=document.getElementById('loadingArtwork').style.backgroundImage;
+    // Procedural noise stands in for the external Roblox texture until it is supplied.
+    const tile=document.createElement('canvas');tile.width=tile.height=128;const nc=tile.getContext('2d');
+    for(let layer=0;layer<2;layer++){
+      const data=nc.createImageData(128,128);
+      for(let i=0;i<data.data.length;i+=4){data.data[i]=layer===0?126:0;data.data[i+3]=Math.random()*255;}
+      nc.putImageData(data,0,0);noise[layer].style.backgroundImage=`url(${tile.toDataURL()})`;
+    }
+    let begun=performance.now(),previous=begun,lastNoise=0;
+    const driftX=2.8+Math.random()*3.8,driftY=2.8+Math.random()*3.8;
+    function frame(now){
+      if(titleState!==state)return;
+      const seconds=(now-begun)/1000,dt=Math.min(.1,(now-previous)/1000);previous=now;
+      const blend=1-Math.pow(.1,dt);state.sx+=(state.x-state.sx)*blend;state.sy+=(state.y-state.sy)*blend;
+      if(!reduced){
+        const slide=seconds<2?0:Math.pow(1-Math.min(1,(seconds-2)/1.5),2)*.1;
+        logo.style.transform=`translate(${(Math.sin(now/1000/driftX)/205+state.sx/99)*innerWidth}px,${(slide+Math.cos(now/1000/driftY)/205+state.sy/99)*innerHeight}px)`;
+        backdrop.style.transform=`translate(${(state.sx-.5)*-25}px,${Math.pow(Math.max(0,1-seconds/4),2)*90+(state.sy-.5)*-25}px) rotate(${state.sx/51}rad)`;
+      }
+      if(now-lastNoise>(reduced?500:1000/120)){
+        noise.forEach(el=>el.style.transform=`translate(${(Math.random()-.5)*innerWidth}px,${(Math.random()-.5)*innerHeight}px)`);lastNoise=now;
+      }
+      state.raf=requestAnimationFrame(frame);
+    }
+    state.raf=requestAnimationFrame(frame);root.addEventListener('pointermove',move);
+    later(()=>{
+      if(!reduced)veil.animate([{backgroundColor:'#000'},{backgroundColor:'#fff'}],{duration:1000,easing:'ease-in-out',fill:'forwards'});
+      veil.animate([{opacity:1},{opacity:0}],{delay:120,duration:1000,easing:'cubic-bezier(.39,.575,.565,1)',fill:'forwards'});
+    },500);
+    later(()=>{
+      [logo,prompt].forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:2000,easing:'cubic-bezier(.215,.61,.355,1)',fill:'forwards'}));
+    },2000);
+    later(()=>{state.ready=true;prompt.disabled=false;prompt.focus({preventScroll:true});},3000);
+    function playTitleSound(src,volume,loop){
+      if(!src)return null;const audio=new Audio(src);audio.volume=volume;audio.loop=loop;audio.play().catch(()=>{});state.sounds.push(audio);return audio;
+    }
+    function continueTitle(event){
+      if(!state.ready||state.leaving||event?.repeat)return;
+      state.leaving=true;prompt.disabled=true;
+      root.removeEventListener('pointerdown',continueTitle);document.removeEventListener('keydown',continueTitle);
+      const sound=playTitleSound(TITLE_ASSETS.staticSound,0,true),started=performance.now();
+      noise.forEach(el=>el.animate([{opacity:.07},{opacity:reduced?.2:.9}],{duration:1200,easing:'cubic-bezier(.55,.085,.68,.53)',fill:'forwards'}));
+      if(sound){const ramp=()=>{if(!state.leaving||titleState!==state)return;const t=Math.min(1,(performance.now()-started)/1200);sound.volume=(reduced?.1:.2)*t*t;if(t<1)requestAnimationFrame(ramp);};ramp();}
+      later(()=>{
+        sound?.pause();cancelAnimationFrame(state.raf);root.removeEventListener('pointermove',move);
+        veil.getAnimations().forEach(a=>a.cancel());veil.style.opacity='1';veil.style.background='#000';
+        logo.hidden=true;prompt.hidden=true;noise.forEach(el=>el.hidden=true);
+        later(()=>{
+          showScreen('menu');backdrop.hidden=true;
+          if(!reduced){
+            playTitleSound(TITLE_ASSETS.revealSound,1,false);veil.hidden=true;
+            for(const side of ['top','bottom']){const shutter=document.createElement('div');shutter.className='titleShutter '+side;root.appendChild(shutter);shutter.animate([{height:'50%'},{height:0}],{duration:350,easing:'cubic-bezier(.39,.575,.565,1)',fill:'forwards'});}
+            root.style.background='transparent';
+            const flash=document.createElement('div');flash.id='titleRevealFlash';document.body.appendChild(flash);
+            flash.animate([{opacity:.5},{opacity:0}],{duration:2000,easing:'cubic-bezier(.175,.885,.32,1.275)',fill:'forwards'}).onfinish=()=>flash.remove();
+          }else{root.animate([{opacity:1},{opacity:0}],{duration:750,easing:'cubic-bezier(.39,.575,.565,1)',fill:'forwards'});}
+          later(()=>{root.hidden=true;state.timers.forEach(clearTimeout);titleState=null;document.getElementById('menuNavBtn')?.blur();},reduced?750:350);
+        },2000);
+      },1200);
+    }
+    root.addEventListener('pointerdown',continueTitle);document.addEventListener('keydown',continueTitle);
+  }
+
   let gameStarted = false;
   function tryStartGame() {
     if (!loadingReady || gameStarted) return;
@@ -3466,7 +3563,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     loadingScreenEl.style.pointerEvents='none';
     setTimeout(() => { loadingScreenEl.style.display = 'none'; }, 1500);
     loadingScreenEl.removeEventListener('click', tryStartGame);
-    showScreen('menu');
+    startTitleScreen();
   }
   loadingScreenEl.addEventListener('click', tryStartGame);
 })();
