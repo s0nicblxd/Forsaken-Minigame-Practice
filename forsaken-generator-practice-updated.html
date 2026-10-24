@@ -835,7 +835,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #oldGenStage { position:relative; }
 .oldGenSnapshot { position:absolute; left:50%; top:50%; translate:-50% -50%; pointer-events:none; }
 /* Loading.lua: separate artwork, gradient, text and stroke completion tweens. */
-#loadingArtwork { position:absolute; inset:0; background-size:cover; background-position:center; animation:loadingArtworkEnter 2.5s cubic-bezier(.39,.575,.565,1) both; }
+#loadingArtwork { position:absolute; inset:0; background-size:cover; background-position:center; opacity:1; }
 #loadingScreen::before { z-index:1; }
 #loadingInfo { z-index:2; }
 #loadingScreen.complete { background-color:transparent; transition:background-color .75s cubic-bezier(.25,.46,.45,.94); }
@@ -844,7 +844,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #loadingPercent.complete { color:transparent; text-shadow:none; }
 #loadingPercent.complete::before { content:'100%'; position:absolute; inset:0; color:white; animation:loadingNumberExit 1s cubic-bezier(.755,.05,.855,.06) forwards; }
 #loadingPercent.complete::after { content:'100%'; position:absolute; inset:0; color:transparent; -webkit-text-stroke:1px white; animation:loadingStrokeGrow 2s cubic-bezier(.25,.46,.45,.94) forwards, loadingNumberExit .666s cubic-bezier(.25,.46,.45,.94) forwards; }
-@keyframes loadingArtworkEnter { from { opacity:0; } to { opacity:1; } }
 @keyframes loadingArtworkExit { to { opacity:0; } }
 @keyframes loadingNumberExit { to { opacity:0; } }
 @keyframes loadingStrokeGrow { to { -webkit-text-stroke-width:20px; } }
@@ -2896,6 +2895,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     await new Promise(resolve=>setTimeout(resolve,150));
     loadingComplete=true;loadingTarget=100;loadingPercentEl.textContent='100%';
     loadingPercentEl.classList.add('complete');
+    loadingSubtextEl.hidden=true;
     setTimeout(()=>{
       loadingPercentEl.classList.remove('complete');loadingPercentEl.textContent='Click or tap to start';
       loadingReady=true;loadingScreenEl.classList.add('ready');
