@@ -2372,7 +2372,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   function tileTargetRGB(r, c) {
     for (let i = 0; i < numColors; i++) {
       const p = paths[i];
-      if (p.length < 2) continue;
+      if (p.length === 0) continue;
       for (let k = 0; k < p.length; k++) {
         if (p[k][0] === r && p[k][1] === c) return paletteBgRGB[i];
       }
@@ -2380,7 +2380,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     return DEFAULT_TILE_RGB;
   }
 
-  const PULSE_MS = 425;
+  const PULSE_MS = 450;
   const BUMP_MS  = 400;
   const BUMP_AMOUNT = 0.13;
   const TILE_FADE_MS = 150;
@@ -2428,12 +2428,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       const x = scx(p.c), y = scy(p.r);
 
 
-      const maxR = DOT_R * 1.35;
-      const radius = DOT_R + t * (maxR - DOT_R);
-      const alpha = 1 - t;
+      const eased = easeOutQuad(t);
+      const maxR = CELL_PX * 0.5;
+      const radius = DOT_R + eased * (maxR - DOT_R);
+      const alpha = 1 - eased;
 
       ctx.save();
-      ctx.globalAlpha = alpha * 0.55;
+      ctx.globalAlpha = alpha;
       ctx.fillStyle = p.hex;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -2456,11 +2457,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         const anim = tileAnim[r][c];
         if (!rgbEq(anim.to, target)) {
           const t = Math.min(1, (now - anim.start) / TILE_FADE_MS);
-          const curColor = lerp3(anim.from, anim.to, easeOutCubic(t));
+          const curColor = lerp3(anim.from, anim.to, easeOutQuad(t));
           anim.from = curColor; anim.to = target; anim.start = now;
         }
         const t = Math.min(1, (now - anim.start) / TILE_FADE_MS);
-        currentBg[r][c] = lerp3(anim.from, anim.to, easeOutCubic(t));
+        currentBg[r][c] = lerp3(anim.from, anim.to, easeOutQuad(t));
         if (t < 1) moving = true;
       }
     }
@@ -2495,9 +2496,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
   function drawDot(r, c, hex, label, board=activeMetrics) {
     const x = scx(c, board), y = scy(r, board);
-    const scale = getBumpScale(r, c);
-    const r_ = board.dotR * scale;
-    const fontSz = Math.round(board.fontSz * scale);
+    const r_ = board.dotR;
+    const fontSz = board.fontSz;
     ctx.save();
 
     ctx.beginPath();
@@ -2536,6 +2536,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         if (cellIsEndpt[r][c])
           drawDot(r, c, palette[cellColor[r][c]], colorLabel[cellColor[r][c]]);
 
+    // CircleEffect clones the dot without its number: 200ms Sine Out, then reverse.
+    const bumpNow=performance.now();
+    for(const bump of scaleBumps){
+      const elapsed=bumpNow-bump.start;if(elapsed>=400)continue;
+      const phase=elapsed<=200?Math.sin(elapsed/200*Math.PI/2):Math.sin((400-elapsed)/200*Math.PI/2);
+      const radius=DOT_R+(CELL_PX*.4-DOT_R)*phase;
+      ctx.fillStyle=palette[cellColor[bump.r][bump.c]];ctx.beginPath();ctx.arc(scx(bump.c),scy(bump.r),radius,0,Math.PI*2);ctx.fill();
+      drawDot(bump.r,bump.c,palette[cellColor[bump.r][bump.c]],colorLabel[cellColor[bump.r][bump.c]]);
+    }
     drawPulses();
 
     puzzlesValueEl.textContent = puzzlesFinished;
@@ -2550,7 +2559,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     for (let i = 0; i < numColors; i++) {
       const p = paths[i], e = endpoints[i];
       if (p.length < 2) return false;
-      if (!p.some(cell => eqCell(cell, e[0])) || !p.some(cell => eqCell(cell, e[1]))) return false;
+      if (!((eqCell(p[0],e[0]) && eqCell(p[p.length-1],e[1])) || (eqCell(p[0],e[1]) && eqCell(p[p.length-1],e[0])))) return false;
     }
     return true;
   }
