@@ -3406,7 +3406,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     const st=connectState;if(!st)return;
     if(!st.lines){
       connectSVG.replaceChildren();
-      connectNode('image',{href:EMBEDDED_UI_ASSETS.board,x:0,y:0,width:500,height:500});
+      // Roblox ScaleType.Slice, SliceCenter (15,15)-(415,380), source 430x395.
+      const sx=[0,15,415,430],sy=[0,15,380,395],dest=[0,15,485,500];
+      for(let row=0;row<3;row++)for(let col=0;col<3;col++){
+        const patch=connectNode('svg',{x:dest[col],y:dest[row],width:dest[col+1]-dest[col],height:dest[row+1]-dest[row],viewBox:`${sx[col]} ${sy[row]} ${sx[col+1]-sx[col]} ${sy[row+1]-sy[row]}`,preserveAspectRatio:'none',overflow:'hidden'});
+        connectNode('image',{href:EMBEDDED_UI_ASSETS.board,width:430,height:395},patch);
+      }
       st.lines=connectNode('g',{'data-layer':'wires'});
       st.effects=connectNode('g',{'data-layer':'effects','pointer-events':'none'});
       st.terminals=connectNode('g',{'data-layer':'terminals'});
@@ -3446,7 +3451,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     for(let side=0;side<4;side++){
       const count=Math.floor(blobs.length/4)+(side<blobs.length%4?1:0),gap=count>1?Math.min(.2,.6/(count-1)):0;
       const along=Array.from({length:count},()=>Math.random()*(.6-gap*(count-1))).sort((a,b)=>a-b);
-      along.forEach((v,i)=>{const t=v+.2+gap*i;const positions=[[16+468*t,64],[457,36+428*t],[484-468*t,436],[43,464-428*t]];dots.push({x:positions[side][0],y:positions[side][1],color:blobs[dots.length]});});
+      along.forEach((v,i)=>{const t=v+.2+gap*i;const positions=[[20+460*t,47],[453,20+460*t],[480-460*t,453],[47,480-460*t]];dots.push({x:positions[side][0],y:positions[side][1],color:blobs[dots.length]});});
     }
     connectState={dots,colors:shuffle(PALETTE.slice()),links:Array(blobs.length).fill(null),drag:null,cursor:null,pointer:null,ready:false,ended:false};
     layoutConnect();drawConnect();timerPaused=true;puzzleStartTime=performance.now();timerValueEl.textContent=fmtTime(0);timerValueEl.classList.remove('timer-done','timer-flash-green');
