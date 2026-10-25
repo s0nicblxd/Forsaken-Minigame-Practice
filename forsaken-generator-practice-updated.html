@@ -813,7 +813,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #oldGenStage { position:relative; }
 .oldGenSnapshot { position:absolute; left:50%; top:50%; translate:-50% -50%; pointer-events:none; }
 /* Loading.lua: separate artwork, gradient, text and stroke completion tweens. */
-#loadingArtwork { position:absolute; inset:0; background-size:cover; background-position:center; opacity:1; }
+#loadingArtwork { visibility:hidden; position:absolute; inset:0; background-size:cover; background-position:center; opacity:1; }
 #loadingScreen::before { z-index:1; }
 #loadingInfo { z-index:2; }
 #loadingReadiness { position:relative; }
@@ -859,7 +859,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #titleExperience::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at center,transparent,#0009); z-index:1; }
 #forsakenTitle { position:absolute; left:49.9753%; top:22.6767%; translate:-50% -50%; width:30vw; aspect-ratio:2.28; display:flex; align-items:center; justify-content:center; color:#e7e4df; font:700 clamp(42px,5.4vw,130px)/1 'Accanthis',serif; letter-spacing:-.05em; text-shadow:0 3px 2px #000,0 0 30px #000; opacity:0; z-index:2; will-change:transform; }
 #titleLogo { display:block; width:100%; height:100%; object-fit:contain; }
-#titleSubtitle { position:absolute; left:50%; top:100%; translate:-50% 0; width:max-content; max-width:92vw; font:700 clamp(18px,2.2vw,36px)/1.2 'Accanthis',serif; letter-spacing:.04em; color:#ddd; text-shadow:0 2px 5px #000; }
+#titleSubtitle { position:absolute; left:50%; top:100%; translate:-50% 0; width:max-content; max-width:92vw; font:700 clamp(18px,2.2vw,36px)/1.2 'Accanthis',serif; letter-spacing:.04em; color:#ddd; text-shadow:none; }
 #titleContinue { position:absolute; left:50%; top:60%; translate:-50% -100%; width:45%; min-height:3.8764vh; margin:0; padding:0; border:0; background:transparent; font:700 clamp(18px,3.8764vh,44px)/1.1 'Accanthis',serif; color:#fff6; text-shadow:0 0 2px #0006; cursor:pointer; opacity:0; z-index:3; }
 #titleContinue:focus { outline:none; }
 #titleContinue:focus-visible { text-decoration:underline; text-underline-offset:.2em; }
