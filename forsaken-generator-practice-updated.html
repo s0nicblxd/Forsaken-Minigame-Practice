@@ -3401,20 +3401,43 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   let connectState=null,connectMotions=[],connectEpoch=0;
   const svgNS='http://www.w3.org/2000/svg';
   function connectNode(tag,attrs,parent=connectSVG){const el=document.createElementNS(svgNS,tag);for(const [key,value] of Object.entries(attrs))el.setAttribute(key,value);parent.appendChild(el);return el;}
-  function stopConnect(){connectEpoch++;connectMotions.forEach(a=>a.cancel());connectMotions=[];connectStage.querySelectorAll('.connectOld').forEach(e=>e.remove());connectState=null;}
+  function stopConnect(){if(connectState?.pulseFrame)cancelAnimationFrame(connectState.pulseFrame);connectEpoch++;connectMotions.forEach(a=>a.cancel());connectMotions=[];connectStage.querySelectorAll('.connectOld').forEach(e=>e.remove());connectState=null;}
   function drawConnect(){
-    const st=connectState;if(!st)return;connectSVG.replaceChildren();
-    connectNode('image',{href:EMBEDDED_UI_ASSETS.board,x:0,y:0,width:500,height:500});
-    const line=(a,b,color,opacity=1)=>connectNode('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:st.colors[color],'stroke-width':27,'stroke-linecap':'round',opacity});
+    const st=connectState;if(!st)return;
+    if(!st.lines){
+      connectSVG.replaceChildren();
+      connectNode('image',{href:EMBEDDED_UI_ASSETS.board,x:0,y:0,width:500,height:500});
+      st.lines=connectNode('g',{'data-layer':'wires'});
+      st.effects=connectNode('g',{'data-layer':'effects','pointer-events':'none'});
+      st.terminals=connectNode('g',{'data-layer':'terminals'});
+    }
+    st.lines.replaceChildren();st.terminals.replaceChildren();
+    const line=(a,b,color,opacity=1)=>connectNode('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:st.colors[color],'stroke-width':27,'stroke-linecap':'round',opacity},st.lines);
     st.links.forEach((mate,i)=>{if(mate>i)line(st.dots[i],st.dots[mate],st.dots[i].color);});
     if(st.drag!==null)line(st.dots[st.drag],st.cursor,st.dots[st.drag].color,.65);
-    st.dots.forEach((dot,i)=>{connectNode('rect',{x:dot.x-27,y:dot.y-27,width:54,height:54,rx:4,fill:st.colors[dot.color]});const text=connectNode('text',{x:dot.x,y:dot.y+1,fill:'white','font-family':'Arial','font-size':18,'font-weight':'bold','text-anchor':'middle','dominant-baseline':'middle','paint-order':'stroke','stroke':'#0008','stroke-width':1});text.textContent=dot.color+1;});
+    st.dots.forEach((dot,i)=>{connectNode('rect',{x:dot.x-27,y:dot.y-27,width:54,height:54,rx:3,fill:st.colors[dot.color]},st.terminals);const text=connectNode('text',{x:dot.x,y:dot.y+1,fill:'white','font-family':'Arial','font-size':18,'font-weight':'bold','text-anchor':'middle','dominant-baseline':'middle','paint-order':'stroke','stroke':'#0008','stroke-width':1},st.terminals);text.textContent=dot.color+1;});
   }
   function connectPulse(index,mate=false){
-    const st=connectState;if(!st)return;const d=st.dots[index];
-    const el=connectNode('rect',{x:d.x-27,y:d.y-27,width:54,height:54,rx:4,fill:st.colors[d.color],'pointer-events':'none'});
-    el.style.transformBox='fill-box';el.style.transformOrigin='center';
-    const a=el.animate(mate?[{scale:1},{scale:1.3},{scale:1}]:[{scale:1,opacity:1},{scale:1.8,opacity:0}],{duration:mate?400:450,easing:mate?'ease-out':'cubic-bezier(.25,.46,.45,.94)'});a.onfinish=()=>el.remove();
+    const st=connectState;if(!st||index<0)return;const d=st.dots[index];
+    const el=connectNode('rect',{x:d.x-27,y:d.y-27,width:54,height:54,rx:3,fill:st.colors[d.color]},st.effects);
+    (st.pulses??=[]).push({el,d,mate,start:performance.now()});
+    if(st.pulseFrame)return;
+    function animate(now){
+      if(connectState!==st)return;st.pulseFrame=0;
+      st.pulses=st.pulses.filter(p=>{
+        const age=now-p.start,duration=p.mate?400:450;
+        if(age>=duration){p.el.remove();return false;}
+        // Two 200ms Sine Out legs, reversing the source 1.3x terminal bump.
+        const progress=p.mate?(age<200?Math.sin(age/200*Math.PI/2):Math.cos((age-200)/200*Math.PI/2)):easeOutQuad(age/450);
+        const size=54*(1+(p.mate?.3:.8)*progress);
+        p.el.setAttribute('x',p.d.x-size/2);p.el.setAttribute('y',p.d.y-size/2);
+        p.el.setAttribute('width',size);p.el.setAttribute('height',size);
+        p.el.setAttribute('rx',3*size/54);p.el.setAttribute('opacity',p.mate?1:1-progress);
+        return true;
+      });
+      if(st.pulses.length)st.pulseFrame=requestAnimationFrame(animate);
+    }
+    st.pulseFrame=requestAnimationFrame(animate);
   }
   function startConnect(withOld=false){
     const old=withOld?connectSVG.cloneNode(true):null;stopConnect();const epoch=connectEpoch;
