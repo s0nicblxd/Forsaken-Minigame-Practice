@@ -870,6 +870,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #titleRevealFlash { position:fixed; inset:0; background:white; z-index:99997; pointer-events:none; }
 @media(max-width:700px) { #forsakenTitle { width:76vw; font-size:clamp(42px,11vw,80px); } #titleContinue { width:92%; } }
 
+#screen-connect.active { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
 #connectLayout { position:relative; width:min(560px,92vw,calc(100dvh - 300px)); aspect-ratio:1; translate:0 0; transition:translate 1s cubic-bezier(.25,.46,.45,.94); }
 #connectLayout.tutorial-pending { translate:0 5dvh; }
 #connectTutorial { position:absolute; bottom:calc(100% + 20px); left:50%; translate:-50% 0; width:94vw; }
@@ -3398,22 +3399,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     const line=(a,b,color,opacity=1)=>connectNode('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:st.colors[color],'stroke-width':27,'stroke-linecap':'round',opacity});
     st.links.forEach((mate,i)=>{if(mate>i)line(st.dots[i],st.dots[mate],st.dots[i].color);});
     if(st.drag!==null)line(st.dots[st.drag],st.cursor,st.dots[st.drag].color,.65);
-    st.dots.forEach((dot,i)=>{connectNode('circle',{cx:dot.x,cy:dot.y,r:27,fill:st.colors[dot.color]});const text=connectNode('text',{x:dot.x,y:dot.y+1,fill:'white','font-family':'Arial','font-size':18,'font-weight':'bold','text-anchor':'middle','dominant-baseline':'middle','paint-order':'stroke','stroke':'#0008','stroke-width':1});text.textContent=dot.color+1;});
+    st.dots.forEach((dot,i)=>{connectNode('rect',{x:dot.x-27,y:dot.y-27,width:54,height:54,rx:1.5,fill:st.colors[dot.color]});const text=connectNode('text',{x:dot.x,y:dot.y+1,fill:'white','font-family':'Arial','font-size':18,'font-weight':'bold','text-anchor':'middle','dominant-baseline':'middle','paint-order':'stroke','stroke':'#0008','stroke-width':1});text.textContent=dot.color+1;});
   }
   function connectPulse(index,mate=false){
     const st=connectState;if(!st)return;const d=st.dots[index];
-    const el=connectNode('circle',{cx:d.x,cy:d.y,r:27,fill:st.colors[d.color],'pointer-events':'none'});
+    const el=connectNode('rect',{x:d.x-27,y:d.y-27,width:54,height:54,rx:1.5,fill:st.colors[d.color],'pointer-events':'none'});
     el.style.transformBox='fill-box';el.style.transformOrigin='center';
     const a=el.animate(mate?[{scale:1},{scale:1.3},{scale:1}]:[{scale:1,opacity:1},{scale:1.8,opacity:0}],{duration:mate?400:450,easing:mate?'ease-out':'cubic-bezier(.25,.46,.45,.94)'});a.onfinish=()=>el.remove();
   }
   function startConnect(withOld=false){
     const old=withOld?connectSVG.cloneNode(true):null;stopConnect();const epoch=connectEpoch;
-    // Server pair count is absent from the supplied client dump: practice uses six pairs.
-    const pairs=6,blobs=shuffle(Array.from({length:pairs*2},(_,i)=>Math.floor(i/2))),dots=[];
+    // User-verified in-game range: four to six matching wire pairs.
+    const pairs=4+Math.floor(Math.random()*3),blobs=shuffle(Array.from({length:pairs*2},(_,i)=>Math.floor(i/2))),dots=[];
     for(let side=0;side<4;side++){
       const count=Math.floor(blobs.length/4)+(side<blobs.length%4?1:0),gap=count>1?Math.min(.2,.6/(count-1)):0;
       const along=Array.from({length:count},()=>Math.random()*(.6-gap*(count-1))).sort((a,b)=>a-b);
-      along.forEach((v,i)=>{const t=v+.2+gap*i;const positions=[[25+450*t,52],[448,25+450*t],[475-450*t,448],[52,475-450*t]];dots.push({x:positions[side][0],y:positions[side][1],color:blobs[dots.length]});});
+      along.forEach((v,i)=>{const t=v+.2+gap*i;const positions=[[25+450*t,64],[436,25+450*t],[475-450*t,436],[64,475-450*t]];dots.push({x:positions[side][0],y:positions[side][1],color:blobs[dots.length]});});
     }
     connectState={dots,colors:shuffle(PALETTE.slice()),links:Array(blobs.length).fill(null),drag:null,cursor:null,pointer:null,ready:false,ended:false};
     drawConnect();timerPaused=true;puzzleStartTime=performance.now();timerValueEl.textContent=fmtTime(0);timerValueEl.classList.remove('timer-done','timer-flash-green');
@@ -3506,8 +3507,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if (!gameScreens[id] || menuTransitioning) return;
     fadeTransition(() => {
       showScreen(id);
+      if(['generator','generator-old','connect'].includes(id))playStart();
       if (id === 'generator') {
-        playStart();
         puzzleStartTime = performance.now();
         timerPaused = false;
         timerValueEl.classList.remove('timer-done');
@@ -3516,7 +3517,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       } else if (id === 'connect') {
         startConnect();
       } else if (id === 'generator-old') {
-        playStart();
         oldGenNewPuzzle(false);
       } else if (id === 'bloodhook') {
         document.activeElement?.blur();startBlood();
