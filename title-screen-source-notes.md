@@ -22,3 +22,7 @@ These assets are referenced by ID in the place, not embedded media. Uploaded aud
 Compared against the supplied 20.52-second recording. Loading percentage is above the italic status line at the lower-right edge. The title prompt uses the source 3.8764%-of-height sizing and approximately 40% white opacity; automatic focus glow is removed. Both noise layers start at zero opacity at the user's request and ramp only after continuation. “Minigame Practice” is a separate subtitle that follows the title's drift and fade. No warning screen is added.
 
 The inline logo preview was visible in chat but was not supplied to the execution workspace as downloadable image bytes. A PNG/WebP upload is needed to replace the temporary text logo with that exact asset.
+
+## Embedded logo
+
+The PNG provided in a.zip is now embedded directly in the standalone HTML, replacing the temporary text logo. Its image proportions are preserved, and Minigame Practice stays beneath it. No external request is needed for the logo. Audio and the original noise texture remain pending.
