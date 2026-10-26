@@ -38,3 +38,10 @@ input from the Lua source is not yet ported.
 Validation: Chromium mouse and touch events, reverse/jump handling, input gated
 while entering/completing, zero points for gears1/2, one point for gear3, single
 completion cue, automatic supply, exit cleanup, desktop/mobile tutorial layout.
+
+## Requested follow-up adjustments
+Four full rotations (1440 degrees) now complete each gear, overriding the Lua
+client's six-turn default. Removed the gear inventory/count HUD entirely.
+Every completed gear plays puzzleDone after its spin; scoring remains exactly
+one point per three gears. Legacy also uses the shared generator completion
+cue. Verified four-turn boundary, per-gear sound count, scoring, and cleanup.
