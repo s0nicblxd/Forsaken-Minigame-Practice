@@ -48,3 +48,8 @@ X sits3% from the top/right with a32–56px responsive size. Heading/body sizes,
 line heights and paragraph width are tightened for clearer reading. Browser
 checks cover real blackout playback state/time, reveal resume, loop/fade,
 dialog controls, and overflow scrolling using long test-only content.
+
+Credits refinement: increased X dimensions and text50%; increased body size
+slightly, raised content toward the heading, and added two acknowledgements:
+Forsaken Dev Team—for assets, sound effects, and the original game; You—for
+playing. Both remain in the scrollable content region. Transparency stays75%.
