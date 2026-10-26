@@ -45,3 +45,6 @@ client's six-turn default. Removed the gear inventory/count HUD entirely.
 Every completed gear plays puzzleDone after its spin; scoring remains exactly
 one point per three gears. Legacy also uses the shared generator completion
 cue. Verified four-turn boundary, per-gear sound count, scoring, and cleanup.
+
+Tutorial now dismisses after the first completed gear, independently of the
+three-gear scoring threshold. Verified first-gear dismissal and unchanged scoring.
