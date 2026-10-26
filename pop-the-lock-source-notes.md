@@ -21,3 +21,20 @@ mate pulse. Connect also now plays Flow's completion cue once per solve.
 Validated both games in Chromium: linking/disconnecting, persistent pulses,
 lock hits/misses/direction reversal, single scoring and completion cue,
 automatic next round, and cleanup on exit.
+
+### New Pop the Lock reference: Recording 2026-10-25 203147.mp4
+This 41-second recording supersedes the earlier fixed speed/arc estimates.
+Measured target spans across its five puzzles are approximately 45, 40, 35, 30,
+and 25 degrees. Tracked the red marker over uninterrupted motion segments;
+approximate speeds used are 145, 165, 185, 205, and 225 degrees/second. These
+remain video estimates, not recovered server constants. Endless practice repeats
+this five-round progression and reentry starts from the first stage; misses
+reset the seven hits without changing the current difficulty or direction.
+
+Matched the lock-to-ring proportions (230px sprite box in a 500px SVG), gray
+sprite tint, counter baseline/font size, and rounded red marker to the clip.
+Completion sound follows the 900ms unlock sequence, consistent with the client
+Finish method; leaving cancels pending sound and round transition.
+
+Chromium verification passed all five stages and cycling, hits/misses,
+single score/sound per solve, restart, and exit during the unlock sequence.
