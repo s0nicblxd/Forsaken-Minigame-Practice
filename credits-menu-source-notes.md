@@ -37,3 +37,14 @@ Latest requested revision:
   title, and retains350ms puzzle fade/pause/resume behavior.
 Validated actual loading click, title playback, updated sizes/opacity, encoded
 track duration, loop wrap, mobile credits scrolling and puzzle transitions.
+
+Latest polish:
+Music pauses immediately at the post-static black hold (after1200ms static),
+keeps currentTime through the2000ms blackout, and resumes when reveal starts.
+Fade progress clamps both bounds to handle animation timestamps just before
+fade initialization without invalid negative volume.
+Credits backing is now25% opaque (75% transparent), as corrected by the user.
+X sits3% from the top/right with a32–56px responsive size. Heading/body sizes,
+line heights and paragraph width are tightened for clearer reading. Browser
+checks cover real blackout playback state/time, reveal resume, loop/fade,
+dialog controls, and overflow scrolling using long test-only content.
