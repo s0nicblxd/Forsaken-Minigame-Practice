@@ -25,3 +25,15 @@ Follow-up: Credits opener scales to half width/height. Panel backing and dialog
 backdrop are transparent so the underlying menu remains visible. Escape exits
 generator games without triggering their leave cue; clicking Menu retains it.
 Validated all five generator modes and credits close/focus behavior.
+
+Latest requested revision:
+- Restored Credits opener to full original size (2x the previous half-size).
+- Exit X button is now half-sized independently.
+- Panel backing is rgba(0,0,0,.75):25% transparent; backdrop remains transparent.
+- Replaced AzureLobby with supplied REQUIEM - Forsaken OST - Emmy Z (128k).
+  Decoded to PCM and blended the final/initial120ms at exact sample boundaries,
+  then encoded Vorbis. Result189.529s. Original supplied recording is unchanged.
+- Menu theme now starts on the initial loading-screen click/tap, continues through
+  title, and retains350ms puzzle fade/pause/resume behavior.
+Validated actual loading click, title playback, updated sizes/opacity, encoded
+track duration, loop wrap, mobile credits scrolling and puzzle transitions.
