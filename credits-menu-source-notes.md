@@ -1,23 +1,22 @@
-# Credits menu research (implementation pending assets)
-The requested entry belongs in the main menu's bottom-right corner.
-SidebarHandler (node45277) uses TweenInfo.new(0.25), default Quad/Out.
-On first open Menu.Size starts0,0, expands to screen size minus20px margins.
-Closing collapses height to0 while keeping full width; hides after250ms.
-Subsequent opening grows from that collapsed-height state. Menu input debounce
-is300ms; switching away from an existing menu adds125ms.
-Inventory and Credits both use CreateSidebarMenu. Credits module46083 has no
-custom OnTransitionState, so uses the shared transition directly.
+# Credits menu and menu theme
+Implemented bottom-right Credits button on the main menu. Uses supplied
+CreditsContainer123911976725450 and Exit81726400449787 textures. The X is text,
+as confirmed in CreditsScreen/Exit/Text. Credits content acknowledges only the
+Forsaken Dev Team, as requested. Overflow scrolls by wheel/touch; dialog traps
+focus and closes with X or Escape, returning focus to its opener.
 
-Original CreditsScreen requires:
-- CreditsContainer image123911976725450:
-  https://assetdelivery.roblox.com/v1/asset/?id=123911976725450
-- Exit image81726400449787:
-  https://assetdelivery.roblox.com/v1/asset/?id=81726400449787
-No credits UI coded, per user's instruction to wait for needed assets.
-Actual credit entries/names remain to be provided by the user.
+SidebarHandler node45277 uses TweenInfo.new(0.25), default Quad Out. First opening
+grows from zero on both axes; closing collapses height; subsequent openings grow
+height. Credits uses the shared SidebarHandler, not a custom transition.
 
-Audio changes in this update:
-- Restore playOldGenComplete for legacy solves.
-- Embed supplied lockMiss.mp3 only for Pop the Lock misses.
-- Embed supplied titleStatic.ogg for the existing title continue static ramp.
-  Starts on input, ramps over1.2s, stops at the title transition.
+AzureLobby.mp3.mpeg was converted to embedded Vorbis for offline playback. Trimmed
+0.88s leading silence and blended the last/first120ms into a wraparound seam.
+Browser audio loops without scheduling another player. Menu volume .35; entering
+any puzzle fades volume to0 across the existing350ms black transition and pauses
+without resetting currentTime. Returning to either menu fades in/resumes; submenu
+and credits navigation keep playback continuous. Playback starts only after the
+title flow; browser autoplay rejection retries on a real menu gesture.
+
+Chromium checks: real audio playback and loop wrap, fade and pause timing,
+preserved resume position, credits X/Escape/focus, mobile containment and wheel
+scrolling. Audio source and textures included under assets/ and embedded in HTML.
