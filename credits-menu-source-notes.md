@@ -20,3 +20,8 @@ title flow; browser autoplay rejection retries on a real menu gesture.
 Chromium checks: real audio playback and loop wrap, fade and pause timing,
 preserved resume position, credits X/Escape/focus, mobile containment and wheel
 scrolling. Audio source and textures included under assets/ and embedded in HTML.
+
+Follow-up: Credits opener scales to half width/height. Panel backing and dialog
+backdrop are transparent so the underlying menu remains visible. Escape exits
+generator games without triggering their leave cue; clicking Menu retains it.
+Validated all five generator modes and credits close/focus behavior.
