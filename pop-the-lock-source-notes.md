@@ -7,3 +7,17 @@ Implemented source rules: hit tolerance is target half-width plus 3 degrees, eac
 Mouse/touch and Space controls, green/red ring feedback, hit bump, miss shake, shackle opening, source 0.9-second completion window, automatic next rounds, zoom transitions, one-time tutorial, scoring and generator entry audio are integrated. Supplied lock PNGs are embedded. Existing website audio substitutes remain. Controller input is not yet implemented in this browser port.
 
 Verified via Chromium: hit decrement, direction reversal, miss reset retaining direction, duplicate-completion protection, next-round reset and exit cleanup. Desktop screenshot inspected.
+
+### Visual refinement
+Compared against the earlier Gamefinite footage: enlarged the counter and red
+marker and tinted the lock sprites light gray. Speed and target width remain
+video estimates, not verified server configuration. Completion now invokes the
+same sound as Flow once per solve.
+
+The two supplied `Recording 2026-10-25 203142.mp4` uploads are byte-identical and
+show Connect the Wires only. Used this clearer recording plus ConnectRenderer
+for its exact palette, 12% terminal / 6% wire sizing, and reversed Sine Out
+mate pulse. Connect also now plays Flow's completion cue once per solve.
+Validated both games in Chromium: linking/disconnecting, persistent pulses,
+lock hits/misses/direction reversal, single scoring and completion cue,
+automatic next round, and cleanup on exit.

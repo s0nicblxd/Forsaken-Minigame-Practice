@@ -3425,14 +3425,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       st.terminals=connectNode('g',{'data-layer':'terminals'});
     }
     st.lines.replaceChildren();st.terminals.replaceChildren();
-    const line=(a,b,color,opacity=1)=>connectNode('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:st.colors[color],'stroke-width':27,'stroke-linecap':'round',opacity},st.lines);
+    const line=(a,b,color,opacity=1)=>connectNode('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:st.colors[color],'stroke-width':27.6,'stroke-linecap':'round',opacity},st.lines);
     st.links.forEach((mate,i)=>{if(mate>i)line(st.dots[i],st.dots[mate],st.dots[i].color);});
     if(st.drag!==null)line(st.dots[st.drag],st.cursor,st.dots[st.drag].color,.65);
-    st.dots.forEach((dot,i)=>{connectNode('rect',{x:dot.x-27,y:dot.y-27,width:54,height:54,rx:3,fill:st.colors[dot.color]},st.terminals);const text=connectNode('text',{x:dot.x,y:dot.y+1,fill:'white','font-family':'Arial','font-size':18,'font-weight':'bold','text-anchor':'middle','dominant-baseline':'middle','paint-order':'stroke','stroke':'#0008','stroke-width':1},st.terminals);text.textContent=dot.color+1;});
+    st.dots.forEach((dot,i)=>{connectNode('rect',{x:dot.x-27.6,y:dot.y-27.6,width:55.2,height:55.2,rx:3,fill:st.colors[dot.color]},st.terminals);const text=connectNode('text',{x:dot.x,y:dot.y+1,fill:'white','font-family':'Arial','font-size':22,'font-weight':'bold','text-anchor':'middle','dominant-baseline':'middle','paint-order':'stroke','stroke':'#0008','stroke-width':1},st.terminals);text.textContent=dot.color+1;});
   }
   function connectPulse(index,mate=false){
     const st=connectState;if(!st||index<0)return;const d=st.dots[index];
-    const el=connectNode('rect',{x:d.x-27,y:d.y-27,width:54,height:54,rx:3,fill:st.colors[d.color]},st.effects);
+    const el=connectNode('rect',{x:d.x-27.6,y:d.y-27.6,width:55.2,height:55.2,rx:3,fill:st.colors[d.color]},st.effects);
     (st.pulses??=[]).push({el,d,mate,start:performance.now()});
     if(st.pulseFrame)return;
     function animate(now){
@@ -3441,11 +3441,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         const age=now-p.start,duration=p.mate?400:450;
         if(age>=duration){p.el.remove();return false;}
         // Two 200ms Sine Out legs, reversing the source 1.3x terminal bump.
-        const progress=p.mate?(age<200?Math.sin(age/200*Math.PI/2):Math.cos((age-200)/200*Math.PI/2)):easeOutQuad(age/450);
-        const size=54*(1+(p.mate?.3:.8)*progress);
+        const progress=p.mate?(age<200?Math.sin(age/200*Math.PI/2):1-Math.sin((age-200)/200*Math.PI/2)):easeOutQuad(age/450);
+        const size=55.2*(1+(p.mate?.3:.8)*progress);
         p.el.setAttribute('x',p.d.x-size/2);p.el.setAttribute('y',p.d.y-size/2);
         p.el.setAttribute('width',size);p.el.setAttribute('height',size);
-        p.el.setAttribute('rx',3*size/54);p.el.setAttribute('opacity',p.mate?1:1-progress);
+        p.el.setAttribute('rx',3*size/55.2);p.el.setAttribute('opacity',p.mate?1:1-progress);
         return true;
       });
       if(st.pulses.length)st.pulseFrame=requestAnimationFrame(animate);
@@ -3459,9 +3459,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     for(let side=0;side<4;side++){
       const count=Math.floor(blobs.length/4)+(side<blobs.length%4?1:0),gap=count>1?Math.min(.2,.6/(count-1)):0;
       const along=Array.from({length:count},()=>Math.random()*(.6-gap*(count-1))).sort((a,b)=>a-b);
-      along.forEach((v,i)=>{const t=v+.2+gap*i;const positions=[[20+460*t,47],[453,20+460*t],[480-460*t,453],[47,480-460*t]];dots.push({x:positions[side][0],y:positions[side][1],color:blobs[dots.length]});});
+      along.forEach((v,i)=>{const t=v+.2+gap*i;const positions=[[20+460*t,47.6],[452.4,20+460*t],[480-460*t,452.4],[47.6,480-460*t]];dots.push({x:positions[side][0],y:positions[side][1],color:blobs[dots.length]});});
     }
-    connectState={dots,colors:shuffle(PALETTE.slice()),links:Array(blobs.length).fill(null),drag:null,cursor:null,pointer:null,ready:false,ended:false};
+    connectState={dots,colors:shuffle(['#d9102b','#10d910','#1042d9','#deb441','#c709bd','#d96f01','#ffead0','#f76f8e','#5ad2f4','#3e009c']),links:Array(blobs.length).fill(null),drag:null,cursor:null,pointer:null,ready:false,ended:false};
     layoutConnect();drawConnect();timerPaused=true;puzzleStartTime=performance.now();timerValueEl.textContent=fmtTime(0);timerValueEl.classList.remove('timer-done','timer-flash-green');
     if(old){old.removeAttribute('id');old.classList.add('connectOld');old.setAttribute('aria-hidden','true');connectStage.prepend(old);const a=old.animate([{scale:1},{scale:0}],{duration:500,easing:'cubic-bezier(.25,.46,.45,.94)'});a.onfinish=()=>old.remove();connectMotions.push(a);}
     const grow=connectSVG.animate([{scale:0},{scale:1}],{duration:450,easing:'cubic-bezier(.25,.46,.45,.94)'});connectMotions.push(grow);
@@ -3479,7 +3479,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   function releaseConnect(e){const st=connectState;if(!st||st.pointer!==e.pointerId)return;e.preventDefault();const from=st.drag,to=e.type==='pointerup'?connectHit(connectPoint(e)):-1;st.pointer=null;st.drag=null;
     const valid=to>=0&&from!==to&&st.links[to]===null&&st.dots[from].color===st.dots[to].color;
     if(valid){st.links[from]=to;st.links[to]=from;playWireConnect();}else playLetGoBacktrack();drawConnect();if(valid)connectPulse(to);
-    if(valid&&st.links.every(x=>x!==null)&&!st.ended){st.ended=true;st.ready=false;puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));completePracticeTutorial('connect','connectTutorial','connectLayout');startConnect(true);}
+    if(valid&&st.links.every(x=>x!==null)&&!st.ended){st.ended=true;st.ready=false;playLayer();puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));completePracticeTutorial('connect','connectTutorial','connectLayout');startConnect(true);}
   }
   connectSVG.addEventListener('pointerup',releaseConnect);connectSVG.addEventListener('pointercancel',releaseConnect);connectSVG.addEventListener('lostpointercapture',releaseConnect);
 
@@ -3493,7 +3493,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   function lockArc(a,b){const p=lockPoint(a),q=lockPoint(b);return `M ${p} A 175 175 0 0 1 ${q}`;}
   function renderLock(now){
     const st=lockState;if(!st)return;const angle=lockAngle(now);st.marker.setAttribute('transform',`rotate(${angle} 250 250)`);
-    st.target.setAttribute('d',lockArc(st.targetAngle-20,st.targetAngle+20));st.number.textContent=st.remaining;
+    st.target.setAttribute('d',lockArc(st.targetAngle-LOCK_CONFIG.targetSize/2,st.targetAngle+LOCK_CONFIG.targetSize/2));st.number.textContent=st.remaining;
     lockFrame=requestAnimationFrame(renderLock);
   }
   function startLock(oldRound=false){
@@ -3503,9 +3503,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     for(let y=0;y<3;y++)for(let x=0;x<3;x++){const patch=n('svg',{x:dest[x],y:dest[y],width:dest[x+1]-dest[x],height:dest[y+1]-dest[y],viewBox:`${sx[x]} ${sy[y]} ${sx[x+1]-sx[x]} ${sy[y+1]-sy[y]}`,preserveAspectRatio:'none',overflow:'hidden'});n('image',{href:EMBEDDED_UI_ASSETS.board,width:430,height:395},patch);}
     const ring=n('circle',{cx:250,cy:250,r:175,fill:'none',stroke:'#6e6e6e','stroke-width':4.2});
     const target=n('path',{fill:'none',stroke:'#f0f0f0','stroke-width':15.75});
-    const marker=n('rect',{x:246,y:63,width:8,height:24,fill:'#e60000'});
-    const group=n('g',{}),top=n('image',{href:lockImages.top,x:125,y:125,width:250,height:250},group);n('image',{href:lockImages.bottom,x:125,y:125,width:250,height:250},group);
-    const number=n('text',{x:250,y:307,'text-anchor':'middle','font-family':'Arial','font-weight':'bold','font-size':34,fill:'#111'},group);
+    const marker=n('rect',{x:241,y:60,width:18,height:30,fill:'#e60000'});
+    const group=n('g',{}),top=n('image',{href:lockImages.top,style:"filter:brightness(.74)",x:125,y:125,width:250,height:250},group);n('image',{href:lockImages.bottom,style:"filter:brightness(.74)",x:125,y:125,width:250,height:250},group);
+    const number=n('text',{x:250,y:311,'text-anchor':'middle','font-family':'Arial','font-weight':'bold','font-size':50,fill:'#111'},group);
     const st=lockState={angle:0,time:performance.now()+450,direction:1,remaining:7,targetAngle:90+Math.random()*180,ready:false,ended:false,ring,target,marker,group,top,number};
     group.style.transformOrigin='250px 250px';group.style.transformBox='view-box';
     timerPaused=true;timerValueEl.textContent=fmtTime(0);timerValueEl.classList.remove('timer-done','timer-flash-green');
@@ -3521,7 +3521,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     playWireConnect();st.remaining--;st.angle=angle;st.time=now;
     st.group.animate([{scale:1},{scale:1.08},{scale:1}],{duration:140,easing:'ease-out'});
     if(st.remaining>0){st.direction*=-1;st.targetAngle=(angle+90+Math.random()*180)%360;return;}
-    st.ended=true;st.ready=false;timerPaused=true;st.target.style.display='none';
+    st.ended=true;st.ready=false;timerPaused=true;playLayer();st.target.style.display='none';
     st.top.style.transformOrigin='250px 250px';st.top.animate([{transform:'translateY(0) rotate(0deg)'},{transform:'translateY(-30px) rotate(18deg)'}],{duration:250,easing:'cubic-bezier(.175,.885,.32,1.275)',fill:'forwards'});
     lockTimers.push(setTimeout(()=>{if(lockState===st)st.group.animate([{opacity:1},{opacity:0}],{duration:450,fill:'forwards'});},250));
     completePracticeTutorial('lock','lockTutorial','lockLayout');puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));
