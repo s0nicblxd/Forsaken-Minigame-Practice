@@ -1,0 +1,6 @@
+Guest block tester — Studio only
+
+Stop Play, insert GuestBlockTester.rbxmx into Workspace using Insert from File. Move its SpawnPoint to floor level in your testing area and rotate it toward an open area. The dummy appears at SpawnPoint; the green standing marker appears in front.
+Start a one-player test, spawn as Guest1337Rework, and stand on the green marker facing the dummy. J = Slash, K = Behead, H = restore health, clear overheal and reset ability cooldowns. Block when the label says BLOCK NOW. Results print to Output.
+Uses the current Slasher Config values but an isolated copy of the uploaded rebuild hitbox engine, with NPC support and DamageOverride handling. Does not replace ReplicatedStorage.Modules.Hitboxes. Only direct Slash/Behead hitbox behavior is tested: no bleeding, executions, cutscenes, full AI, animations, or audio. Direct damage is capped to leave at least 1 HP, so reset health before comparing damage. Existing status effects are not cleared by reset.
+Original Guest block handlers may still award normal block stats/rewards. Use your private test place. This is a static-checked prototype, not Roblox Studio runtime-tested. Remove GuestBlockTester from Workspace to uninstall (stop Play first).
