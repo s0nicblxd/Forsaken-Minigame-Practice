@@ -1,0 +1,888 @@
+<?xml version='1.0' encoding='utf-8'?>
+<roblox version="4">
+  <Item class="Model" referent="KIT">
+    <Properties>
+      <string name="Name">GuestBlockTester</string>
+    </Properties>
+    <Item class="Part" referent="SPAWN">
+      <Properties>
+        <string name="Name">SpawnPoint</string>
+        <bool name="Anchored">true</bool>
+        <bool name="CanCollide">false</bool>
+        <Vector3 name="size">
+          <X>3</X>
+          <Y>0.2</Y>
+          <Z>3</Z>
+        </Vector3>
+        <CoordinateFrame name="CFrame">
+          <X>0</X>
+          <Y>1</Y>
+          <Z>0</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+      </Properties>
+    </Item>
+    <Item class="Script" referent="Trainer">
+      <Properties>
+        <string name="Name">Trainer</string>
+        <ProtectedString name="Source">-- Single-client, Studio-only Guest block tester. Not Slasher's complete AI/moveset.
+local RunService = game:GetService("RunService")
+if not RunService:IsStudio() then return end
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local kit = script.Parent
+local marker = kit:WaitForChild("SpawnPoint")
+local started = os.clock()
+while workspace:GetAttribute("ServerLoaded") ~= true do
+    if os.clock() - started &gt; 120 then
+        warn("[Guest tester] Server initialization did not finish; tester stopped.")
+        return
+    end
+    task.wait(0.25)
+end
+local Actors = require(RS.Modules.Actors)
+local Hitboxes = require(kit.TestHitboxes)
+local config = require(RS.Assets.Killers.Slasher.Config)
+local killers = workspace:WaitForChild("Players"):WaitForChild("Killers")
+local dummy = Instance.new("Model")
+dummy.Name = "SlasherHitboxTester"
+dummy:SetAttribute("Team", "Killers")
+local origin = marker.CFrame * CFrame.new(0, 3.1, 0)
+local function body(name, size, offset, color, transparency)
+    local part = Instance.new("Part")
+    part.Name = name
+    part.Size = size
+    part.CFrame = origin * CFrame.new(offset)
+    part.Color = color
+    part.Anchored = true
+    part.CanCollide = false
+    part.CanTouch = false
+    part.Transparency = transparency or 0
+    part.Parent = dummy
+    return part
+end
+local gray = Color3.fromRGB(65, 65, 70)
+local root = body("HumanoidRootPart", Vector3.new(2,2,1), Vector3.zero, gray, 1)
+dummy.PrimaryPart = root
+body("Torso", Vector3.new(2,2,1), Vector3.zero, gray)
+local head = body("Head", Vector3.new(2,1,1), Vector3.new(0,1.5,0), Color3.fromRGB(220,215,195))
+body("Left Arm", Vector3.new(1,2,1), Vector3.new(-1.5,0,0), gray)
+body("Right Arm", Vector3.new(1,2,1), Vector3.new(1.5,0,0), gray)
+body("Left Leg", Vector3.new(1,2,1), Vector3.new(-0.5,-2,0), gray)
+body("Right Leg", Vector3.new(1,2,1), Vector3.new(0.5,-2,0), gray)
+local hum = Instance.new("Humanoid")
+hum.RequiresNeck = false
+hum.BreakJointsOnDeath = false
+hum.MaxHealth = 100000
+hum.Health = hum.MaxHealth
+hum.WalkSpeed = 0
+hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+hum.Parent = dummy
+dummy.Parent = killers
+local billboard = Instance.new("BillboardGui")
+billboard.Name = "Instructions"
+billboard.Size = UDim2.fromOffset(440,160)
+billboard.StudsOffset = Vector3.new(0,3,0)
+billboard.AlwaysOnTop = true
+billboard.Parent = head
+local label = Instance.new("TextLabel")
+label.Size = UDim2.fromScale(1,1)
+label.BackgroundColor3 = Color3.new(0,0,0)
+label.BackgroundTransparency = 0.2
+label.TextColor3 = Color3.new(1,1,1)
+label.TextSize = 18
+label.TextWrapped = true
+label.Font = Enum.Font.GothamBold
+label.Parent = billboard
+local function say(message)
+    label.Text = message
+    print("[Guest tester] " .. message)
+end
+local stand = Instance.new("Part")
+stand.Name = "StandHere"
+stand.Anchored = true
+stand.CanCollide = false
+stand.CanTouch = false
+stand.CanQuery = false
+stand.Size = Vector3.new(3,0.1,2)
+stand.Color = Color3.fromRGB(70,200,120)
+stand.Material = Enum.Material.Neon
+stand.Transparency = 0.35
+stand.CFrame = marker.CFrame * CFrame.new(0,0.15,-3.5)
+stand.Parent = kit
+marker.Transparency = 1
+marker.CanCollide = false
+marker.CanQuery = false
+local busy = false
+local prompts = {}
+local function setBusy(value)
+    busy = value
+    for _, prompt in ipairs(prompts) do prompt.Enabled = not value end
+end
+local function getGuest(player)
+    local actor = Actors.CurrentActors[player]
+    if not actor or actor.ActorName ~= "Guest1337Rework" then
+        say("Spawn as Guest 1337 (Rework) first.")
+        return
+    end
+    local rig = actor.Rig
+    local h = rig and rig:FindFirstChildOfClass("Humanoid")
+    if not h or h.Health &lt;= 0 or not rig.PrimaryPart then return end
+    if (rig.PrimaryPart.Position-root.Position).Magnitude &gt; 12 then return end
+    return actor, rig, h
+end
+local function prompt(text, key, offset, callback)
+    local attachment = Instance.new("Attachment")
+    attachment.Position = Vector3.new(0,offset,0)
+    attachment.Parent = root
+    local p = Instance.new("ProximityPrompt")
+    p.ActionText = text
+    p.ObjectText = "Guest block tester"
+    p.KeyboardKeyCode = key
+    p.HoldDuration = 0
+    p.RequiresLineOfSight = false
+    p.MaxActivationDistance = 10
+    p.Exclusivity = Enum.ProximityPromptExclusivity.AlwaysShow
+    p.UIOffset = Vector2.new(0, offset*65)
+    p.Parent = attachment
+    p.Triggered:Connect(function(player)
+        if busy then return end
+        local actor, rig, h = getGuest(player)
+        if actor then callback(player, actor, rig, h) end
+    end)
+    table.insert(prompts,p)
+end
+local function attack(kind, player, actor, rig, h)
+    setBusy(true)
+    local ok, err = xpcall(function()
+        for n=2,1,-1 do
+            say(kind .. " in " .. n .. "... Stand on the green marker, facing the dummy.")
+            task.wait(1)
+        end
+        if not rig.Parent or h.Health &lt;= 0 or Actors.CurrentActors[player] ~= actor then return end
+        local slash = kind == "Slash"
+        local damage = slash and config.SlashDamage or config.BeheadDamage
+        local windup = slash and config.SlashWindup or config.BeheadWindup
+        local linger = slash and config.SlashLinger or config.BeheadLinger
+        say(kind .. ": BLOCK NOW!")
+        task.wait(windup)
+        if not rig.Parent or h.Health &lt;= 0 or Actors.CurrentActors[player] ~= actor then return end
+        local hpBefore = h.Health
+        local ohBefore = h:GetAttribute("Overheal") or 0
+        Hitboxes:CreateHitbox(dummy, {
+            Size = slash and Vector3.new(4.5,6,7.5) or Vector3.new(8,2,7),
+            CFrameOffset = CFrame.new(0,0,slash and -1.75 or -2),
+            AbilityType = slash and "MainAbility" or "AltAbility1",
+            Damage = damage,
+            Time = linger,
+            Knockback = 2,
+            HitMultiple = false,
+            Team = "Survivors",
+            PredictVelocity = false,
+            ExecuteOnKill = false,
+        })
+        task.wait(linger + 0.3)
+        if rig.Parent and h.Parent then
+            say(string.format("%s result — HP: %.1f → %.1f | Overheal: %.1f → %.1f\nBase damage: %.1f. No change can also mean a miss.\nJ: Slash | K: Behead | H: reset health/cooldowns", kind, hpBefore, h.Health, ohBefore, h:GetAttribute("Overheal") or 0, damage))
+        end
+    end, debug.traceback)
+    if not ok then say("Tester error — see Output"); warn(err) end
+    setBusy(false)
+end
+prompt("Test Slash", Enum.KeyCode.J, 0, function(...) attack("Slash", ...) end)
+prompt("Test Behead", Enum.KeyCode.K, -1, function(...) attack("Behead", ...) end)
+prompt("Reset health + cooldowns", Enum.KeyCode.H, -2, function(player, actor, rig, h)
+    if actor.Blocking or actor.AbilitiesDisabled or rig:GetAttribute("GuestCharging") then
+        say("Finish the current ability before resetting.")
+        return
+    end
+    h:SetAttribute("DrainingID", nil)
+    h:SetAttribute("Overheal", nil)
+    h:SetAttribute("OverhealDecayMin", nil)
+    h.Health = h.MaxHealth
+    for _, name in ipairs({"Block","Punch","Charge"}) do actor:SetCooldownOf(name,0) end
+    say("Health/cooldowns reset. Existing status effects are unchanged.\nStand on green: J Slash | K Behead | H reset")
+end)
+say("Stationary Slash / Behead HITBOX tester\nStand on green, face the dummy.\nJ: Slash | K: Behead | H: health/cooldown reset\nNo bleed, cutscenes, animations, or full Slasher AI.")
+kit.Destroying:Connect(function() dummy:Destroy() end)
+</ProtectedString>
+        <bool name="Disabled">false</bool>
+      </Properties>
+    </Item>
+    <Item class="ModuleScript" referent="TestHitboxes">
+      <Properties>
+        <string name="Name">TestHitboxes</string>
+        <ProtectedString name="Source">-- So, I've been trying to improve the engine recently and I just though: WHY NOT JUST RECODE EVERYTHING?????????????????
+-- also improving my comments!
+-- skiddy katamari will say this is trash because her engine needs to be better than anything
+
+-- // services:
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local AnalyticsService = game:GetService("AnalyticsService")
+local isStudio = RunService:IsStudio()
+local isServer = RunService:IsServer()
+
+-- // modules:
+local Ragdolls = require(ReplicatedStorage.Modules.Ragdolls)
+local Util = require(ReplicatedStorage.Modules.Util)
+local AchievementUtil = require(ReplicatedStorage.Modules.AchievementUtil)
+local Actors = require(ReplicatedStorage.Modules.Actors)
+local Network = require(ReplicatedStorage.Modules.Network)
+local Sounds = require(ReplicatedStorage.Modules.Sounds)
+local Stats = require(ReplicatedStorage.Modules.Stats)
+local Statuses = require(ReplicatedStorage.Modules.Statuses)
+
+-- // new modules (these were originally not on forsaken neither on aeternus)
+local Janitor = require(ReplicatedStorage.Modules.Misc.Janitor) -- expect to see this alot (maid will still be here to keep compatibility)
+local CoreLoader = require(ReplicatedStorage.CoreLoader)
+local Signal = require(ReplicatedStorage.Modules.Misc.Signal) -- why doesn't forsaken use this module
+
+local Hitboxes = {}
+
+
+-- new function to prevent wall clipping (aka. hitting someone if they are behind an wall)
+local function PreventWallClip(pOrigin, pTargetPos, pExcludeChar)
+	local diff = pTargetPos - pOrigin
+	local dist = diff.Magnitude
+	if dist &gt; 10 then
+		pTargetPos = pOrigin + diff.Unit * 10
+		dist = 10
+	end
+	if dist &lt; 0.1 then
+		return pTargetPos
+	end
+
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.FilterDescendantsInstances = { workspace.Players, pExcludeChar, workspace:FindFirstChild("Hitboxes") }
+
+	local raycastResult = workspace:Raycast(pOrigin, diff, rayParams)
+	if not raycastResult then
+		return pTargetPos
+	end
+
+	local safeDist = math.max(raycastResult.Distance - 0.5, 0)
+	return pOrigin + diff.Unit * safeDist
+end
+
+
+local function GetDictionaryLength(dict)
+	local count = 0
+	for _, _ in pairs(dict) do
+		count += 1
+	end
+	return count
+end
+
+
+function Hitboxes.LineOfSight(_, origin, targetChar)
+	local player = Players:GetPlayerFromCharacter(targetChar)
+
+	if player then
+		local _ = Actors.CurrentActors[player]
+	end
+
+	targetChar:FindFirstChild("Humanoid")
+
+	local hasReplicating = targetChar:FindFirstChild("QueryHitbox") and (player and targetChar:HasTag("Replicating"))
+	local raycastParams = RaycastParams.new()
+
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	raycastParams.FilterDescendantsInstances = if not typeof(origin == "Vector3") then {
+		workspace.Players,
+		targetChar,
+		origin
+	} else {
+			workspace.Players,
+			targetChar
+		}
+	raycastParams.CollisionGroup = tostring(typeof(origin) ~= "Vector3" and (not not origin.PrimaryPart and origin.PrimaryPart.CollisionGroup) or "Killers")
+
+	local function partCanBlock(hitPart)
+		local isHitbox = hitPart:GetAttribute("Hitbox") or (hitPart.CanCollide or hitPart.Transparency &lt; 1)
+		local hitHumanoid = hitPart.Parent:FindFirstChild("Humanoid")
+
+		if isHitbox and not hitHumanoid then
+			return true
+		end
+
+		raycastParams:AddToFilter(hitPart)
+
+		if hitHumanoid then
+			raycastParams:AddToFilter(hitHumanoid.Parent)
+		end
+
+		return false
+	end
+
+	if typeof(origin) == "Vector3" then
+	else
+		local originPlayer = Players:GetPlayerFromCharacter(origin)
+		local originActor = originPlayer and Actors.CurrentActors[originPlayer]
+
+		origin = originActor and originActor:GetPivot(false).Position or origin.PrimaryPart.Position
+	end
+
+	for _, child in ipairs(targetChar:GetChildren()) do
+		if not child:IsA("BasePart") or not child.CanQuery or child:GetAttribute("Hitbox") then
+			continue
+		end
+
+		local objectSpace = targetChar.PrimaryPart.CFrame:ToObjectSpace(child.CFrame)
+		local targetPos = hasReplicating and targetChar.QueryHitbox.CFrame:ToWorldSpace(objectSpace).Position or child.Position
+		local attempts = 0
+		local raycastResult
+
+		repeat
+			raycastResult = workspace:Raycast(origin, targetPos - origin, raycastParams)
+			attempts += 1
+		until not raycastResult or partCanBlock(raycastResult.Instance) or attempts &gt; 15
+
+		if not raycastResult and attempts &lt;= 15 then
+			return true
+		end
+	end
+
+	return false
+end
+
+
+function Hitboxes.CreateHitbox(_, creator, hitboxParams)
+	local creatorChar = creator and (creator:IsA("Model") and creator or creator.Character)
+
+	if not creatorChar or not creatorChar.PrimaryPart then
+		return
+	end
+
+	local params = hitboxParams or {}
+	local config = {
+		Size = params.Size or Vector3.new(4, 7, 4),
+		CFrameOffset = params.CFrameOffset or CFrame.new(0, 0, 0),
+		CFrame = params.CFrame or nil,
+		CastPoint = if params.CastPoint ~= nil then params.CastPoint else nil,
+		Damage = params.Damage or 15,
+		AbilityType = params.AbilityType or nil,
+		Time = params.Time or 0.125,
+		Knockback = params.Knockback or 0,
+		HitMultiple = params.HitMultiple or false,
+		PredictVelocity = params.PredictVelocity == nil or params.PredictVelocity,
+		ExecuteOnKill = params.ExecuteOnKill or false,
+		FriendlyFire = params.FriendlyFire or false,
+		Team = params.Team,
+		OnlyHitPlayers = params.OnlyHitPlayers or false,
+		RagdollOnHit = params.RagdollOnHit or false,
+		Hide = params.Hide or false,
+		DeathProfile = params.DeathProfile or {},
+		Shape = params.Shape or Enum.PartType.Block,
+		ExcludeChars = params.ExcludeChars or {},
+		Connections = params.Connections or {}
+	}
+	local overlapParams = OverlapParams.new()
+
+	overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+	overlapParams.FilterDescendantsInstances = { creatorChar }
+
+	local hitboxState = {
+		TimePast = 0,
+		HumanoidsDamaged = {},
+		InvincibleProcs = {},
+		Creator = creator,
+		AbilityType = config.AbilityType,
+		Damage = config.Damage,
+		IsProjectile = config.CFrame ~= nil,
+
+		OnHit = Signal.new(),
+		OnEnded = Signal.new()
+	}
+
+	local hitboxJanitor = Janitor.new()
+	hitboxJanitor:Add(hitboxState.OnHit, "Destroy")
+	hitboxJanitor:Add(hitboxState.OnEnded, "Destroy")
+
+	local function runCallback(callbackName, ...)
+		if config.Connections[callbackName] then
+			config.Connections[callbackName](...)
+		end
+	end
+
+	function hitboxState.Cancel(_)
+		hitboxState.Cancelled = true
+		hitboxJanitor:Cleanup()
+	end
+
+	task.spawn(function()
+		local creatorActor = creator and (creator:IsA("Player") and Actors.CurrentActors[creator])
+
+		while creatorChar.Parent and creatorChar.PrimaryPart and hitboxState.TimePast &lt; config.Time and not hitboxState.Cancelled do
+			local humanoidsDamaged = hitboxState.HumanoidsDamaged
+			local hitCount = 0
+
+			for _, _ in pairs(humanoidsDamaged) do
+				hitCount += 1
+			end
+
+			if hitCount &gt; 0 and not config.HitMultiple or creatorChar:GetAttribute("Stunned") or not Util:IsAlive(creatorChar) and not hitboxState.IsProjectile then
+				break
+			end
+
+			local pivotCF = creatorActor and creatorActor:GetPivot(not not config.PredictVelocity) or creatorChar.PrimaryPart.CFrame
+			local hitboxPart = Instance.new("Part")
+
+			hitboxPart.Name = tostring(creator) .. "Hitbox"
+			hitboxPart.Transparency = 1
+			hitboxPart.CanCollide = false
+			hitboxPart.CanTouch = false
+			hitboxPart.CanQuery = false
+			hitboxPart.CastShadow = false
+			hitboxPart.Anchored = true
+			hitboxPart.Shape = config.Shape
+			hitboxPart.Size = typeof(config.Size) == "function" and config.Size() or config.Size
+			hitboxPart.CFrame = typeof(config.CFrame) == "function" and config.CFrame() or (config.CFrame or pivotCF * if typeof(config.CFrameOffset) ~= "function" then config.CFrameOffset else config.CFrameOffset())
+			hitboxPart.Parent = workspace:FindFirstChild("Hitboxes")
+			hitboxState.Instance = hitboxPart
+
+			task.delay(0.36, function()
+				if hitboxPart and hitboxPart.Parent then hitboxPart:Destroy() end
+			end)
+
+			if config.Hide then
+				hitboxPart:SetAttribute("Hidden", true)
+			end
+
+			if config.PredictVelocity then
+				if not creator:IsA("Player") then
+				end
+			end
+
+			local partsFound = workspace:GetPartsInPart(hitboxPart, overlapParams)
+
+			table.sort(partsFound, function(partA, partB)
+				local parentA = partA.Parent
+				local parentB = partB.Parent
+				local priorityA = parentA:GetAttribute("HitboxPriority") or 1
+				local priorityB = parentB:GetAttribute("HitboxPriority") or 1
+
+				if priorityA == priorityB then
+					priorityA = (creatorChar.PrimaryPart.Position - partB.Position).Magnitude
+					priorityB = (creatorChar.PrimaryPart.Position - partA.Position).Magnitude
+				end
+
+				return priorityB &lt; priorityA
+			end)
+
+			local targetsHit = {}
+
+			for _, hitPart in ipairs(partsFound) do
+				local victimHumanoid = hitPart.Parent:FindFirstChildOfClass("Humanoid")
+
+				if victimHumanoid and not (victimHumanoid.Health &lt;= 0) and (not victimHumanoid.Parent:HasTag("Replicating") or not Players:GetPlayerFromCharacter(victimHumanoid.Parent) or hitPart.Name == "QueryHitbox") and ((not victimHumanoid.Parent:HasTag("SurvivorConstruct") or not config.OnlyHitPlayers) and not hitboxState.HumanoidsDamaged[victimHumanoid]) and (not config.Team or tostring(hitPart.Parent.Parent) == config.Team or tostring(hitPart.Parent:GetAttribute("Team")) == config.Team) and ((workspace:GetAttribute("FriendlyFire") or config.FriendlyFire or config.Team and config.Team == tostring(creatorChar.Parent) or tostring(hitPart.Parent:GetAttribute("Team")) ~= tostring(creatorChar.Parent) and tostring(hitPart.Parent.Parent) ~= tostring(creatorChar.Parent)) and (not config.Target or config.Target == victimHumanoid.Parent)) then
+					local castOrigin = if not config.CastPoint then if config.CFrame then hitboxPart.CFrame.Position else creatorChar else if typeof(config.CastPoint) ~= "function" then config.CastPoint else config.CastPoint()
+
+							if (config.CastPoint == false or Hitboxes:LineOfSight(castOrigin, victimHumanoid.Parent)) and not table.find(config.ExcludeChars, victimHumanoid.Parent) and not table.find(config.ExcludeChars, victimHumanoid) then
+								if victimHumanoid.Parent:GetAttribute("Invincible") then
+									if not hitboxState.InvincibleProcs[victimHumanoid] then
+										local victimPrimaryPart = victimHumanoid.Parent.PrimaryPart
+										local invincibleFX = victimPrimaryPart and victimPrimaryPart:FindFirstChild("InvincibleFX")
+
+										if invincibleFX and invincibleFX:FindFirstChild("Deflect") then
+											Sounds:Play("invincibleDeflect", {
+												Parent = victimPrimaryPart
+											})
+											invincibleFX.Deflect:Emit(1)
+										end
+									end
+
+									hitboxState.InvincibleProcs[victimHumanoid] = true
+								else
+									local hitPriority = victimHumanoid.Parent:GetAttribute("HitboxPriority") or 1
+
+									hitboxState.HumanoidsDamaged[victimHumanoid] = true
+									table.insert(targetsHit, victimHumanoid)
+
+									if not config.HitMultiple and hitPriority &gt;= 0 then
+										break
+									end
+								end
+							end
+						end
+					end
+
+					hitboxPart.Color = #targetsHit &gt; 0 and Color3.new(0.5, 1, 0.5) or Color3.new(1, 0.25, 0.25)
+
+					for i, victimHumanoid in ipairs(targetsHit) do
+						local victimChar = victimHumanoid.Parent
+						local victimPrimaryPart = victimChar and (victimChar:IsA("Model") and victimChar.PrimaryPart)
+						local rawDamage = typeof(config.Damage) == "number" and config.Damage or config.Damage(victimChar)
+						local resistanceSum = 0
+						local resistanceFolder = victimChar and victimChar:FindFirstChild("ResistanceMultipliers")
+
+						for _, resistanceValue in pairs(resistanceFolder and resistanceFolder:GetChildren() or {}) do
+							resistanceSum += resistanceValue.Value
+						end
+
+						local finalDamage = rawDamage * (1 - math.min(resistanceSum - (creatorChar:GetAttribute("StrengthBuff") or 0), 100) / 100)
+
+						if not victimPrimaryPart then
+							continue
+						end
+
+						victimChar:SetAttribute("TimesHit", (victimChar:GetAttribute("TimesHit") or 0) + 1)
+						runCallback("HitAbsolute", victimChar, i == 1)
+
+						local victimPlayer = Players:GetPlayerFromCharacter(victimChar)
+						local victimActor = Actors.CurrentActors[victimPlayer]
+
+						if victimActor and victimActor.Behavior and victimActor.Behavior.OnHit then
+							local response = victimActor.Behavior:OnHit(victimActor, hitboxState, finalDamage)
+                            if response == "Ignored" then continue end
+                            if typeof(response) == "table" and typeof(response.DamageOverride) == "number" then
+                                finalDamage = math.max(0, response.DamageOverride)
+                            end
+
+							if hitboxState.TimePast &gt; config.Time then
+								break
+							end
+						end
+
+						-- Training only: never let this direct hit kill a player.
+                        -- At low HP this intentionally changes damage; reset before measuring.
+                        finalDamage = math.clamp(finalDamage, 0, math.max(0, victimHumanoid.Health - 1))
+                        local knockbackVal = not (typeof(config.Knockback) ~= "number" and typeof(config.Knockback) ~= "Vector3") and config.Knockback or config.Knockback(victimChar)
+						local isKbVector = typeof(knockbackVal) == "Vector3"
+						local kbDir = isKbVector and knockbackVal or hitboxPart.CFrame.LookVector
+
+						if isKbVector or knockbackVal &gt; 0 then
+							local kbForce = (typeof(knockbackVal) == "Vector3" and knockbackVal or kbDir * knockbackVal) * 10
+
+							if victimPlayer then
+								Network:FireClientConnection(victimPlayer, "KB", "REMOTE_EVENT", Util:SerializeVector(kbForce))
+							else
+								victimPrimaryPart.AssemblyLinearVelocity = kbForce + victimPrimaryPart.AssemblyLinearVelocity / 2
+							end
+						end
+
+						local deathProfile = Util:CopyTable(config.DeathProfile)
+
+						if not deathProfile.Velocity then
+							if isKbVector then
+								deathProfile = {
+									Velocity = kbDir * 10
+								}
+							elseif knockbackVal &gt; 0 then
+								deathProfile = {
+									Velocity = kbDir * knockbackVal * 10
+								}
+							end
+						end
+
+						Ragdolls.AddProfile(victimChar, deathProfile)
+
+						local damageDealt = finalDamage
+						local overhealVal = victimHumanoid:GetAttribute("Overheal") or 0
+						local shatterpointHP = victimChar:GetAttribute("ShatterpointHP") or 0
+						local _ = victimHumanoid.Health + overhealVal + shatterpointHP
+						local isVictimAlive = victimHumanoid.Health &gt; 0
+						local remainingOverheal = math.max(0, overhealVal - finalDamage)
+
+						if remainingOverheal &lt; (victimHumanoid:GetAttribute("OverhealDecayMin") or 0) then
+							victimHumanoid:SetAttribute("OverhealDecayMin", remainingOverheal &gt; 0 and remainingOverheal or nil)
+						end
+
+						local damageToApply = finalDamage - overhealVal
+
+						if damageToApply &gt; 0 and shatterpointHP &gt; 0 then
+							local shatterDamage = damageToApply * (victimChar:GetAttribute("ShatterpointResistance") or 1)
+
+							if shatterDamage &gt; 0 then
+								local victimBehaviorActor = Actors.CurrentActors[victimPlayer]
+
+								if victimBehaviorActor and victimBehaviorActor.Behavior and victimBehaviorActor.Behavior.sv_DamageCrystalHP then
+									victimBehaviorActor.Behavior:sv_DamageCrystalHP(victimBehaviorActor, shatterDamage)
+								else
+									victimChar:SetAttribute("ShatterpointHP", (math.max(0, shatterpointHP - shatterDamage)))
+								end
+
+								local shatterRemainder = shatterDamage - shatterpointHP
+
+								damageDealt = shatterDamage + overhealVal
+								damageToApply = not (shatterRemainder &gt; 0) and 0 or shatterRemainder
+							end
+						end
+
+						local finalDeductibleDamage = math.max(0, damageToApply)
+						local victimPosInt16 = Vector3int16.new(victimPrimaryPart.Position.X, victimPrimaryPart.Position.Y, victimPrimaryPart.Position.Z)
+						local isKilled = victimHumanoid.Health - finalDeductibleDamage &lt;= 0
+						local creatorBehaviorActor = creator and Actors.CurrentActors[creator]
+
+						if creatorBehaviorActor then
+							local _, _ = pcall(function()
+								return creatorBehaviorActor.Behavior.OnInflictedDamage(creatorBehaviorActor, victimChar, (math.min(victimHumanoid.Health, damageDealt)))
+							end)
+						end
+
+						if isVictimAlive and isKilled then
+							local protectionPlayerName = victimChar:GetAttribute("DusekkarProtected")
+							local protectionPlayer = protectionPlayerName and Players:FindFirstChild(protectionPlayerName)
+
+							if protectionPlayer then
+								local protectorChar = protectionPlayer.Character
+
+								print(`dusekkar moment ({ victimChar } protected by { protectionPlayer })`)
+								Actors:IncrementActorStats(protectionPlayer, {
+									Action = "Prevented the death of a Survivor",
+									Money = 10,
+									EXP = 30
+								})
+								victimChar:SetAttribute("DusekkarProtected", nil)
+								protectorChar:SetAttribute("Protecting", nil)
+								AchievementUtil:IncrementAchievementProgress(protectionPlayer, "DusekkarUbercharge")
+
+								return
+							end
+
+							if tostring(victimChar.Parent) == "Survivors" then
+								if creator then
+									Stats:UpdatePlayerStat(creator, "Kills", "Add", 1)
+								end
+
+								if creatorBehaviorActor then
+									creatorBehaviorActor.TotalKills = creatorBehaviorActor.TotalKills + 1
+
+									local ok, result = pcall(function()
+										AnalyticsService:LogCustomEvent(creator, "TotalKills", 1, {
+											[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = `Character - { creatorBehaviorActor.ActorName }`
+										})
+									end)
+
+									if not ok then
+										warn(`[AnalyticsService]: Failed to log custom event: TotalKills due to: { result }`)
+									end
+								end
+							end
+
+							local creatorVoicelines = creatorBehaviorActor and creatorBehaviorActor.Config.Voicelines
+
+							if creatorVoicelines and not victimChar:GetAttribute("ExecutionsDisabled") then
+								local killType = "Kill"
+
+								if isServer then
+									local RoundManager = require(game.ServerScriptService.Server.Systems.Core.RoundManager)
+
+									if RoundManager and RoundManager.CurrentSession and RoundManager.CurrentSession.LastSurvivorAlive then
+										killType = "LastKill"
+									end
+								end
+
+								for _, actionName in ipairs({
+									killType,
+									"Kill"
+									}) do
+									if creatorVoicelines[`{ actionName }{ tostring(victimChar:GetAttribute("SkinName")) }`] then
+										Sounds:PlayVoiceline(creatorBehaviorActor, `Kill{ tostring(victimChar:GetAttribute("SkinName")) }`)
+
+										break
+									end
+
+									if creatorVoicelines[`{ actionName }{ victimChar.Name }`] then
+										Sounds:PlayVoiceline(creatorBehaviorActor, `Kill{ victimChar.Name }`)
+
+										break
+									end
+
+									if creatorVoicelines[`{ actionName }`] then
+										Sounds:PlayVoiceline(creatorBehaviorActor, "Kill")
+
+										break
+									end
+								end
+							end
+
+							local RoundManager = game.ServerScriptService.Server.Systems.Core.RoundManager
+							local lib = require(RoundManager)
+
+							if tostring(victimChar.Parent) == "Survivors" and (lib.CurrentSession and lib.CurrentSession.TimePast or isStudio or workspace:GetAttribute("Testing")) then
+								lib:AddTime(nil, victimActor and victimActor.TimeAddMultiplier or 1, true)
+
+								if creatorBehaviorActor and creatorBehaviorActor.Behavior and creatorBehaviorActor.Behavior.OnKill then
+									local ok, result = pcall(function()
+										return creatorBehaviorActor.Behavior.OnKill(creatorBehaviorActor, victimChar)
+									end)
+
+									if not ok then
+										warn(`[{ script }/CreateHitbox]: Failed to call .OnKill() due to: { result }`)
+									end
+								end
+
+								require(game.ServerScriptService.Server.Systems.Core.EventHandlerServer):CallMethod("OnPlayerKilled", creator, victimPlayer)
+								Actors:IncrementActorStats(creator, {
+									Action = "Killed a Survivor",
+									Money = 15,
+									EXP = 45
+								})
+							end
+
+							if config.ExecuteOnKill and not victimChar:GetAttribute("ExecutionsDisabled") and not creatorBehaviorActor.AbilityDisablers.Execution then
+								local skinName = victimChar:GetAttribute("SkinName")
+								local executionAnimName = nil
+
+								if not creatorBehaviorActor then
+									warn("Hitboxes: Non-Actor attempted to Execute!")
+								else
+									executionAnimName = if not skinName or (skinName == "" or not creatorBehaviorActor.Config.Animations[`Execution{ skinName }`]) then not creatorBehaviorActor.Config.Animations[`Execution{ victimChar.Name }`] and "Execution" or `Execution{ victimChar.Name }` else `Execution{ skinName }`
+								end
+
+								local executionAnimConfig = creatorBehaviorActor and creatorBehaviorActor.Config.Animations[executionAnimName]
+
+								if executionAnimConfig and executionAnimConfig.KillerRig and executionAnimConfig.PlayerRig then
+									task.spawn(function()
+										Statuses:RemoveStatuses(victimChar, true)
+										Util:GiveStackableAttribute(victimChar, "BeingExecuted", `{ creatorBehaviorActor.Player.Name }Execution`, 10)
+
+										local killerTrack = creatorBehaviorActor.Cache[`{ executionAnimName }Anim`]
+
+										if not killerTrack then
+											killerTrack = Util:LoadAnimationFromID(creatorBehaviorActor.Rig, executionAnimConfig.KillerRig, false)
+											creatorBehaviorActor.Cache[`{ executionAnimName }Anim`] = killerTrack
+										end
+
+										local killerPrimaryPart = creatorBehaviorActor.Rig.PrimaryPart
+										local victimTrack = Util:LoadAnimationFromID(victimChar, executionAnimConfig.PlayerRig, false)
+										local isExecutionFinished = false
+										local stateConn = nil
+
+										stateConn = victimHumanoid.StateChanged:Connect(function(_, newState)
+											if newState == Enum.HumanoidStateType.Dead then
+												isExecutionFinished = true
+
+												if stateConn then
+													stateConn:Disconnect()
+													hitboxJanitor:Remove("Execution_" .. victimHumanoid.Name)
+												end
+
+												Network:FireClientConnection(creator, "Hit", "UREMOTE_EVENT", damageDealt, victimPosInt16, nil, true)
+											end
+										end)
+
+										hitboxJanitor:Add(stateConn, "Disconnect", "Execution_" .. victimHumanoid.Name)
+
+										Util:GiveInvincible(creatorChar, "Executing")
+										Util:SetUpCutscene(creatorBehaviorActor.Rig, victimChar, executionAnimConfig.PlayerCFrameOffset, "Execution")
+										task.delay(killerTrack.Length + 1.5, function()
+											Util:RemoveInvincible(creatorChar, "Executing")
+										end)
+										creatorBehaviorActor:DisableAbilities("Execution", true)
+										task.delay(killerTrack.Length, function()
+											if stateConn then
+												stateConn:Disconnect()
+												hitboxJanitor:Remove("Execution_" .. victimHumanoid.Name)
+											end
+
+											if not isExecutionFinished then
+												isExecutionFinished = true
+												Network:FireClientConnection(creator, "Hit", "UREMOTE_EVENT", damageDealt, victimPosInt16, nil, true)
+											end
+
+											creatorBehaviorActor:DisableAbilities("Execution", false)
+											Util:ToggleAnchored(creatorBehaviorActor.Rig, "Execution", false)
+											Util:ToggleAnchored(victimChar, "Execution", false)
+											Util:RemoveStackableAttribute(victimChar, "NoItems", "Execution")
+											victimHumanoid.Health = 0
+											victimHumanoid:ChangeState(Enum.HumanoidStateType.Dead)
+										end)
+										killerTrack:Play(0)
+										victimTrack:Play(0)
+
+										local executionSound = creatorBehaviorActor.Config.Sounds[executionAnimName]
+
+										Sounds:Play(executionSound, {
+											Parent = killerPrimaryPart
+										})
+
+										if creatorBehaviorActor.Behavior.OnExecution then
+											creatorBehaviorActor.Behavior:OnExecution(creatorBehaviorActor, victimChar, {
+												victimInfo = victimActor,
+												Tracks = {
+													Killer = killerTrack,
+													Victim = victimTrack
+												}
+											})
+										end
+
+										if creatorBehaviorActor.Behavior.OnExecutionClient then
+											Network:FireClientConnection(creatorBehaviorActor.Player, "OnExecutionClientAsync", "REMOTE_EVENT", victimChar)
+										end
+									end)
+
+									return
+								end
+							end
+						end
+
+						if config.RagdollOnHit then
+							local ragdollTime = typeof(config.RagdollOnHit) == "number" and config.RagdollOnHit or 2
+
+							Ragdolls.EnableRagdoll(victimChar, ragdollTime)
+						end
+
+						victimChar:SetAttribute("RecentAttacker", (tostring(creator)))
+						victimChar:SetAttribute("RecentAttackerTime", os.clock())
+
+						if victimHumanoid:GetAttribute("Overheal") then
+							victimHumanoid:SetAttribute("Overheal", remainingOverheal &gt; 0 and remainingOverheal or nil)
+						end
+
+						victimHumanoid.Health = victimHumanoid.Health - finalDeductibleDamage
+
+						if victimHumanoid.Health &lt;= 0 then
+							victimHumanoid:SetAttribute("Overheal", nil)
+							victimHumanoid:ChangeState(Enum.HumanoidStateType.Dead)
+						end
+
+						runCallback("Hit", victimChar, i == 1)
+						hitboxState.OnHit:Fire(victimChar, i == 1)
+
+						if creator:IsA("Player") then Network:FireClientConnection(creator, "Hit", "UREMOTE_EVENT", damageDealt, victimPosInt16, nil, victimHumanoid.Health &lt;= 0) end
+					end
+
+					local stateRef = hitboxState
+
+					stateRef.TimePast = stateRef.TimePast + RunService.Heartbeat:Wait()
+				end
+
+				runCallback("Ended")
+				hitboxState.OnEnded:Fire()
+			end)
+
+	task.delay(config.Time + 1, function()
+		hitboxJanitor:Cleanup()
+	end)
+
+	return hitboxState
+end
+
+
+function Hitboxes.Start(_)
+	if isServer then
+		local Folder = Instance.new("Folder")
+
+		Folder.Name = "Hitboxes"
+		Folder.Parent = workspace
+	end
+end
+
+
+return Hitboxes</ProtectedString>
+      </Properties>
+    </Item>
+  </Item>
+</roblox>
