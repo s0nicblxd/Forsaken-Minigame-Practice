@@ -148,19 +148,19 @@ v0.Information = {
         Image = "rbxassetid://137576632569674", 
         Header = "BLOCK", 
         Quote = "\"Stay strong, friend. I got your back.\" - Guest 1337", 
-        Text = ("Cooldown: %*s\n"):format(v0.BlockCooldown) .. ("Guest 1337 braces for impact, applying <b>Resistance V</b> (aka Invincibility) for %*s and has their movement reduced by 80%% for %*s.\n"):format(v0.BlockDuration, v0.SlownessDuration) .. ("Upon successfully blocking an attack, Guest 1337 has their movement speed restored, their <b>Resistance</b> status removed, and the attacking Killer has their movement speed reduced by 30%% for %*s.\n"):format(v0.KillerSlownessDuration) .. ("Successful blocks restore a charge for Guest 1337's <b>Punch</b> ability and grant <b>Speed I</b> for %*s.\n"):format(v0.BlockSpeedDuration) .. "<b>Projectiles CANNOT be blocked.\n</b>"
+        Text = "Cooldown: 27s. Guard for 1s; movement is reduced by 50% for up to 1.75s. A successful basic-attack block restores movement, grants 10 permanent overheal (maximum 30), resets Punch's cooldown and opens a 1s Parry window. It also grants Speed I for 2s and slows the attacker by 30% for 1s. Non-basic attacks and projectiles break the guard: that hit deals 60% damage and grants Resistance II for 3s. A guard that expires without blocking locks abilities for another 2s."
     }, 
     {
         Image = "rbxassetid://73254549946762", 
         Header = "CHARGE", 
         Quote = "\"Incoming! Look out!\" - Guest 1337", 
-        Text = ("Cooldown: %*s\n"):format(v0.ChargeCooldown) .. ("Guest 1337 dashes forward in a shoulder-bash pose for %*s.\n"):format(v0.ChargingDuration) .. "If Guest 1337 collides with a killer during his charge, then the killer is knocked back and has their abilities locked for 1.25s. Guest 1337 also becomes invincible for 1.25s.\n" .. ("Not landing a charge on an enemy inflicts Guest 1337 with <b>Slowness II</b> that lasts for %* times Guest 1337's distance from the nearest killer divided by %*.\n"):format(v0.ChargePunishmentSlownessDurationMultiplier, v0.ChargePunishmentDistanceInterval) .. "Charge ends automatically if you crash into a wall.\n" .. "Guest 1337 cannot gain stamina while charging.\n"
+        Text = "Cooldown: 40s. Charge forward for up to 1.5s, dealing 5 damage. Knockback increases from 6 to 11 over the first 0.5s of active charging. A successful hit grants Resistance III for 0.5s, without an extra hit slowdown or target ability lock. Charge still ends on contact or a wall. Your abilities remain locked during Charge and for 1s afterward. Missing retains the distance-based Slowness II penalty (up to 15s). A target recently charged into is protected from Charge damage and knockback for 20s. Knockback is reduced by 10% per additional living Reworked Guest."
     }, 
     {
         Image = "rbxassetid://86535502112498", 
         Header = "PUNCH", 
         Quote = "\"FALCAWN PAAWNCH\" - random guy", 
-        Text = ("Guest 1337 winds up his fist for %*s and punches forward, stunning any killer within range of his punch for %*s.\n"):format(v0.PunchWindupTime, v0.PunchStunTime) .. ("If this ability is used within %*s of a successful block, then it becomes a Parry.\n"):format(v0.BlockDuration) .. ("Parried punches have a windup time of %*s and stun the killer for %*s.\n"):format(v0.ParryWindupTime, v0.ParryStunTime)
+        Text = "Cooldown: 55s. Normal Punch has a 0.6s windup, deals 25 damage and applies 7 knockback, Helpless I and Slowness II for 2s. It does not stun, pierce or grant cast Resistance. Debuff duration decreases by 0.35s per additional living Reworked Guest, to a minimum of 0s. After a successful Block, Punch becomes Parry for 1s: 0.4s windup, 35 damage, 13 knockback and a 2s stun, with piercing and Resistance III during windup. Landing Parry immediately stops your horizontal momentum; missing does not. Knockback is reduced by 10% per additional living Reworked Guest. Punch cannot interrupt other active abilities. This practice version allows hits on survivors as well as killers."
     }
 };
 return v0;
