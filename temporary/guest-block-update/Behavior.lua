@@ -68,6 +68,21 @@ local function resolveGuestBlock(actor)
     actor:DisableAbilities("GuestReworkBlock", false)
 end
 
+local function setGuestParryWindow(actor, active)
+    actor.Blocked = active and true or nil
+    if actor.Rig then
+        actor.Rig:SetAttribute("GuestReworkParryUntil",
+            active and (workspace:GetServerTimeNow() + actor.Config.BlockDuration) or 0)
+    end
+end
+
+local function stopGuestParryMotion(rig)
+    local root = rig and rig.PrimaryPart
+    if not root or not root.Parent then return end
+    local velocity = root.AssemblyLinearVelocity
+    root.AssemblyLinearVelocity = Vector3.new(0, velocity.Y, 0)
+end
+
 v2.Abilities = {
     Block = {
         LayoutOrder = 1,
@@ -89,7 +104,7 @@ v2.Abilities = {
             cancelGuestBlockTask(actor, "__blockSlowThread")
             cancelGuestBlockTask(actor, "__blockUnlockThread")
             cancelGuestBlockTask(actor, "BlockedThread")
-            actor.Blocked = nil
+            setGuestParryWindow(actor, false)
             actor.Blocking = true
             actor.BlockSucceeded = false
             actor:DisableAbilities("GuestReworkBlock", true)
@@ -463,13 +478,20 @@ v2.Abilities = {
         Icon = "rbxassetid://86535502112498", 
         Callback = function(v78, v79) --[[ Line: 379 ]] --[[ Name: Callback ]]
             -- upvalues: l_RunService_0 (copy), v4 (copy), v7 (copy), v3 (copy), v5 (copy), v9 (copy), l_ReplicatedStorage_0 (copy), v6 (copy)
-            local v80 = v78.Blocked or v79;
+            local v80
+            if l_RunService_0:IsServer() then
+                v80 = v78.Blocked == true
+            else
+                v80 = v79 == true
+            end
             local v81 = v80 and "Parry" or "Punch";
             local function _(v82) --[[ Line: 383 ]] --[[ Name: getConfig ]]
                 -- upvalues: v78 (copy), v81 (copy)
                 return v78.Config[("%*%*"):format(v81, v82)];
             end;
             if l_RunService_0:IsServer() then
+                cancelGuestBlockTask(v78, "BlockedThread")
+                setGuestParryWindow(v78, false)
                 v78.AbilitiesDisabled = true;
                 task.delay(2, function() --[[ Line: 390 ]]
                     -- upvalues: v78 (copy)
@@ -493,11 +515,6 @@ v2.Abilities = {
                     if not l_pcall_4 then
                         warn((("[%*]: Failed to call .ParryStart() due to: %*"):format(v84, v87)));
                     end;
-                elseif v81 == "Punch" then
-                    v4:ApplyStatus(v78.Rig, "Resistance", {
-                        Level = 2, 
-                        Duration = v78.Config.PunchWindupTime
-                    });
                 end;
                 v7:Play(v78.Config.Sounds.PunchWindup, {
                     Parent = v78.Rig.PrimaryPart
@@ -534,6 +551,7 @@ v2.Abilities = {
 						1 - 0.10 * extraGuests
 					)
                     game.Debris:AddItem(v88, 0.1);
+                    local parryConnected = false
                     local _ = v5:CreateHitbox(v78.Player, {
 						FriendlyFire = true,
 						AbilityType = "AltAbility3",
@@ -547,6 +565,13 @@ v2.Abilities = {
                         Connections = {
                             Hit = function(v89) --[[ Line: 423 ]] --[[ Name: Hit ]]
                                 -- upvalues: v7 (ref), v78 (ref), v81 (ref), v4 (ref), v80 (ref), v9 (ref), l_ReplicatedStorage_0 (ref)
+                                if v80 and not parryConnected then
+                                    parryConnected = true
+                                    if v88 and v88.Parent then v88:Destroy() end
+                                    stopGuestParryMotion(v78.Rig)
+                                    v6:FireClientConnection(v78.Player,
+                                        v78.Player.Name .. "1337ReworkParryStop", "REMOTE_EVENT", v78.Rig)
+                                end
                                 v7:Play(v78.Config.Sounds[v81], {
                                     Parent = v89.PrimaryPart or v78.Rig.PrimaryPart
                                 });
@@ -685,7 +710,7 @@ v2.OnHit = function(_, v111, v112) --[[ Line: 507 ]] --[[ Name: OnHit ]]
 
 		-- guarding/parry state before registerin' the hit.
 		resolveGuestBlock(v111)
-		v111.Blocked = nil
+		setGuestParryWindow(v111, false)
 
 		if v111.BlockedThread then
 			task.cancel(v111.BlockedThread)
@@ -773,10 +798,10 @@ v2.OnHit = function(_, v111, v112) --[[ Line: 507 ]] --[[ Name: OnHit ]]
         if v111.BlockedThread then
             task.cancel(v111.BlockedThread);
         end;
-        v111.Blocked = true;
+        setGuestParryWindow(v111, true);
         v111.BlockedThread = task.delay(v111.Config.BlockDuration, function() --[[ Line: 542 ]]
             -- upvalues: v111 (copy)
-            v111.Blocked = nil;
+            setGuestParryWindow(v111, false);
         end);
         local v116 = ("%*/BlockEnd"):format(script.Parent);
         local l_pcall_7 = pcall;
@@ -824,6 +849,12 @@ v2.Created = function(_, v122) --[[ Line: 578 ]] --[[ Name: Created ]]
         return;
     else
 		if v122.Player == game.Players.LocalPlayer then
+            v6:SetConnection(v122.Player.Name .. "1337ReworkParryStop", "REMOTE_EVENT", function(rig)
+                if rig == v122.Rig and rig == game.Players.LocalPlayer.Character then
+                    stopGuestParryMotion(rig)
+                end
+            end)
+
 			v6:SetConnection(
 				v122.Player.Name .. "1337ReworkBlockBroken",
 				"REMOTE_EVENT",
@@ -862,44 +893,44 @@ v2.Created = function(_, v122) --[[ Line: 578 ]] --[[ Name: Created ]]
         return;
     end;
 end;
-v2.CreatedPost = function(_, v125) --[[ Line: 592 ]] --[[ Name: CreatedPost ]]
-    -- upvalues: l_RunService_0 (copy), v8 (copy), v10 (copy), v11 (copy), v12 (copy), v13 (copy)
-    if l_RunService_0:IsServer() or v125.Player ~= game.Players.LocalPlayer then
-        return;
-    else
-        local v126 = v125.Player.PlayerGui.MainUI:WaitForChild("AbilityContainer", 5);
-        local v127 = v126 and v126:WaitForChild("Punch", 5);
-        local v128 = v8.new();
-        v125.__parryTrove = v128;
-        if v127 then
-            v127.Charges:GetPropertyChangedSignal("Text"):Connect(function() --[[ Line: 604 ]]
-                -- upvalues: v127 (copy), v10 (ref), v11 (ref), v12 (ref), v13 (ref), v125 (copy), v128 (copy)
-                local v129 = tonumber(v127.Charges.Text);
-                if not v129 then
-                    return;
-                else
-                    local v130 = v129 and v129 >= 1 and v10 or v11;
-                    local v131 = v129 and v129 >= 1 and v12 or v13;
-                    v127.ImageColor3 = v130;
-                    v125.Behavior.Abilities.Punch.Icon = v129 and v129 >= 1 and "rbxassetid://76339130778616" or "rbxassetid://86535502112498";
-                    v127.KeybindName.TextColor3 = v131;
-                    v127.AbilityName.TextColor3 = v131;
-                    v127.Charges.TextColor3 = v131;
-                    if v129 >= 1 then
-                        local v132 = v125.Config.ParryUIStroke:Clone();
-                        v132.Parent = v127.AbilityName;
-                        v128:Add(v132);
-                        return;
-                    else
-                        v128:Destroy();
-                        return;
-                    end;
-                end;
-            end);
-        end;
-        return;
-    end;
-end;
+v2.CreatedPost = function(_, actor)
+    if l_RunService_0:IsServer() or actor.Player ~= game.Players.LocalPlayer then return end
+    local trove = v8.new()
+    actor.__parryTrove = trove
+    local mainUI = actor.Player.PlayerGui:WaitForChild("MainUI", 5)
+    local container = mainUI and mainUI:WaitForChild("AbilityContainer", 5)
+    local button = container and container:WaitForChild("Punch", 5)
+    if not button or actor.__parryTrove ~= trove then return end
+    local previous, stroke
+    local function refresh()
+        local deadline = actor.Rig:GetAttribute("GuestReworkParryUntil") or 0
+        local active = deadline > workspace:GetServerTimeNow()
+        if active == previous then return end
+        previous = active
+        button.ImageColor3 = active and v10 or v11
+        local icon = active and "rbxassetid://76339130778616" or "rbxassetid://86535502112498"
+        button.Image = icon
+        local label = button:FindFirstChild("AbilityName")
+        if label then
+            label.Text = active and "Parry" or "Punch"
+            label.TextColor3 = active and v12 or v13
+        end
+        local keybind = button:FindFirstChild("KeybindName")
+        if keybind then keybind.TextColor3 = active and v12 or v13 end
+        local charges = button:FindFirstChild("Charges")
+        if charges then charges.Visible = false end
+        if stroke then stroke:Destroy(); stroke = nil end
+        if active and label and actor.Config.ParryUIStroke then
+            stroke = actor.Config.ParryUIStroke:Clone()
+            stroke.Parent = label
+        end
+    end
+    trove:Add(function() if stroke then stroke:Destroy(); stroke = nil end end)
+    trove:Add(actor.Rig:GetAttributeChangedSignal("GuestReworkParryUntil"):Connect(refresh))
+    -- Expire the indicator on time even if the server's clear arrives late.
+    trove:Add(l_RunService_0.Heartbeat:Connect(refresh))
+    refresh()
+end
 v2.Destroyed = function(_, v134)
     if l_RunService_0:IsServer() then
         cancelGuestBlockTask(v134, "BlockThread")
@@ -908,7 +939,7 @@ v2.Destroyed = function(_, v134)
         cancelGuestBlockTask(v134, "BlockedThread")
         clearGuestBlockSlow(v134)
         v134.Blocking = nil
-        v134.Blocked = nil
+        setGuestParryWindow(v134, false)
         v134:DisableAbilities("GuestReworkBlock", false)
     end
 
@@ -917,6 +948,7 @@ v2.Destroyed = function(_, v134)
 	end
 
 	if v134.Player == game.Players.LocalPlayer then
+        v6:RemoveConnection(v134.Player.Name .. "1337ReworkParryStop", "REMOTE_EVENT")
 		v6:RemoveConnection(
 			v134.Player.Name .. "1337ReworkBlockBroken",
 			"REMOTE_EVENT"
