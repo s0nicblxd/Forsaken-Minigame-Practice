@@ -1,25 +1,56 @@
 # Forsaken Minigame Practice!
 ## Train yourself to become the BEST Guest 1337 main ever! (satire)
 
-This is a simple website to train for Forsaken's minigames! This website ***CURRENTLY*** contains:
-### Generators:
-  - A 7x7 Flow Free-like game which is interactable (duh)
-  - An infinite amount of puzzles
-  - A simple leaderboard showing your completed puzzles
-  - Adjustable grid size! Go down up to 5x5 or use the legacy 6x6 option :D
-- **Fake Generators** are also a thing here! Having one missing number, slightly offset colors and even SFXs!
-    Careful! Don't complete those and skip them, or else, you might get tricked!
+A simple website I made for practicing Forsaken’s minigames, without a killer chasing you down halfway through :D
 
-### Old Generators:
-  - Start off with a simple 4x2 grid of green tiles and red tiles
-  - Click one of the tiles to replace the red tiles to green tiles and vice versa
-  - Try to get all tiles to go green to win!
-  - Ajustable sizes, from 2x2 to 8x8 (which idk if it's possible...)
+### Generators
 
-### Entanglement Popup (Old):
-- Spawns 5 random popups in your screen for you to click
-- Try to click them all as fast as possible to get your best time!
-- Has a pretty cool spawn animation too :3
+- **Flow Puzzle:** Connect matching dots with paths! Choose between **5×5, 6×6, and 7×7** grids.
+- **Connect The Wires:** Drag between matching colors and numbers to connect **4–6 pairs of wires**.
+- **Pop The Lock:** Time your inputs as the red marker reaches the target. Land **7 hits** to complete the puzzle!
+- **Gear Puzzle:** Move your cursor or finger clockwise to screw in the gears. Complete **3 gears** to earn a puzzle point.
+- **Legacy Puzzle:** Flip the tiles until they’re all green! Choose your width and height individually, from **2×2 to 8×8**!!! :)))
 
-More changes coming soon for this website, if you'd like, you can gimme ideas in my Discord DMs (arandomsonicfan) :D
+**Fake Generators** are here too! Watch for missing numbers, slightly different colors, and suspicious sounds. Skip them before they trick you >-<
+
+### Clean Graffiti
+
+- Clear **1–3 graffiti designs** by clicking or tapping the cleaning targets.
+- Clean every piece to earn a puzzle point!
+- Rare designs can also appear too ooooo :O
+
+### Bloodhook QTE
+
+- Fight against a 'bot' to escape the hook (I think that's how it's called?)
+- Press the displayed keys on PC, or tap the targets on touch devices.
+- Choose **Easy, Medium, or Hard** difficulty. Easy is selected by default :D
+
+### Plant Disarming
+
+- Click, tap, or press **Space** when the red marker overlaps a target.
+- Clear the targets to complete a disarm.
+- **Two misses reset the attempt**, so be careful, or else >:(
+
+### Entanglement Popup (Old)
+
+- Clear **5 random popups** as quickly as you can!
+- Included sounds, 
+- A little stressful? Not really. Good addition? Eyep :3
+
+### Extra Features
+
+- A redesigned menu with minigame previews.
+- Puzzle timing and a completed puzzle counter.
+- Tutorials texts that move out of the way once you’ve completed your first round.
+- SImple menu music when you're out of the minigames (Requiem).
+- Support for mouse, keyboard, and touch controls where applicable.
+
+**Scoring note:** 5×5 Flow puzzles don’t award puzzle points. Legacy grids with either dimension below 3 don’t count either, except **4×2 and 2×4**. You can still practice them as much as you want!
+
+### Credits
+
+**Forsaken Dev Team** — For the assets, sound effects, and the game that made this possible.
+
+**You** — For playing the game <3
+
 # ENJOY!!!
