@@ -1025,6 +1025,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .legacyInputSkin:focus-within .button-highlight{opacity:.12}
 @media(max-width:480px){#menuPreview[data-game="generator-old"]>img{max-width:80%;max-height:70%}}
 </style>
+<style id="nativePlantPreview">
+#menuPreview .menuAzureStage{position:relative;flex:none;width:min(calc(37.5vw + 90px),86%);height:calc(6.25vh + 18px);pointer-events:none}
+@media(max-width:700px){#menuPreview .menuAzureStage{width:86%;height:calc(6.25vh + 18px)}}
+</style>
 </head>
 <body>
 <div id="titleExperience" hidden role="dialog" aria-modal="true" aria-label="Forsaken title screen">
@@ -3367,14 +3371,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   }
   let azureTransitionFrame=0, azureEntering=false, azureTutorialComplete=false;
   function stopAzure() { azureShake?.cancel();azureShake=null; cancelAnimationFrame(azureTransitionFrame);azureTransitionFrame=0;azureEntering=false;document.querySelectorAll(".azureSnapshot").forEach(el=>el.remove());azureBar.style.transform=""; clearTimeout(azureRestart); azureRestart=0; cancelAnimationFrame(azureFrame); azureFrame=0; azure=null; azureTriggerHeld=false; }
-  function renderAzureZones() {
-    azureZones.replaceChildren();
-    azure.zones.forEach(z=>{
-      const el=document.createElement('div'); el.className='azureZone';
-      el.style.left=((z.min+z.max)/2*100)+'%'; el.style.width=((z.max-z.min-.01)*100)+'%';
-      el.hidden=z.done; azureZones.appendChild(el);
+  function paintAzureZones(container,zones) {
+    container.replaceChildren();
+    zones.forEach(z=>{
+      const el=document.createElement('div');el.className='azureZone';
+      el.style.left=((z.min+z.max)/2*100)+'%';el.style.width=((z.max-z.min-.01)*100)+'%';
+      el.hidden=z.done;container.appendChild(el);
     });
   }
+  function renderAzureZones(){paintAzureZones(azureZones,azure.zones);}
   function azureMessage() {
     azureStatus.textContent=`Misses ${azure.misses}/2`;
   }
@@ -4085,6 +4090,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if(key==='generator')key+='-'+menuFlowSizeChoice;
     if(key==='generator-old')key=`legacy-${oldGenPendingCols}-${oldGenPendingRows}`;
     if(preview.dataset.previewKey===key)return;
+    if(selectedMenuGame==='azure'){
+      const stage=document.createElement('div');stage.className='menuAzureStage';
+      stage.setAttribute('role','img');stage.setAttribute('aria-label','Plant Disarming gameplay bar');
+      const bar=document.createElement('div');bar.className='azureBar';
+      const zones=document.createElement('div');zones.className='azureZones';
+      paintAzureZones(zones,[.16,.46,.76].map(min=>({min,max:min+.15,done:false})));
+      const marker=document.createElement('div');marker.className='azureMarker';marker.style.left='55%';
+      bar.append(zones,marker);stage.append(bar);preview.replaceChildren(stage);
+      preview.dataset.game='azure';preview.dataset.previewKey=key;return;
+    }
+
     const image=new Image();
     image.alt=`${menuNames[selectedMenuGame]} gameplay preview`;
     image.draggable=false;
