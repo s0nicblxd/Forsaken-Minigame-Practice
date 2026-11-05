@@ -3949,7 +3949,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     const burst=connectNode('image',{href:GRAFFITI_ASSETS.splash,filter:'url(#graffitiBlue)',x:dot.x-r,y:dot.y-r,width:r*2,height:r*2},st.effects);burst.style.transformBox='fill-box';burst.style.transformOrigin='center';const fade=animateUI(burst,[{scale:1,opacity:1},{scale:1.8,opacity:0}],{duration:250,easing:'ease-out'});fade.onfinish=()=>burst.remove();
     if(p.hits===10){st.index++;graffitiTimers.push(setTimeout(()=>{if(graffitiState===st)graffitiParticles(st,p);},250));}
     if(st.index===st.pieces.length){
-      fmpSound('SprayComplete');
       st.ended=true;st.ready=false;timerPaused=true;uiAnimations(st.target).forEach(a=>a.cancel());st.target.style.display='none';puzzlesFinished++;puzzlesValueEl.textContent=puzzlesFinished;localStorage.setItem(PUZZLES_KEY,String(puzzlesFinished));completePracticeTutorial('graffiti','graffitiTutorial','graffitiLayout');
       graffitiTimers.push(setTimeout(()=>{if(graffitiState===st&&activeScreen==='graffiti')startGraffiti(true);},750));
     }else drawGraffitiTarget();
@@ -3971,6 +3970,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   }
   addEventListener('resize',layoutGraffiti);
   function graffitiParticles(st,p){
+    fmpSound('SprayComplete');
     for(let i=0;i<24;i++){const angle=Math.random()*Math.PI*2,distance=p.half*(.4+Math.random()),size=p.half*.09;
       const dot=connectNode('image',{href:GRAFFITI_ASSETS.particle,x:p.x-size/2,y:p.y-size/2,width:size,height:size,filter:'url(#graffitiGreen)'},st.effects);
       const a=animateUI(dot,[{transform:'translate(0,0)',opacity:1},{transform:`translate(${Math.cos(angle)*distance}px,${Math.sin(angle)*distance}px)`,opacity:0}],{duration:500+Math.random()*300,easing:'ease-out'});a.onfinish=()=>dot.remove();
