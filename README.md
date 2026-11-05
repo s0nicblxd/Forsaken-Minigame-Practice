@@ -1,4 +1,4 @@
-# Forsaken Minigame Practice! [V1.0.1]
+# Forsaken Minigame Practice! [V1.0.2]
 ## Train yourself to become the BEST Guest 1337 main ever! (satire)
 
 A simple website I made for practicing Forsaken’s minigames, without a killer chasing you down halfway through :D
