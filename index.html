@@ -1137,6 +1137,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lobbySizeOptions button{display:block;width:100%;min-height:42px;padding:8px 12px;border:0;border-bottom:1px solid #ffffff20;background:#111;color:#ddd;font:inherit;cursor:pointer;text-align:center}
 .lobbySizeOptions button:hover,.lobbySizeOptions button:focus-visible{background:#ddd;color:black}
 .lobbySizeOptions button[aria-pressed=true]{background:#333;color:white}
+.lobbySizeChoice>summary{background:transparent url('assets/Texture_18954013854.png') center/100% 100% no-repeat;border:0;padding:10px 42px 10px 14px}
+.lobbySizeChoice>summary::before{content:'';position:absolute;left:3%;top:8%;width:77%;height:84%;background:url('assets/Texture_18954024670.png') center/100% 100% no-repeat;pointer-events:none;z-index:-1}
+.lobbySizeChoice>summary{isolation:isolate}
+.lobbySizeChoice>summary::after{right:4%;top:24%;width:20%;height:52%;border:0;background:url('assets/Texture_18954016422.png') center/contain no-repeat;transform:rotate(0deg)}
+.lobbySizeChoice[open]>summary::after{transform:rotate(180deg)}
+.lobbySizeOptions{border:0;background:#080808;padding:3px}
+.lobbySizeOptions button{border:0;background:transparent url('assets/Texture_18954022905.png') center/100% 100% no-repeat}
+.lobbySizeOptions button:hover,.lobbySizeOptions button:focus-visible{background:transparent url('assets/Texture_18954022905.png') center/100% 100% no-repeat;filter:brightness(1.5);color:white}
+.lobbySizeOptions button[aria-pressed=true]{background:transparent url('assets/Texture_18954024670.png') center/100% 100% no-repeat;color:white}
 .lobbySoon{display:flex;min-height:75%;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}.lobbySoon img{width:clamp(70px,8vw,130px);height:auto;mask-image:linear-gradient(transparent,black 19%,black 65%,transparent)}.lobbySoon h3,.lobbyLogs h3{font-size:clamp(27px,2.1vw,40px);font-weight:400}.lobbySoon p,.lobbyLogs p{font-size:clamp(19px,1.5vw,28px);line-height:1.4}
 .lobbyCreditsContent{font-size:clamp(19px,1.55vw,27px);line-height:1.45}.lobbyCreditsContent section+section{margin-top:1.4em}.lobbyCreditsContent h2{font-size:1.18em;margin:0 0 .5em}.lobbyCreditsContent p{margin:0;max-width:42ch}
 #lobbyContent>label{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:14px;margin-top:30px;font-size:clamp(20px,1.667vw,32px)}#lobbyContent #menuMusicVolume{width:min(280px,40vw);accent-color:#b89c77}
