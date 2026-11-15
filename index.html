@@ -1069,7 +1069,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 <style id="lobbyStatsUpdate">
 /* UPD SidebarHandler: independent texture layers, 87% icon, label at 103% Y. */
 #menuScreen{padding-left:145px;padding-bottom:100px}#menuScreen .menuShell{max-width:1360px}
-#lobbyRail{--sidebar-size:clamp(58px,7.4vw,96px);position:fixed;left:16px;top:48%;transform:translateY(-50%);display:flex;flex-direction:column;gap:calc(var(--sidebar-size)*.38);z-index:30}
+#lobbyRail{--sidebar-size:clamp(54px,4.7vw,90px);position:fixed;left:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:calc(var(--sidebar-size)*.2);z-index:30}
 #lobbyRail .lobbyButton{position:relative;width:var(--sidebar-size);height:var(--sidebar-size);padding:0;border:0;background:none;isolation:isolate;color:white;cursor:pointer;font-family:'Accanthis',Georgia,serif}
 .lobbyFace{position:absolute;inset:0;isolation:isolate;background:#0009;transition:transform .25s cubic-bezier(.25,.46,.45,.94);pointer-events:none}
 .lobbyLayer{position:absolute;max-width:none;max-height:none;transform:translate(-50%,-50%);object-fit:fill;margin:0;pointer-events:none;transition:filter .25s,opacity .25s}
@@ -1081,7 +1081,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lobbyLayer.grunge{left:48.58%;top:50.87%;width:170%;height:170%;filter:brightness(0);z-index:5}
 .lobbyLayer.highlight{inset:0;left:50%;top:50%;width:200%;height:200%;z-index:6;opacity:0;filter:brightness(1);transition:opacity .25s,filter .25s}
 .lobbyLayer.icon{left:50%;top:50%;width:87%;height:87%;object-fit:contain;z-index:7;mask-image:linear-gradient(to bottom,transparent 0%,black 19.46%,black 64.69%,#0000003a 83.89%,transparent 100%)}
-.lobbyLabel{position:absolute;left:50.3%;top:103%;width:172%;height:27.5%;transform:translate(-50%,-50%);display:grid;place-items:center;z-index:10;white-space:nowrap;font-size:calc(var(--sidebar-size)*.245);font-weight:600;line-height:1}
+.lobbyLabel{position:absolute;left:50.3%;top:103%;width:172%;height:27.5%;transform:translate(-50%,-50%);display:grid;place-items:center;z-index:10;white-space:nowrap;font-size:calc(var(--sidebar-size)*.21);font-weight:600;line-height:1}
 .lobbyLabel::before,.lobbyLabel::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:118%;height:263%;background:var(--lobby-grunge) center/100% 100%;filter:brightness(0);z-index:-1;transition:filter .25s}
 .lobbyLabel::after{height:185%;background-image:var(--lobby-textGrunge);opacity:.35}
 #lobbyRail button:hover .lobbyFace{transform:scale(1.037)}
@@ -1091,7 +1091,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #lobbyRail button[aria-pressed=true] .highlight{opacity:.14;filter:brightness(0)}
 #lobbyRail button[aria-pressed=true] .lobbyLabel{color:black}
 #lobbyRail button[aria-pressed=true] .lobbyLabel::before,#lobbyRail button[aria-pressed=true] .lobbyLabel::after{filter:brightness(.8784)}
-#lobbyUtilities{--sidebar-size:clamp(32px,3.8vw,48px);position:fixed;bottom:30px;left:20px;display:flex;gap:30px;z-index:30}
+#lobbyUtilities{--sidebar-size:clamp(30px,2.3vw,44px);position:fixed;bottom:24px;left:20px;display:flex;gap:30px;z-index:30}
 #lobbyUtilities .lobbyButton,#menuScreen #lobbyUtilities #creditsOpen{position:relative;inset:auto;transform:none;translate:none;width:var(--sidebar-size);height:var(--sidebar-size);min-width:0;min-height:0;padding:0;border:0;background:none;box-shadow:none;isolation:isolate;color:white;font-family:'Accanthis',Georgia,serif;cursor:pointer}
 #lobbyUtilities .lobbyFace{background:none}#lobbyUtilities .icon{width:100%;height:100%}#lobbyUtilities .grunge{width:220%;height:220%;opacity:.65}#lobbyUtilities .shadow{opacity:.4}
 #lobbyUtilities .lobbyLabel{top:112%;font-size:calc(var(--sidebar-size)*.29);width:190%}#lobbyUtilities .lobbyLabel::before{opacity:.47}#lobbyUtilities .lobbyLabel::after{opacity:.72}
@@ -1601,7 +1601,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   const menuSoundSelector='#menuScreen button,#generatorMenuScreen button,#creditsOpen,#creditsClose,#menuNavBtn,#generatorBackBtn,.gridDropdown summary,.gridDropdown button,#bloodDifficulty button';
   document.addEventListener('pointerover',e=>{
     if(e.pointerType==='touch')return;const b=e.target.closest(menuSoundSelector);
-    if(b&&!b.disabled&&!b.contains(e.relatedTarget))fmpSound('Hover',.5);
+    if(b&&!b.disabled&&!['creditsClose','menuNavBtn','generatorBackBtn'].includes(b.id)&&!b.contains(e.relatedTarget))fmpSound('Hover',.5);
   });
   document.addEventListener('click',e=>{
     const b=e.target.closest(menuSoundSelector);if(!b||b.disabled)return;
@@ -4377,7 +4377,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   const lobbyUtilities=document.createElement('nav');lobbyUtilities.id='lobbyUtilities';lobbyUtilities.setAttribute('aria-label','Utilities');lobbyDock.append(lobbyUtilities);
   menuScreenEl.append(lobbyRail,lobbyDock);
   const lobbyDialog=document.createElement('dialog');lobbyDialog.id='lobbyDialog';lobbyDialog.setAttribute('aria-labelledby','lobbyHeading');lobbyDialog.innerHTML='<header class="lobbyHeading"><h2 id="lobbyHeading"></h2></header><div id="lobbyContent"></div>';
-  document.body.append(lobbyDialog);const lobbyContent=document.getElementById('lobbyContent');
+  menuScreenEl.append(lobbyDialog);const lobbyContent=document.getElementById('lobbyContent');
   const lobbyMusic=document.getElementById('menuMusicVolume').closest('label');
   lobbyMusic.remove();
   function lobbyAssetKey(id){return id==='shop'?'achievements':id==='achievements'?'shop':id;}
@@ -4423,10 +4423,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if(id==='stats')renderLobbyStats();
     else if(id==='logs'){const intro=document.createElement('div');intro.className='lobbyLogs';intro.innerHTML='<h3>Stats & sidebar — test update</h3><p>Personal records for every minigame, a mobile bottom dock, and a new home for your music control.</p><p class="lobbyNote">More update entries will appear here as FMP grows.</p>';lobbyContent.append(intro,lobbyMusic);}
     else {const block=document.createElement('div');block.className='lobbySoon';block.innerHTML=`<img src="${lobbyAssets[lobbyAssetKey(id)]}" alt=""><h3>Coming soon</h3><p>${label} will arrive in a future update.</p>`;lobbyContent.append(block);}
-    setLobbyPressed(id);if(!lobbyDialog.open)lobbyDialog.show();lobbyContent.scrollTop=0;await animateLobby(true);document.querySelector(`.lobbyButton[data-lobby="${id}"]`)?.focus({preventScroll:true});
+    setLobbyPressed(id);if(!lobbyDialog.open)lobbyDialog.show();lobbyContent.scrollTop=0;await animateLobby(true);lobbyDialog.style.transform='scale(1)';document.querySelector(`.lobbyButton[data-lobby="${id}"]`)?.focus({preventScroll:true});
   }
   setInterval(()=>{const time=document.getElementById('statsWebsiteTime');if(lobbyDialog.open&&time)time.textContent=durationText(statsData.websiteMs);},1000);
-  async function closeLobbyPanel(playBack=true){if(lobbyDialog.open&&!lobbyClosing){const token=++lobbyTransitionToken;lobbyClosing=true;if(playBack)fmpSound('Back');setLobbyPressed();await animateLobby(false);if(token===lobbyTransitionToken)lobbyDialog.close();lobbyClosing=false;}}
+  async function closeLobbyPanel(playBack=true){if(lobbyDialog.open&&!lobbyClosing){const token=++lobbyTransitionToken;lobbyClosing=true;if(playBack)fmpSound('Back');setLobbyPressed();await animateLobby(false);if(token===lobbyTransitionToken)lobbyDialog.close();lobbyDialog.style.transform='';lobbyClosing=false;}}
   lobbyDialog.addEventListener('cancel',e=>{e.preventDefault();closeLobbyPanel();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&lobbyDialog.open){e.preventDefault();closeLobbyPanel();}});
   lobbyDialog.addEventListener('close',()=>setLobbyPressed());
