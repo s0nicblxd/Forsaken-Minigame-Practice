@@ -1119,6 +1119,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lobbySectionTitle{display:flex;align-items:center;justify-content:center;min-height:60px;margin:0 0 10px;font-size:clamp(24px,1.875vw,36px);line-height:1.15;font-weight:400;background:var(--lobby-separator) center/100% 100% no-repeat}
 .lobbyTextRow{font-size:clamp(20px,1.667vw,32px);line-height:1.2;margin:0 0 10px;overflow-wrap:anywhere}
 .lobbyVariantTitle{font-size:clamp(21px,1.7vw,33px);font-weight:400;margin:22px 0 14px;color:#fff}
+.lobbyStatGroup{margin:12px 0;direction:ltr}.lobbyStatGroup>summary{cursor:pointer;position:relative;padding:8px 32px;text-align:center;list-style:none}.lobbyStatGroup>summary::-webkit-details-marker{display:none}.lobbyStatGroup>summary::before{content:'▸';position:absolute;left:10px;font-size:.65em}.lobbyStatGroup[open]>summary::before{content:'▾'}.lobbyStatBody{padding:6px 16px 18px}.lobbyStatGroup .lobbyStatGroup{margin-left:12px}.lobbyRecord{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px}.lobbyRecord>span:last-child{text-align:right}.lobbySizeFilter{display:flex;align-items:center;gap:14px;margin:4px 0 20px;font-size:clamp(19px,1.5vw,27px)}.lobbySizeFilter select{max-width:60%;padding:6px 10px;background:#111;color:white;border:1px solid #888;font:inherit}.lobbyStatGroup>summary:focus-visible{outline:2px solid white;outline-offset:-3px}
 .lobbyNote{font-size:clamp(16px,1.15vw,21px);line-height:1.4;color:#bbb;margin:18px 0}
 .lobbySoon{display:flex;min-height:75%;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}.lobbySoon img{width:clamp(70px,8vw,130px);height:auto;mask-image:linear-gradient(transparent,black 19%,black 65%,transparent)}.lobbySoon h3,.lobbyLogs h3{font-size:clamp(27px,2.1vw,40px);font-weight:400}.lobbySoon p,.lobbyLogs p{font-size:clamp(19px,1.5vw,28px);line-height:1.4}
 .lobbyCreditsContent{font-size:clamp(19px,1.55vw,27px);line-height:1.45}.lobbyCreditsContent section+section{margin-top:1.4em}.lobbyCreditsContent h2{font-size:1.18em;margin:0 0 .5em}.lobbyCreditsContent p{margin:0;max-width:42ch}
@@ -1183,7 +1184,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 <div id="menuGameSettings">
 <details class="gridDropdown" id="menuFlowSize"><summary>Grid size <span id="menuFlowValue">7 × 7</span><span class="dropdownArrow">⌄</span></summary><div class="dropdownOptions"><button type="button" data-menu-size="5">5 × 5</button><button type="button" data-menu-size="6">6 × 6</button><button type="button" data-menu-size="7">7 × 7</button></div></details>
 <div id="menuLegacySize" class="legacyDimensions" hidden><label>Width <input id="menuLegacyCols" type="number" min="2" max="8" step="1" value="4" inputmode="numeric"></label><span>×</span><label>Height <input id="menuLegacyRows" type="number" min="2" max="8" step="1" value="2" inputmode="numeric"></label></div>
-<details class="gridDropdown" id="menuBloodDifficulty" hidden><summary>Difficulty <span id="menuBloodValue">Easy</span><span class="dropdownArrow">⌄</span></summary><div class="dropdownOptions"><button data-menu-difficulty="easy">Easy</button><button data-menu-difficulty="medium">Medium</button><button data-menu-difficulty="hard">Hard</button></div></details>
+<details class="gridDropdown" id="menuBloodDifficulty" hidden><summary>Difficulty <span id="menuBloodValue">Normal</span><span class="dropdownArrow">⌄</span></summary><div class="dropdownOptions"><button data-menu-difficulty="easy">Easy</button><button data-menu-difficulty="medium">Normal</button><button data-menu-difficulty="hard">Hard</button></div></details>
 </div><button class="menuBtn" id="practiceBtn">Practice</button></div></div></section></div>
 <footer class="menuFooter"><label for="menuMusicVolume">Music <input id="menuMusicVolume" type="range" min="0" max="100" value="35" aria-label="Menu music volume"><output id="menuMusicPercent">35%</output></label><button class="menuBtn" id="creditsOpen" aria-haspopup="dialog">Credits</button></footer>
 </div></div>
@@ -1232,7 +1233,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 <div id="screen-connect" class="gameScreen"><div id="connectLayout" class="tutorial-pending"><p id="connectTutorial" class="practiceTutorial">Drag each wire to its matching color and number.<br>Connect every pair to complete the puzzle.<br>Click the menu button to leave.</p><div id="connectStage"><svg id="connectBoard" viewBox="0 0 500 500" aria-label="Connect matching wires"></svg></div></div></div>
 <div id="screen-bloodhook" class="gameScreen">
   <section id="bloodPanel" class="tutorial-pending" aria-label="Bloodhook practice">
-    <div id="bloodDifficulty" aria-label="Bot difficulty"><button data-level="easy" aria-pressed="true">Easy</button><button data-level="medium" aria-pressed="false">Medium</button><button data-level="hard" aria-pressed="false">Hard</button></div>
+    <div id="bloodDifficulty" aria-label="Bot difficulty"><button data-level="easy" aria-pressed="false">Easy</button><button data-level="medium" aria-pressed="true">Normal</button><button data-level="hard" aria-pressed="false">Hard</button></div>
     <p id="bloodHelp">Press the shown W, A, S or D key to escape the bot’s hook.</p>
     <h2 id="bloodTitle">Escape</h2>
     <div id="bloodMeter" role="progressbar" aria-label="Escape progress" aria-valuemin="0" aria-valuemax="100"><div id="bloodFill"></div></div>
@@ -3622,7 +3623,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   const BLOOD_BOTS={easy:{delay:1120,accuracy:.68},medium:{delay:750,accuracy:.85},hard:{delay:450,accuracy:.97}};
   const bloodKeys=['W','A','S','D'];
   const bloodPanel=document.getElementById('bloodPanel'),bloodTap=document.getElementById('bloodTap');
-  let blood=null,bloodFrame=0,bloodRestart=0,bloodLevel='easy',bloodFade=null,bloodLearned=false;
+  let blood=null,bloodFrame=0,bloodRestart=0,bloodLevel='medium',bloodFade=null,bloodLearned=false;
   function bloodPick(except) {const keys=bloodKeys.filter(k=>k!==except);return keys[Math.floor(Math.random()*keys.length)];}
   function stopBlood() {stopHookAudio();bloodShrink?.cancel();bloodShrink=null;document.querySelectorAll(".bloodSnapshot").forEach(el=>el.remove());bloodFade?.cancel();bloodFade=null;bloodPanel.style.opacity="1";cancelAnimationFrame(bloodFrame);clearTimeout(bloodRestart);bloodFrame=0;bloodRestart=0;blood=null;bloodPanel.style.transform='';bloodPanel.querySelectorAll('.bloodDeparting').forEach(el=>el.remove());}
   function bloodPrompt(now) {
@@ -4260,7 +4261,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     document.querySelectorAll('#generatorMenuList .menuBtn').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.game===id)));
     document.getElementById('menuFlowSize').hidden=id!=='generator';document.getElementById('menuLegacySize').hidden=id!=='generator-old';document.getElementById('menuBloodDifficulty').hidden=id!=='bloodhook';
     document.querySelectorAll('.gridDropdown[open]').forEach(d=>d.open=false);
-    syncFlowChoice(menuFlowSizeChoice);syncLegacyInputs();document.getElementById('menuBloodValue').textContent=bloodLevel[0].toUpperCase()+bloodLevel.slice(1);
+    syncFlowChoice(menuFlowSizeChoice);syncLegacyInputs();document.getElementById('menuBloodValue').textContent=bloodLevel==='medium'?'Normal':bloodLevel[0].toUpperCase()+bloodLevel.slice(1);
     updateMenuPreview();
   }
   function syncFlowChoice(size){
@@ -4415,16 +4416,20 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if(id==='bloodhook'||id==='graffiti')rows.push([id==='bloodhook'?'Input accuracy':'Spray accuracy',r.inputs?Math.round(r.hits/r.inputs*100)+'%':'—']);
     if(id==='azure')rows.push(['Perfect disarms',r.perfect]);
     if(id==='lock')rows.push(['Missed hits',r.misses],['Flawless completions',r.perfect]);
-    return rows.map(([label,value])=>`<p class="lobbyTextRow">${label}: ${value}</p>`).join('');
+    return rows.map(([label,value])=>`<p class="lobbyTextRow lobbyRecord"><span>${label}</span><span>${value}</span></p>`).join('');
   }
   function appendStatsMarkup(markup){const template=document.createElement('template');template.innerHTML=markup;lobbyContent.append(template.content);}
   function renderLobbyStats(){statsSample();statsSave();const games=Object.values(statsData.games),practice=games.reduce((n,g)=>n+g.practiceMs,0);
     appendStatsMarkup(`<h3 class="lobbySectionTitle">Overall</h3><p class="lobbyTextRow">Minigames completed: ${statsTotal()}</p><p class="lobbyTextRow">Website playtime: <span id="statsWebsiteTime">${durationText(statsData.websiteMs)}</span></p><p class="lobbyTextRow">Practice time: ${durationText(practice)}</p>`);
-    for(const [id,label] of Object.entries(statNames)){const game=statGame(id),sized=id==='generator'||id==='generator-old';appendStatsMarkup(`<h3 class="lobbySectionTitle">${label}</h3>${recordRows(game,id,sized)}`);
-      if(sized){const variants=Object.keys(game.variants).sort((a,b)=>{const [ax,ay]=a.split('x').map(Number),[bx,by]=b.split('x').map(Number);return ax-bx||ay-by;});for(const size of variants)appendStatsMarkup(`<h4 class="lobbyVariantTitle">${size.replace('x',' × ')}</h4>${recordRows(game.variants[size],id)}`);if(!variants.length)appendStatsMarkup('<p class="lobbyNote">Grid-size records appear as you practice.</p>');}
-      if(id==='bloodhook')appendStatsMarkup('<p class="lobbyNote">All difficulties combined.</p>');
+    const generators=document.createElement('details');generators.className='lobbyStatGroup';generators.innerHTML='<summary class="lobbySectionTitle">Generators</summary>';lobbyContent.append(generators);
+    for(const [id,label] of Object.entries(statNames)){const game=statGame(id),sized=id==='generator'||id==='generator-old',section=document.createElement('details');section.className='lobbyStatGroup';section.innerHTML=`<summary class="lobbySectionTitle">${label}</summary>`;
+      const body=document.createElement('div');body.className='lobbyStatBody';section.append(body);
+      if(sized){const filter=document.createElement('label');filter.className='lobbySizeFilter';filter.append('Grid size ');const select=document.createElement('select');select.setAttribute('aria-label',label+' grid size');select.add(new Option('All sizes',''));const sizes=new Set(Object.keys(game.variants));if(id==='generator')for(const size of ['5x5','6x6','7x7'])sizes.add(size);else for(let x=2;x<=8;x++)for(let y=2;y<=8;y++)sizes.add(x+'x'+y);for(const size of [...sizes].sort((a,b)=>{const [x,y]=a.split('x').map(Number),[u,v]=b.split('x').map(Number);return x-u||y-v}))select.add(new Option(size.replace('x',' × '),size));filter.append(select);const rows=document.createElement('div');const update=()=>{rows.innerHTML=recordRows(select.value?game.variants[select.value]:game,id,!select.value);};select.addEventListener('change',update);update();body.append(filter,rows);}
+      else body.innerHTML=recordRows(game,id);
+      if(id==='bloodhook')body.insertAdjacentHTML('beforeend','<p class="lobbyNote">All difficulties combined.</p>');
+      (['generator','connect','lock','gear','generator-old'].includes(id)?generators:lobbyContent).append(section);
     }
-    appendStatsMarkup(`<h3 class="lobbySectionTitle">Fake Generators</h3><p class="lobbyTextRow">Spotted / skipped: ${statsData.fakeSkipped}</p><p class="lobbyTextRow">Accidentally completed: ${statsData.fakeCompleted}</p>`);
+    const fake=document.createElement('details');fake.className='lobbyStatGroup';fake.innerHTML=`<summary class="lobbySectionTitle">Fake Generators</summary><div class="lobbyStatBody"><p class="lobbyTextRow lobbyRecord"><span>Correctly skipped</span><span>${statsData.fakeSkipped}</span></p><p class="lobbyTextRow lobbyRecord"><span>Accidentally completed</span><span>${statsData.fakeCompleted}</span></p></div>`;generators.append(fake);
     const note=document.createElement('p');note.className='lobbyNote';note.textContent=(statsData.historical?`${statsData.historical} previous completions are included in the overall total. Detailed records start with this update. `:'')+(statsStorageOK?'Saved on this browser. ':'Browser storage is unavailable; this session only. ')+'Leaving is not a loss. Hidden-tab time is excluded.';lobbyContent.append(note);
   }
   let lobbyClosing=false,lobbyTransitionToken=0;
