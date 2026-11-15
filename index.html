@@ -1096,6 +1096,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #lobbyUtilities .lobbyFace{background:none}#lobbyUtilities .icon{width:100%;height:100%}#lobbyUtilities .grunge{width:220%;height:220%;opacity:.65}#lobbyUtilities .shadow{opacity:.4}
 #lobbyUtilities .lobbyLabel{top:112%;font-size:calc(var(--sidebar-size)*.29);width:190%}#lobbyUtilities .lobbyLabel::before{opacity:.47}#lobbyUtilities .lobbyLabel::after{opacity:.72}
 #lobbyUtilities button:hover .lobbyFace{transform:scale(1.064)}
+.lobbyLabel{font-weight:400;text-shadow:none}
+@media(min-width:851px){
+ #lobbyRail{gap:calc(var(--sidebar-size)*.29)}
+ #lobbyRail .lobbyLabel{font-size:calc(var(--sidebar-size)*.22)!important}
+ #lobbyUtilities{--sidebar-size:40px;left:34px;bottom:32px;gap:46px}
+ #lobbyUtilities .lobbyLabel{top:125%;font-size:14px;width:220%}
+ #lobbyUtilities .grunge{width:180%;height:180%;opacity:.45}
+}
 /* UPD StatsContainer: 65% viewport width, 1.2 aspect; scrolling text inset 3.5%. */
 #lobbyDialog{position:fixed;inset:0;z-index:20;margin:auto;width:min(65vw,calc((100dvh - 32px)*1.2));height:auto;aspect-ratio:1.2;max-width:none;max-height:none;padding:0;border:0;color:white;background:#080808d9 var(--lobby-panel) center/100% 100% no-repeat;box-shadow:none;overflow:visible;font-family:'Accanthis',Georgia,serif;transform-origin:center}
 #lobbyDialog::backdrop{background:#0003;backdrop-filter:none}
@@ -4435,7 +4443,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   async function closeLobbyPanel(playBack=true){if(lobbyDialog.open&&!lobbyClosing){const token=++lobbyTransitionToken;lobbyClosing=true;if(playBack)fmpSound('Back');setLobbyPressed();await animateLobby(false);if(token===lobbyTransitionToken)lobbyDialog.close();lobbyDialog.style.transform='';lobbyClosing=false;}}
   lobbyDialog.addEventListener('cancel',e=>{e.preventDefault();closeLobbyPanel();});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&lobbyDialog.open){e.preventDefault();closeLobbyPanel();}});
-  lobbyDialog.addEventListener('close',()=>setLobbyPressed());
+  // A queued close event can arrive after the next panel has already opened.
+  lobbyDialog.addEventListener('close',()=>setLobbyPressed(lobbyDialog.open?lobbyDialog.dataset.panel:''));
   document.addEventListener('pointerover',e=>{const b=e.target.closest('#lobbyDialog button,#lobbyDialog summary,#lobbyDialog select');if(e.pointerType!=='touch'&&b&&!b.contains(e.relatedTarget))fmpSound('Hover',.5);});
 
 })();
