@@ -1121,6 +1121,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lobbyVariantTitle{font-size:clamp(21px,1.7vw,33px);font-weight:400;margin:22px 0 14px;color:#fff}
 .lobbyStatGroup{margin:12px 0;direction:ltr}.lobbyStatGroup>summary{cursor:pointer;position:relative;padding:8px 32px;text-align:center;list-style:none}.lobbyStatGroup>summary::-webkit-details-marker{display:none}.lobbyStatGroup>summary::before{content:'▸';position:absolute;left:10px;font-size:.65em}.lobbyStatGroup[open]>summary::before{content:'▾'}.lobbyStatBody{padding:6px 16px 18px}.lobbyStatGroup .lobbyStatGroup{margin-left:12px}.lobbyRecord{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px}.lobbyRecord>span:last-child{text-align:right}.lobbySizeFilter{display:flex;align-items:center;gap:14px;margin:4px 0 20px;font-size:clamp(19px,1.5vw,27px)}.lobbySizeFilter select{max-width:60%;padding:6px 10px;background:#111;color:white;border:1px solid #888;font:inherit}.lobbyStatGroup>summary:focus-visible{outline:2px solid white;outline-offset:-3px}
 .lobbyNote{font-size:clamp(16px,1.15vw,21px);line-height:1.4;color:#bbb;margin:18px 0}
+.lobbyStatGroup>summary{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;padding:8px 14px;min-height:48px;font-size:clamp(21px,1.65vw,30px)}
+.lobbyStatGroup>summary::before{position:static;justify-self:start;content:'';width:10px;height:10px;border:solid #ddd;border-width:0 2px 2px 0;transform:rotate(-45deg);transition:transform .18s}
+.lobbyStatGroup>summary::after{content:''}
+.lobbyStatGroup[open]>summary::before{content:'';transform:rotate(45deg)}
+.lobbyStatGroup>summary:hover{filter:brightness(1.3)}
+.lobbyStatGroup .lobbyStatGroup>summary{background-color:#080808;border-bottom:1px solid #ffffff24}
+.lobbySizeFilter{justify-content:space-between;flex-wrap:wrap;font-size:clamp(18px,1.4vw,25px)}
+.lobbySizeChoice{position:relative;min-width:170px;width:45%;max-width:300px;color:white;font:inherit}
+.lobbySizeChoice>summary{list-style:none;cursor:pointer;position:relative;padding:10px 42px 10px 14px;background:#080808 var(--lobby-separator) center/100% 100%;border:1px solid #777;min-height:44px;box-sizing:border-box;text-align:center}
+.lobbySizeChoice>summary::-webkit-details-marker{display:none}
+.lobbySizeChoice>summary::after{content:'';position:absolute;right:16px;top:40%;width:9px;height:9px;border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg);transition:transform .18s}
+.lobbySizeChoice[open]>summary::after{transform:rotate(225deg)}
+.lobbySizeOptions{position:relative;max-height:210px;overflow-y:auto;background:#070707;border:1px solid #777;border-top:0;padding:4px;scrollbar-color:white #111}
+.lobbySizeOptions button{display:block;width:100%;min-height:42px;padding:8px 12px;border:0;border-bottom:1px solid #ffffff20;background:#111;color:#ddd;font:inherit;cursor:pointer;text-align:center}
+.lobbySizeOptions button:hover,.lobbySizeOptions button:focus-visible{background:#ddd;color:black}
+.lobbySizeOptions button[aria-pressed=true]{background:#333;color:white}
 .lobbySoon{display:flex;min-height:75%;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}.lobbySoon img{width:clamp(70px,8vw,130px);height:auto;mask-image:linear-gradient(transparent,black 19%,black 65%,transparent)}.lobbySoon h3,.lobbyLogs h3{font-size:clamp(27px,2.1vw,40px);font-weight:400}.lobbySoon p,.lobbyLogs p{font-size:clamp(19px,1.5vw,28px);line-height:1.4}
 .lobbyCreditsContent{font-size:clamp(19px,1.55vw,27px);line-height:1.45}.lobbyCreditsContent section+section{margin-top:1.4em}.lobbyCreditsContent h2{font-size:1.18em;margin:0 0 .5em}.lobbyCreditsContent p{margin:0;max-width:42ch}
 #lobbyContent>label{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:14px;margin-top:30px;font-size:clamp(20px,1.667vw,32px)}#lobbyContent #menuMusicVolume{width:min(280px,40vw);accent-color:#b89c77}
@@ -4419,6 +4435,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     return rows.map(([label,value])=>`<p class="lobbyTextRow lobbyRecord"><span>${label}</span><span>${value}</span></p>`).join('');
   }
   function appendStatsMarkup(markup){const template=document.createElement('template');template.innerHTML=markup;lobbyContent.append(template.content);}
+  function styleStatsSizeChoices(){
+    lobbyContent.querySelectorAll('.lobbySizeFilter select').forEach(select=>{
+      const filter=select.parentElement,container=document.createElement('div');container.className=filter.className;filter.replaceWith(container);container.append(...filter.childNodes);
+      const choice=document.createElement('details');choice.className='lobbySizeChoice';const summary=document.createElement('summary');summary.textContent=select.selectedOptions[0].textContent;summary.setAttribute('aria-label',select.getAttribute('aria-label'));const options=document.createElement('div');options.className='lobbySizeOptions';
+      for(const option of select.options){const button=document.createElement('button');button.type='button';button.textContent=option.textContent;button.setAttribute('aria-pressed',String(option.selected));button.addEventListener('click',()=>{select.value=option.value;select.dispatchEvent(new Event('change',{bubbles:true}));summary.textContent=option.textContent;options.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));choice.open=false;summary.focus({preventScroll:true});fmpSound('SelectAndBack');});options.append(button);}
+      select.hidden=true;choice.append(summary,options);container.append(choice);
+    });
+  }
   function renderLobbyStats(){statsSample();statsSave();const games=Object.values(statsData.games),practice=games.reduce((n,g)=>n+g.practiceMs,0);
     appendStatsMarkup(`<h3 class="lobbySectionTitle">Overall</h3><p class="lobbyTextRow">Minigames completed: ${statsTotal()}</p><p class="lobbyTextRow">Website playtime: <span id="statsWebsiteTime">${durationText(statsData.websiteMs)}</span></p><p class="lobbyTextRow">Practice time: ${durationText(practice)}</p>`);
     const generators=document.createElement('details');generators.className='lobbyStatGroup';generators.innerHTML='<summary class="lobbySectionTitle">Generators</summary>';lobbyContent.append(generators);
@@ -4430,6 +4454,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       (['generator','connect','lock','gear','generator-old'].includes(id)?generators:lobbyContent).append(section);
     }
     const fake=document.createElement('details');fake.className='lobbyStatGroup';fake.innerHTML=`<summary class="lobbySectionTitle">Fake Generators</summary><div class="lobbyStatBody"><p class="lobbyTextRow lobbyRecord"><span>Correctly skipped</span><span>${statsData.fakeSkipped}</span></p><p class="lobbyTextRow lobbyRecord"><span>Accidentally completed</span><span>${statsData.fakeCompleted}</span></p></div>`;generators.append(fake);
+    styleStatsSizeChoices();
     const note=document.createElement('p');note.className='lobbyNote';note.textContent=(statsData.historical?`${statsData.historical} previous completions are included in the overall total. Detailed records start with this update. `:'')+(statsStorageOK?'Saved on this browser. ':'Browser storage is unavailable; this session only. ')+'Leaving is not a loss. Hidden-tab time is excluded.';lobbyContent.append(note);
   }
   let lobbyClosing=false,lobbyTransitionToken=0;
