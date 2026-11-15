@@ -1150,6 +1150,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 .lobbyCreditsContent{font-size:clamp(19px,1.55vw,27px);line-height:1.45}.lobbyCreditsContent section+section{margin-top:1.4em}.lobbyCreditsContent h2{font-size:1.18em;margin:0 0 .5em}.lobbyCreditsContent p{margin:0;max-width:42ch}
 #lobbyContent>label{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:14px;margin-top:30px;font-size:clamp(20px,1.667vw,32px)}#lobbyContent #menuMusicVolume{width:min(280px,40vw);accent-color:#b89c77}
 .lobbyButton:focus-visible{outline:2px solid white;outline-offset:6px}
+#lobbyContent>.lobbyMusicSetting{display:grid;grid-template-columns:auto minmax(100px,1fr) 4ch;gap:20px;text-align:left;margin:24px 16px}
+#lobbyContent #menuMusicVolume{appearance:none;-webkit-appearance:none;width:100%;min-width:0;height:36px;margin:0;background:transparent;cursor:pointer}
+#menuMusicVolume::-webkit-slider-runnable-track{height:18px;background:url('assets/Images18953954150_125225912214611.png') center/100% 100% no-repeat;border:0}
+#menuMusicVolume::-moz-range-track{height:18px;background:url('assets/Images18953954150_125225912214611.png') center/100% 100% no-repeat;border:0}
+#menuMusicVolume::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:32px;height:36px;margin-top:-9px;border:0;background:url('assets/Images18953955692_130893928901265.png') center/100% 100% no-repeat}
+#menuMusicVolume::-moz-range-thumb{width:32px;height:36px;border:0;border-radius:0;background:url('assets/Images18953955692_130893928901265.png') center/100% 100% no-repeat}
+#menuMusicVolume:focus-visible{outline:2px solid white;outline-offset:4px}
+#menuMusicPercent{text-align:right;font-variant-numeric:tabular-nums}
 @media(max-width:850px){
  #menuScreen{padding:18px 16px calc(184px + env(safe-area-inset-bottom))}.menuHeader{justify-content:center}
  #lobbyDock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#0d0d0d;padding:10px 18px max(15px,env(safe-area-inset-bottom));box-shadow:0 -12px 18px #0d0d0d}
@@ -4419,6 +4427,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   const lobbyDialog=document.createElement('dialog');lobbyDialog.id='lobbyDialog';lobbyDialog.setAttribute('aria-labelledby','lobbyHeading');lobbyDialog.innerHTML='<header class="lobbyHeading"><h2 id="lobbyHeading"></h2></header><div id="lobbyContent"></div>';
   menuScreenEl.append(lobbyDialog);const lobbyContent=document.getElementById('lobbyContent');
   const lobbyMusic=document.getElementById('menuMusicVolume').closest('label');
+  lobbyMusic.classList.add('lobbyMusicSetting');
   lobbyMusic.remove();
   function lobbyAssetKey(id){return id==='shop'?'achievements':id==='achievements'?'shop':id;}
   function lobbyButtonMarkup(id,label){
@@ -4473,7 +4482,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if(lobbyDialog.open){if(lobbyDialog.dataset.panel===id){closeLobbyPanel(false);return;}lobbyClosing=true;setLobbyPressed();await animateLobby(false);if(token!==lobbyTransitionToken)return;lobbyDialog.close();lobbyClosing=false;}
     lobbyDialog.dataset.panel=id;document.getElementById('lobbyHeading').textContent=label;lobbyContent.replaceChildren();
     if(id==='stats')renderLobbyStats();
-    else if(id==='logs'){const intro=document.createElement('div');intro.className='lobbyLogs';intro.innerHTML='<h3>Stats & sidebar — test update</h3><p>Personal records for every minigame, a mobile bottom dock, and a new home for your music control.</p><p class="lobbyNote">More update entries will appear here as FMP grows.</p>';lobbyContent.append(intro,lobbyMusic);}
+    else if(id==='logs'){const intro=document.createElement('div');intro.className='lobbyLogs';intro.innerHTML='<h3>Stats & sidebar — test update</h3><p>Personal records for every minigame, a mobile bottom dock, and music volume in Settings.</p><p class="lobbyNote">More update entries will appear here as FMP grows.</p>';lobbyContent.append(intro);}
+    else if(id==='settings'){appendStatsMarkup('<h3 class="lobbySectionTitle">Audio</h3>');lobbyContent.append(lobbyMusic);appendStatsMarkup('<p class="lobbyNote">Adjust the menu music volume. More settings are coming soon.</p>');}
     else if(id==='credits'){const credits=document.createElement('div');credits.className='lobbyCreditsContent';credits.innerHTML=document.getElementById('creditsContent').innerHTML;lobbyContent.append(credits);}
     else {const block=document.createElement('div');block.className='lobbySoon';block.innerHTML=`<img src="${lobbyAssets[lobbyAssetKey(id)]}" alt=""><h3>Coming soon</h3><p>${label} will arrive in a future update.</p>`;lobbyContent.append(block);}
     setLobbyPressed(id);if(!lobbyDialog.open)lobbyDialog.show();lobbyContent.scrollTop=0;await animateLobby(true);lobbyDialog.style.transform='scale(1)';document.querySelector(`.lobbyButton[data-lobby="${id}"]`)?.focus({preventScroll:true});
