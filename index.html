@@ -4376,9 +4376,11 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   document.body.append(lobbyDialog);const lobbyContent=document.getElementById('lobbyContent');
   const lobbyMusic=document.getElementById('menuMusicVolume').closest('label');
   lobbyMusic.remove();
+  function lobbyAssetKey(id){return id==='shop'?'achievements':id==='achievements'?'shop':id;}
   function lobbyButtonMarkup(id,label){
     const utility=['settings','logs','credits'].includes(id);
-    const layers=utility?[['shadow','shadow'],['grunge','grunge'],['icon',id]]:[['bg','background'],['shadow','shadow'],['texture','texture'],['line','outline'],['mainGrunge','mainGrunge'],['grunge','grunge'],['icon',id]];
+    const icon=lobbyAssetKey(id);
+    const layers=utility?[['shadow','shadow'],['grunge','grunge'],['icon',icon]]:[['bg','background'],['shadow','shadow'],['texture','texture'],['line','outline'],['mainGrunge','mainGrunge'],['grunge','grunge'],['icon',icon]];
     return '<span class="lobbyFace" aria-hidden="true">'+layers.map(([cls,key])=>`<img class="lobbyLayer ${cls}" src="${lobbyAssets[key]}" alt="">`).join('')+`<span class="lobbyLabel"${id==='achievements'?' style="font-size:clamp(11px,calc(var(--sidebar-size)*.18),18px)"':''}>${label}</span></span>`;
   }
   function lobbyButton(id,label){const b=document.createElement('button');b.className='lobbyButton';b.dataset.lobby=id;b.setAttribute('aria-haspopup','dialog');b.setAttribute('aria-label',label);b.innerHTML=lobbyButtonMarkup(id,label);return b;}
@@ -4410,13 +4412,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   function openLobbyPanel(id,label){if(activeScreen!=='menu'||menuTransitioning)return;closeCredits(true);lobbyDialog.dataset.panel=id;document.getElementById('lobbyHeading').textContent=label;lobbyContent.replaceChildren();
     if(id==='stats')renderLobbyStats();
     else if(id==='logs'){const intro=document.createElement('div');intro.className='lobbyLogs';intro.innerHTML='<h3>Stats & sidebar — test update</h3><p>Personal records for every minigame, a mobile bottom dock, and a new home for your music control.</p><p class="lobbyNote">More update entries will appear here as FMP grows.</p>';lobbyContent.append(intro,lobbyMusic);}
-    else {const block=document.createElement('div');block.className='lobbySoon';block.innerHTML=`<img src="${lobbyAssets[id]}" alt=""><h3>Coming soon</h3><p>${label} will arrive in a future update.</p>`;lobbyContent.append(block);}
+    else {const block=document.createElement('div');block.className='lobbySoon';block.innerHTML=`<img src="${lobbyAssets[lobbyAssetKey(id)]}" alt=""><h3>Coming soon</h3><p>${label} will arrive in a future update.</p>`;lobbyContent.append(block);}
     for(const b of lobbyRail.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.lobby===id));
     if(!lobbyDialog.open)lobbyDialog.showModal();lobbyContent.scrollTop=0;animateUI(lobbyDialog,[{transform:'scaleY(0)'},{transform:'scaleY(1)'}],{duration:250,easing:'cubic-bezier(.25,.46,.45,.94)'});document.getElementById('lobbyClose').focus({preventScroll:true});
   }
   setInterval(()=>{const time=document.getElementById('statsWebsiteTime');if(lobbyDialog.open&&time)time.textContent=durationText(statsData.websiteMs);},1000);
   let lobbyClosing=false;
-  function closeLobbyPanel(){if(lobbyDialog.open&&!lobbyClosing){lobbyClosing=true;fmpSound('SelectAndBack');const motion=animateUI(lobbyDialog,[{transform:'scaleY(1)'},{transform:'scaleY(0)'}],{duration:250,easing:'cubic-bezier(.25,.46,.45,.94)'});motion.onfinish=()=>{lobbyDialog.close();lobbyClosing=false;};}}
+  function closeLobbyPanel(){if(lobbyDialog.open&&!lobbyClosing){lobbyClosing=true;fmpSound('Back');const motion=animateUI(lobbyDialog,[{transform:'scaleY(1)'},{transform:'scaleY(0)'}],{duration:250,easing:'cubic-bezier(.25,.46,.45,.94)'});motion.onfinish=()=>{lobbyDialog.close();lobbyClosing=false;};}}
   document.getElementById('lobbyClose').addEventListener('click',closeLobbyPanel);
   lobbyDialog.addEventListener('cancel',e=>{e.preventDefault();closeLobbyPanel();});
   lobbyDialog.addEventListener('close',()=>lobbyRail.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed','false')));
