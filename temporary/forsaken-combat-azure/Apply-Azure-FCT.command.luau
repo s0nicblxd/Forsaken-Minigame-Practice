@@ -7255,7 +7255,7 @@ t1.Information = {
 return t1
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Killers/Azure/Config/cl_ObjectBehavior/cl_GroundBulb]====],before="32876:309b4cbd:3f2ed240",after="36718:02f31c22:b9d461bb",source=[====[
+ReplicatedStorage/Assets/Killers/Azure/Config/cl_ObjectBehavior/cl_GroundBulb]====],before="32876:309b4cbd:3f2ed240",previous="36718:02f31c22:b9d461bb",after="36723:3ec60adc:a79fdd17",source=[====[
 -- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
 
 -- Bytecode (Base64):
@@ -7272,7 +7272,7 @@ game:GetService("Debris")
 require(ReplicatedStorage.Modules.PredictProjectile)
 
 local Util = require(ReplicatedStorage.Modules.Util)
-local Maid = require(ReplicatedStorage.Modules.Maid)
+local Maid = require(ReplicatedStorage.Modules.Misc.Maid)
 local Sounds = require(ReplicatedStorage.Modules.Sounds)
 local t2 = {}
 
@@ -7958,7 +7958,7 @@ end
 return t1
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Killers/Azure/Config/cl_ObjectBehavior/cl_Vine]====],before="42392:a149b22a:0f6bee39",after="48530:4b8a008c:1f4d2caf",source=[====[
+ReplicatedStorage/Assets/Killers/Azure/Config/cl_ObjectBehavior/cl_Vine]====],before="42392:a149b22a:0f6bee39",previous="48530:4b8a008c:1f4d2caf",after="48535:5c3f2046:2023f0db",source=[====[
 -- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
 
 -- Bytecode (Base64):
@@ -7984,7 +7984,7 @@ game:GetService("Debris")
 require(ReplicatedStorage.Modules.PredictProjectile)
 
 local Util = require(ReplicatedStorage.Modules.Util)
-local Maid = require(ReplicatedStorage.Modules.Maid)
+local Maid = require(ReplicatedStorage.Modules.Misc.Maid)
 local Sounds = require(ReplicatedStorage.Modules.Sounds)
 local t3 = {}
 
@@ -8813,7 +8813,7 @@ end
 return t1
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Killers/Azure/Config/cl_WorkaroundModules/cl_ConstructQTE]====],before="18703:62d0ec4e:51f0ba7d",after="19934:e4936693:d2e8296e",source=[====[
+ReplicatedStorage/Assets/Killers/Azure/Config/cl_WorkaroundModules/cl_ConstructQTE]====],before="18703:62d0ec4e:51f0ba7d",previous="19934:e4936693:d2e8296e",after="19939:a81587ed:1556ffe8",source=[====[
 -- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
 
 -- Bytecode (Base64):
@@ -8838,7 +8838,7 @@ local UserInputService = game:GetService("UserInputService")
 require(ReplicatedStorage.GlobalTypes)
 require(ReplicatedStorage.Modules.Misc.Signal)
 
-local Maid = require(ReplicatedStorage.Modules.Maid)
+local Maid = require(ReplicatedStorage.Modules.Misc.Maid)
 local Util = require(ReplicatedStorage.Modules.Util)
 
 require(ReplicatedStorage.Modules.Sounds)
@@ -9184,7 +9184,7 @@ end
 return t1
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Killers/Azure/Config/cl_WorkaroundModules/cl_QTEUI]====],before="14127:03f4b08c:ccb011d9",after="14692:a25d4973:f95b343c",source=[====[
+ReplicatedStorage/Assets/Killers/Azure/Config/cl_WorkaroundModules/cl_QTEUI]====],before="14127:03f4b08c:ccb011d9",previous="14692:a25d4973:f95b343c",after="14702:5ec3bde7:6170d1a8",source=[====[
 -- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
 
 -- Bytecode (Base64):
@@ -9203,9 +9203,9 @@ game:GetService("RunService")
 game:GetService("HttpService")
 game:GetService("UserInputService")
 require(ReplicatedStorage.GlobalTypes)
-require(ReplicatedStorage.Modules.Signal)
+require(ReplicatedStorage.Modules.Misc.Signal)
 
-local Maid = require(ReplicatedStorage.Modules.Maid)
+local Maid = require(ReplicatedStorage.Modules.Misc.Maid)
 
 require(ReplicatedStorage.Modules.Util)
 
@@ -13276,7 +13276,7 @@ for _,plan in ipairs(plans)do
   assert(target:IsA("ModuleScript"),"Expected ModuleScript: "..plan.path..". Nothing changed.")
   local source=target.Source
   if fingerprint(source)~=plan.after then
-   assert(plan.before and fingerprint(source)==plan.before,"Source does not match FCTtest2 + Guest fix: "..plan.path..". Nothing changed. Apply Guest's fix first, or send this script if it was edited.")
+   assert(plan.before and (fingerprint(source)==plan.before or plan.previous and fingerprint(source)==plan.previous),"Source does not match FCTtest2 + Guest fix: "..plan.path..". Nothing changed. Apply Guest's fix first, or send this script if it was edited.")
    table.insert(pending,{target=target,plan=plan,before=source})
   end
  else

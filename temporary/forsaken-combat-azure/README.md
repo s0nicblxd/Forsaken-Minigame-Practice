@@ -13,6 +13,8 @@ The script checks all targets before writing anything. A source mismatch stops t
 
 The installer also checks Studio's 200,000-byte Source limit before writing. Azure's Behavior uses compact indentation (165,307 bytes); its compiled bytecode is identical to the uncompressed version. If the earlier installer reported a Source-length rollback, use this updated installer directly with playtesting stopped.
 
+If you already applied the port and startup reports `Maid is not a valid member of Folder "ReplicatedStorage.Modules"`, stop the playtest and run `Repair-Azure-Module-Paths.command.luau`. It repairs four Azure client/QTE modules (five require references), mapping Maid and Signal to FCT's `Modules.Misc` folder, and makes backups. Start a fresh playtest afterward to clear failed module-load caches. The full installer now includes the correction and also supports upgrading that earlier port.
+
 Backups are placed in `ServerStorage/AzureFCTPort_Backup_<timestamp>`. To undo, stop playtesting and run `Restore-Azure-FCT.command.luau`. It restores the newest Azure backup, including removing the newly added Atropa module, while retaining the earlier Guest fix.
 
 ## Port contents
