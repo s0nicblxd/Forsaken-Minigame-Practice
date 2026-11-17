@@ -11,6 +11,8 @@ Apply this to the uploaded **FCTtest2.rbxl after the Reworked Guest patch**. It 
 
 The script checks all targets before writing anything. A source mismatch stops the whole patch and names the module; send that current script rather than removing the check. Reapplying an already installed patch changes nothing.
 
+The installer also checks Studio's 200,000-byte Source limit before writing. Azure's Behavior uses compact indentation (165,307 bytes); its compiled bytecode is identical to the uncompressed version. If the earlier installer reported a Source-length rollback, use this updated installer directly with playtesting stopped.
+
 Backups are placed in `ServerStorage/AzureFCTPort_Backup_<timestamp>`. To undo, stop playtesting and run `Restore-Azure-FCT.command.luau`. It restores the newest Azure backup, including removing the newly added Atropa module, while retaining the earlier Guest fix.
 
 ## Port contents
