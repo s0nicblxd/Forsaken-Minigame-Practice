@@ -28,6 +28,18 @@ Guest's Config, balance values, VIP/access rules, and FCT's working `Sprinting:R
 
 ## Check in Studio
 
+### Spawn an attacker with one player
+
+After applying the patch, start **Play** with one player. Switch Studio to the **Server** view, open `Spawn-Slasher-Test-Bot.command.luau` on this branch, choose **Raw**, copy the whole script, and run it in the server Command Bar.
+
+It clones the build's base Slasher rig, spawns nine studs in front of your character, follows you, and independently rolls **50% Slash / 50% Behead** each time it attacks. It uses the existing shared hitboxes, Slasher's configured attack windups/linger/damage, and the correct M1/special metadata. The bot has 1,000 HP, respects stun and Helpless, and pauses 2.5 seconds between attacks. Resetting your character makes it follow your new character.
+
+This is a training attacker, not the complete Slasher actor: damage is capped to leave at least one HP, Slash does not apply Bleeding, and it does not award rewards or execute players. Behead applies the current FCT build's eight-second Helpless effect on an unblocked hit. Animations still require permission to play their asset IDs. It uses simple MoveTo chasing rather than obstacle pathfinding; test on a clear, flat area.
+
+Rerunning the spawner replaces the old bot. Stop the playtest to remove it, or delete `ServerScriptService.GuestSlasherTestBot` in the server view. No second client is required.
+
+### Block tests
+
 - Block a normal killer M1: no hit damage, block rewards apply, and Punch changes to Parry immediately.
 - Repeat with both Sixer main attacks and a bot killer that uses the same ability/hitbox code.
 - Use a special attack or projectile against Block: the guard breaks and does not grant Parry.
