@@ -1242,7 +1242,34 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #achievementToast strong{font-size:clamp(16px,1.4vw,26px);line-height:1.05;margin-top:4px}
 #achievementToast p{font-size:clamp(13px,1vw,18px);line-height:1.1;margin:5px 0 0}
 @media(max-width:850px){#lobbyDialog[data-panel=achievements]{width:calc(80vw - 20px);margin-left:10px}#lobbyDialog[data-panel=achievements] .achievementTabs{width:calc(20vw - 4px)}#lobbyDialog[data-panel=achievements] .achievementTabs button{font-size:13px;min-height:44px}.achievementRow{height:auto;min-height:175px}.achievementRow .achievementIcon{width:21%;left:1%}.achievementRow>div{left:24%;width:73%;height:80%;top:10%}.achievementRow h4{font-size:20px}.achievementRow p{font-size:16px}.achievementRow small{font-size:12px}.achievementRow progress{left:24%;width:76%}#achievementToast{right:8px;width:72vw;min-width:0}#achievementToast.visible{height:160px}#achievementToast .achievementIcon{height:70%}#achievementToast small{font-size:17px}}
-@media(prefers-reduced-motion:reduce){.lobbyFace,.lobbyLayer,.lobbyLabel::before,.lobbyLabel::after,#achievementToast{transition:none}}
+/* UPD draws IconBackground over Icon, as siblings, rather than behind it. */
+.achievementIcon{background:none}
+.achievementIcon::after{content:'';position:absolute;inset:0;background:var(--achievement-icon) center/100% 100% no-repeat;pointer-events:none;z-index:2}
+.achievementIcon img{position:relative;z-index:1}
+#lobbyDialog[data-panel=achievements] #lobbyContent{padding-left:2.5%;display:flex;flex-direction:column;gap:10px;container-type:size}
+#lobbyDialog[data-panel=achievements] .lobbySectionTitle{flex:none;width:99%;height:60px;min-height:0;margin:0;box-sizing:border-box}
+#lobbyDialog[data-panel=achievements] .achievementRow{flex:none;width:99%;height:17.5cqh;min-height:110px;margin:0}
+.achievementRow>div{inset:0;width:100%;height:100%}
+.achievementRow h4{position:absolute;left:18%;top:12.5%;width:75%;height:30%;margin:0;display:flex;align-items:center;font-size:clamp(18px,2.6cqw,36px)}
+.achievementRow p{position:absolute;left:18%;top:42.5%;width:75%;height:22.5%;margin:0;padding:0;display:flex;align-items:center;font-size:clamp(13px,1.7cqw,25px)}
+.achievementRow small{display:none}
+.achievementRow progress{left:30%;top:75%;bottom:auto;width:65%;height:calc(2.5% + 4px)}
+.achievementRow .achievementCount{left:18%;top:67.5%;bottom:auto;width:11%;height:20%;display:flex;align-items:center;font-size:clamp(12px,1.3cqw,19px)}
+.achievementRow .achievementIcon{z-index:1}
+.achievementRow .achievementIcon img{width:86.5%;height:86.5%}
+.achievementRow:not(.unlocked)::after{z-index:15}
+#achievementNotifications{position:fixed;right:0;top:5vh;width:30vw;height:90vh;z-index:12000;pointer-events:none;display:flex;flex-direction:column;align-items:stretch}
+#achievementNotifications .achievementNotification{position:relative;flex:none;width:100%;height:0;opacity:1;overflow:visible;transition:height 1s cubic-bezier(.25,.46,.45,.94);font-family:'Accanthis',Georgia,serif;color:white}
+#achievementNotifications .achievementNotification.visible{height:calc(22.5vh - 10px)}
+.achievementNotificationMain{position:absolute;left:0;top:12.5%;width:100%;height:75%;isolation:isolate}
+.achievementNotificationMain::before{content:'';position:absolute;inset:0;z-index:0;background:#000 var(--achievement-notification-frame,var(--lobby-panel)) center/100% 100% no-repeat}
+.achievementNotification .achievementIcon{position:absolute;left:0;top:50%;transform:translate(-50%,-50%);height:min(125%,12vw);width:auto;aspect-ratio:1;z-index:2}
+.achievementNotification .achievementIcon img{width:88%;height:88%;object-fit:cover;border-radius:50%;filter:none}
+.achievementNotificationTitles{position:absolute;left:18.75%;top:21%;width:72.5%;height:55%;z-index:5;display:flex;flex-direction:column;text-align:center;align-items:center;justify-content:center;gap:0}
+.achievementNotificationTitles small{display:block;font-size:clamp(14px,1.8vw,32px);font-weight:400;line-height:1.05;white-space:nowrap}
+.achievementNotificationTitles strong{display:block;font-size:clamp(12px,1.4vw,26px);font-weight:400;line-height:1.05;margin-top:3px}
+@media(max-width:850px){#achievementNotifications{width:72vw;right:8px}.achievementNotification .achievementIcon{height:min(125%,28.8vw)}.achievementNotificationTitles small{font-size:clamp(13px,3.8vw,24px)}.achievementNotificationTitles strong{font-size:clamp(12px,3vw,20px)}#lobbyDialog[data-panel=achievements] .achievementRow{height:150px}.achievementRow .achievementIcon{width:15%;left:2.5%}.achievementRow h4{font-size:17px}.achievementRow p{font-size:13px}}
+@media(prefers-reduced-motion:reduce){.lobbyFace,.lobbyLayer,.lobbyLabel::before,.lobbyLabel::after,.achievementNotification{transition:none!important}}
 </style>
 
 </head>
@@ -4582,18 +4609,33 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   ];
   const achievementKey='fmpAchievementsV1';let achievementState={unlocked:{},evidence:{}};
   try{const saved=JSON.parse(localStorage.getItem(achievementKey));if(saved?.unlocked&&saved?.evidence)achievementState=saved;}catch{}
-  const achievementQueue=[];let achievementShowing=false,achievementCategory='All';
-  const achievementToast=document.createElement('aside');achievementToast.id='achievementToast';achievementToast.setAttribute('role','status');achievementToast.setAttribute('aria-live','polite');document.body.append(achievementToast);
+  const achievementQueue=[];let achievementCategory='All';
+  const achievementToast=document.createElement('aside');achievementToast.id='achievementNotifications';achievementToast.setAttribute('role','status');achievementToast.setAttribute('aria-live','polite');document.body.append(achievementToast);
   function saveAchievements(){try{localStorage.setItem(achievementKey,JSON.stringify(achievementState));}catch{}}
   function achievementProgress(id){const games=statsData.games,completed=id=>games[id]?.completed||0,variants=games.generator?.variants||{};
     switch(id){case 'welcome':return 1;case 'first':case 'hundred':case 'thousand':return statsTotal();case 'lock':return games.lock?.perfect||0;case 'plant':return games.azure?.perfect||0;case 'spray':return games.graffiti?.perfect||0;case 'skip':return statsData.fakeSkipped;case 'fake':return statsData.fakeCompleted;case 'sizes':return ['5x5','6x6','7x7'].filter(size=>variants[size]?.completed>0).length;case 'legacy':return games['generator-old']?.variants?.['8x8']?.completed||0;case 'all':return Object.keys(statNames).filter(id=>completed(id)>0).length;default:return achievementState.evidence[id]?1:0;}
   }
-  function showNextAchievement(){if(achievementShowing||!achievementQueue.length||document.hidden||activeScreen!=='menu'||menuTransitioning)return;achievementShowing=true;const a=achievementQueue.shift();achievementToast.replaceChildren();const image=document.createElement('img');image.src=achievementImages[a[5]];image.alt='';const text=document.createElement('div');const heading=document.createElement('small');heading.textContent='Achievement Completed!';const name=document.createElement('strong');name.textContent=a[2];const quote=document.createElement('p');quote.textContent=a[4];text.append(heading,name,quote);const backing=document.createElement('span');backing.className='achievementIcon';backing.append(image);achievementToast.append(backing,text);achievementToast.classList.add('visible');fmpSound('AchievementNotification',.7);setTimeout(()=>{achievementToast.classList.remove('visible');setTimeout(()=>{achievementToast.replaceChildren();achievementShowing=false;showNextAchievement();},1000);},5000);}
+  function showNextAchievement(){
+    if(!achievementQueue.length||document.hidden)return;
+    while(achievementQueue.length){
+      const a=achievementQueue.shift(),slot=document.createElement('div'),main=document.createElement('div');
+      slot.className='achievementNotification';main.className='achievementNotificationMain';
+      const image=document.createElement('img');image.src=achievementImages[a[5]];image.alt='';
+      const text=document.createElement('div');text.className='achievementNotificationTitles';
+      const heading=document.createElement('small');heading.textContent='Achievement Completed!';
+      const name=document.createElement('strong');name.textContent=a[2];text.append(heading,name);
+      const backing=document.createElement('span');backing.className='achievementIcon';backing.append(image);
+      main.append(backing,text);slot.append(main);achievementToast.append(slot);
+      // Force the zero-height initial layout before UPD's one-second expansion.
+      void slot.offsetHeight;slot.classList.add('visible');fmpSound('AchievementNotification',.7);
+      setTimeout(()=>{slot.style.transitionTimingFunction='cubic-bezier(.55,.085,.68,.53)';slot.classList.remove('visible');setTimeout(()=>slot.remove(),1000);},5000);
+    }
+  }
   function checkAchievements(){let changed=false;for(const a of achievementDefs)if(!achievementState.unlocked[a[0]]&&achievementProgress(a[0])>=a[6]){achievementState.unlocked[a[0]]=new Date().toISOString();achievementQueue.push(a);changed=true;}if(changed){saveAchievements();if(lobbyDialog.open&&lobbyDialog.dataset.panel==='achievements')renderAchievements();}showNextAchievement();}
   document.addEventListener('fmpRoundFinished',e=>{const r=e.detail;if(r.won){if(r.id==='bloodhook'&&r.difficulty==='hard'&&r.misses===0)achievementState.evidence.hook=true;if(r.previous!==null&&r.elapsed<r.previous)achievementState.evidence.speed=true;}saveAchievements();checkAchievements();});
   function renderAchievements(){lobbyContent.replaceChildren();document.getElementById('lobbyHeading').textContent=`Achievements — ${Object.keys(achievementState.unlocked).length}/${achievementDefs.length} Unlocked`;
     const tabs=document.createElement('nav');tabs.className='achievementTabs';tabs.setAttribute('aria-label','Achievement categories');for(const category of ['All','General','Challenges','Fun','Completionist']){const button=document.createElement('button');button.type='button';button.textContent=category;button.setAttribute('aria-pressed',String(achievementCategory===category));button.addEventListener('click',()=>{achievementCategory=category;renderAchievements();lobbyContent.scrollTop=0;});tabs.append(button);}lobbyDialog.querySelectorAll('.achievementTabs').forEach(e=>e.remove());lobbyDialog.append(tabs);
-    for(const category of ['General','Challenges','Fun','Completionist']){if(achievementCategory!=='All'&&achievementCategory!==category)continue;const title=document.createElement('h3');title.className='lobbySectionTitle';title.textContent=category;lobbyContent.append(title);for(const a of achievementDefs.filter(a=>a[1]===category)){const date=achievementState.unlocked[a[0]],row=document.createElement('article');row.className='achievementRow'+(date?' unlocked':'');const icon=document.createElement('img');icon.src=achievementImages[a[5]];icon.alt='';const body=document.createElement('div'),name=document.createElement('h4'),description=document.createElement('p'),status=document.createElement('small');name.textContent=a[2];description.textContent=a[3];status.textContent=date?'Unlocked · '+new Date(date).toLocaleDateString():'Locked';body.append(name,description,status);if(a[6]>1){const value=Math.min(a[6],achievementProgress(a[0])),progress=document.createElement('progress');progress.max=a[6];progress.value=value;progress.setAttribute('aria-label',a[2]);const count=document.createElement('span');count.className='achievementCount';count.textContent=`${value} / ${a[6]}`;body.append(progress,count);}const backing=document.createElement('span');backing.className='achievementIcon';backing.append(icon);row.append(backing,body);lobbyContent.append(row);}}
+    for(const category of ['General','Challenges','Fun','Completionist']){if(achievementCategory!=='All'&&achievementCategory!==category)continue;const title=document.createElement('h3');title.className='lobbySectionTitle';title.textContent=category;lobbyContent.append(title);for(const a of achievementDefs.filter(a=>a[1]===category)){const date=achievementState.unlocked[a[0]],row=document.createElement('article');row.className='achievementRow'+(date?' unlocked':'');const icon=document.createElement('img');icon.src=achievementImages[a[5]];icon.alt='';const body=document.createElement('div'),name=document.createElement('h4'),description=document.createElement('p'),status=document.createElement('small');name.textContent=a[2];description.textContent=a[3];status.textContent=date?'Unlocked · '+new Date(date).toLocaleDateString():'Locked';body.append(name,description,status);if(a[6]>1){const value=Math.min(a[6],achievementProgress(a[0])),progress=document.createElement('progress');progress.max=a[6];progress.value=value;progress.setAttribute('aria-label',a[2]);const count=document.createElement('span');count.className='achievementCount';count.textContent=`${value}/${a[6]}`;body.append(progress,count);}const backing=document.createElement('span');backing.className='achievementIcon';backing.append(icon);row.append(backing,body);lobbyContent.append(row);}}
   }
   setInterval(checkAchievements,1000);
   let lobbyClosing=false,lobbyTransitionToken=0;
