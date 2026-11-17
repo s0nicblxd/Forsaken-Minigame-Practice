@@ -55,7 +55,7 @@ A simple website I made for practicing Forsaken’s minigames, without a killer 
 
 ### Credits
 
-**Forsaken Dev Team** — For the assets, sound effects, and the game that made this possible.
+**Forsaken Dev Team** — For the assets, sound effects, textures, and the game that made this possible.
 
 **You** — For playing the game <3
 
