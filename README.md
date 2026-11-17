@@ -1,4 +1,4 @@
-# Forsaken Minigame Practice! [V1.0.2]
+# Forsaken Minigame Practice! [V1.1.0]
 ## Train yourself to become the BEST Guest 1337 main ever! (satire)
 
 A simple website I made for practicing Forsaken’s minigames, without a killer chasing you down halfway through :D
@@ -23,7 +23,7 @@ A simple website I made for practicing Forsaken’s minigames, without a killer 
 
 - Fight against a 'bot' to escape the hook (I think that's how it's called?)
 - Press the displayed keys on PC, or tap the targets on touch devices.
-- Choose **Easy, Medium, or Hard** difficulty. Easy is selected by default :D
+- Choose **Easy, Normal, or Hard** difficulty. Normal is selected by default, unless you save another default :D
 
 ### Plant Disarming
 
@@ -39,6 +39,12 @@ A simple website I made for practicing Forsaken’s minigames, without a killer 
 
 ### Extra Features
 
+- **14 achievements**, with categories, progress tracking, saved unlocks, and Forsaken-style notification popups.
+- A sidebar with Achievements, Stats, Settings, Update Logs, and Credits. Shop and Inventory are currently unavailable.
+- Organized statistics with expandable sections and filters for puzzle sizes and difficulties.
+- Saved Music and SFX volume controls from **0% to 200%**, popup/tutorial toggles, and default generator size and Bloodhook difficulty settings.
+- Individual reset buttons for settings, plus textured dropdowns, checkboxes, sliders, and custom menu scrollbars.
+- A refreshed Update Log with the **1.1.0 — The Replayability Update** notes.
 - A redesigned menu with minigame previews.
 - Puzzle timing and a completed puzzle counter.
 - Tutorials texts that move out of the way once you’ve completed your first round.
