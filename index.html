@@ -1242,6 +1242,15 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #achievementToast strong{font-size:clamp(16px,1.4vw,26px);line-height:1.05;margin-top:4px}
 #achievementToast p{font-size:clamp(13px,1vw,18px);line-height:1.1;margin:5px 0 0}
 @media(max-width:850px){#lobbyDialog[data-panel=achievements]{width:calc(80vw - 20px);margin-left:10px}#lobbyDialog[data-panel=achievements] .achievementTabs{width:calc(20vw - 4px)}#lobbyDialog[data-panel=achievements] .achievementTabs button{font-size:13px;min-height:44px}.achievementRow{height:auto;min-height:175px}.achievementRow .achievementIcon{width:21%;left:1%}.achievementRow>div{left:24%;width:73%;height:80%;top:10%}.achievementRow h4{font-size:20px}.achievementRow p{font-size:16px}.achievementRow small{font-size:12px}.achievementRow progress{left:24%;width:76%}#achievementToast{right:8px;width:72vw;min-width:0}#achievementToast.visible{height:160px}#achievementToast .achievementIcon{height:70%}#achievementToast small{font-size:17px}}
+/* Separate texture thumb: native scrolling remains available to touch and keys. */
+#lobbyDialog #lobbyContent{scrollbar-width:none;scrollbar-gutter:auto}
+#lobbyDialog #lobbyContent::-webkit-scrollbar{display:none;width:0;height:0}
+.forsakenScroll{position:absolute;left:1.6%;top:3.5%;width:2.5%;height:93%;z-index:20;touch-action:none;cursor:pointer;background:transparent}
+.forsakenScroll[hidden]{display:none}
+.forsakenScrollThumb{display:block;position:absolute;left:12%;top:0;width:76%;min-height:24px;background:var(--achievement-scrollTop) center top/100% 8px no-repeat,var(--achievement-scrollBottom) center bottom/100% 8px no-repeat,var(--achievement-scrollMid) center/100% calc(100% - 12px) no-repeat;pointer-events:auto;cursor:grab}
+.forsakenScroll:active .forsakenScrollThumb{cursor:grabbing}
+.forsakenScroll:focus-visible{outline:1px solid #ddd;outline-offset:2px}
+#lobbyDialog[data-panel=achievements] .forsakenScroll{top:11%;height:86.5%}
 /* UPD draws IconBackground over Icon, as siblings, rather than behind it. */
 .achievementIcon{background:none}
 .achievementIcon::after{content:'';position:absolute;inset:0;background:var(--achievement-icon) center/100% 100% no-repeat;pointer-events:none;z-index:2}
@@ -4115,6 +4124,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   menuMusic.loop=true;menuMusic.preload='auto';menuMusic.volume=0;
   let menuMusicEnabled=false,menuMusicWanted=0,menuMusicFrame=0,menuMusicEpoch=0;
   let MENU_MUSIC_VOLUME=.35;
+  const SETTINGS_KEY='fmpSettingsV1';
+  try{const saved=JSON.parse(localStorage.getItem(SETTINGS_KEY));if(typeof saved?.musicVolume==='number'&&Number.isFinite(saved.musicVolume))MENU_MUSIC_VOLUME=Math.max(0,Math.min(1,saved.musicVolume));}catch{}
   function fadeMenuMusic(target,duration=350){
     menuMusicWanted=target;cancelAnimationFrame(menuMusicFrame);const epoch=++menuMusicEpoch;
     if(!menuMusicEnabled)return;
@@ -4433,7 +4444,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   document.querySelectorAll('[data-menu-size]').forEach(b=>b.addEventListener('click',()=>{menuFlowSizeChoice=Number(b.dataset.menuSize);syncFlowChoice(menuFlowSizeChoice);document.getElementById('menuFlowSize').open=false;document.querySelector('#menuFlowSize summary').focus();}));
   document.querySelectorAll('[data-menu-difficulty]').forEach(b=>b.addEventListener('click',()=>{bloodLevel=b.dataset.menuDifficulty;document.getElementById('menuBloodValue').textContent=b.textContent;document.getElementById('menuBloodDifficulty').open=false;document.querySelector('#menuBloodDifficulty summary').focus();}));
   document.getElementById('practiceBtn').addEventListener('click',()=>{if(selectedMenuGame==='entanglement')primeEntangleStart();openGame(selectedMenuGame);});
-  document.getElementById('menuMusicVolume').addEventListener('input',e=>{MENU_MUSIC_VOLUME=Number(e.target.value)/100;document.getElementById('menuMusicPercent').textContent=e.target.value+'%';if(activeScreen==='menu'||activeScreen==='generators'){menuMusicEnabled=true;fadeMenuMusic(MENU_MUSIC_VOLUME,100);}});
+  document.getElementById('menuMusicVolume').value=String(Math.round(MENU_MUSIC_VOLUME*100));
+  document.getElementById('menuMusicPercent').textContent=Math.round(MENU_MUSIC_VOLUME*100)+'%';
+  document.getElementById('menuMusicVolume').addEventListener('input',e=>{MENU_MUSIC_VOLUME=Number(e.target.value)/100;try{localStorage.setItem(SETTINGS_KEY,JSON.stringify({musicVolume:MENU_MUSIC_VOLUME}));}catch{}document.getElementById('menuMusicPercent').textContent=e.target.value+'%';if(activeScreen==='menu'||activeScreen==='generators'){menuMusicEnabled=true;fadeMenuMusic(MENU_MUSIC_VOLUME,100);}});
   document.addEventListener('pointerdown',e=>{document.querySelectorAll('.gridDropdown[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){const d=document.querySelector('.gridDropdown[open]');if(d){d.open=false;d.querySelector('summary').focus();e.stopImmediatePropagation();}}},true);
   selectMenuGame('generator');
@@ -4537,6 +4550,35 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   menuScreenEl.append(lobbyRail,lobbyDock);
   const lobbyDialog=document.createElement('dialog');lobbyDialog.id='lobbyDialog';lobbyDialog.setAttribute('aria-labelledby','lobbyHeading');lobbyDialog.innerHTML='<header class="lobbyHeading"><h2 id="lobbyHeading"></h2></header><div id="lobbyContent"></div>';
   menuScreenEl.append(lobbyDialog);const lobbyContent=document.getElementById('lobbyContent');
+  const menuScroll=document.createElement('div');menuScroll.className='forsakenScroll';
+  menuScroll.setAttribute('role','scrollbar');menuScroll.setAttribute('aria-controls','lobbyContent');menuScroll.setAttribute('aria-orientation','vertical');menuScroll.setAttribute('aria-label','Scroll menu');menuScroll.tabIndex=0;
+  const menuThumb=document.createElement('span');menuThumb.className='forsakenScrollThumb';menuScroll.append(menuThumb);lobbyDialog.append(menuScroll);
+  function syncMenuScroll(){
+    const max=Math.max(0,lobbyContent.scrollHeight-lobbyContent.clientHeight),track=menuScroll.clientHeight;
+    const height=Math.min(track,Math.max(24,track*lobbyContent.clientHeight/Math.max(1,lobbyContent.scrollHeight)));
+    menuScroll.hidden=max<=1;menuScroll.setAttribute('aria-valuemin','0');menuScroll.setAttribute('aria-valuemax',String(Math.round(max)));menuScroll.setAttribute('aria-valuenow',String(Math.round(lobbyContent.scrollTop)));
+    menuThumb.style.height=height+'px';menuThumb.style.transform=`translateY(${max?lobbyContent.scrollTop/max*(track-height):0}px)`;
+  }
+  lobbyContent.addEventListener('scroll',syncMenuScroll,{passive:true});
+  let menuWheelTarget=null,menuWheelTimer;
+  lobbyContent.addEventListener('wheel',e=>{
+    if(e.ctrlKey||e.target.closest('.lobbySizeOptions'))return;
+    const max=lobbyContent.scrollHeight-lobbyContent.clientHeight;if(max<=0)return;
+    e.preventDefault();const delta=e.deltaY*(e.deltaMode===1?20:e.deltaMode===2?lobbyContent.clientHeight:1);
+    menuWheelTarget=Math.max(0,Math.min(max,(menuWheelTarget??lobbyContent.scrollTop)+delta));
+    lobbyContent.scrollTo({top:menuWheelTarget,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
+    clearTimeout(menuWheelTimer);menuWheelTimer=setTimeout(()=>{menuWheelTarget=null;},250);
+  },{passive:false});
+  const menuResize=new ResizeObserver(syncMenuScroll);menuResize.observe(lobbyContent);menuResize.observe(menuScroll);
+  new MutationObserver(records=>{for(const record of records)for(const child of record.removedNodes)if(child.nodeType===1)menuResize.unobserve(child);for(const child of lobbyContent.children)menuResize.observe(child);syncMenuScroll();}).observe(lobbyContent,{childList:true,subtree:true,characterData:true});
+  let scrollDrag=null;
+  menuScroll.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();const max=lobbyContent.scrollHeight-lobbyContent.clientHeight;if(max<=0)return;
+    if(e.target!==menuThumb){const rect=menuScroll.getBoundingClientRect();lobbyContent.scrollTo({top:(e.clientY-rect.top-menuThumb.offsetHeight/2)/Math.max(1,rect.height-menuThumb.offsetHeight)*max,behavior:'smooth'});return;}
+    scrollDrag={y:e.clientY,top:lobbyContent.scrollTop};menuScroll.setPointerCapture(e.pointerId);
+  });
+  menuScroll.addEventListener('pointermove',e=>{if(!scrollDrag)return;const max=lobbyContent.scrollHeight-lobbyContent.clientHeight;lobbyContent.scrollTo({top:scrollDrag.top+(e.clientY-scrollDrag.y)/Math.max(1,menuScroll.clientHeight-menuThumb.offsetHeight)*max,behavior:'instant'});});
+  const endScrollDrag=()=>{scrollDrag=null;};menuScroll.addEventListener('pointerup',endScrollDrag);menuScroll.addEventListener('pointercancel',endScrollDrag);menuScroll.addEventListener('lostpointercapture',endScrollDrag);
+  menuScroll.addEventListener('keydown',e=>{const max=lobbyContent.scrollHeight-lobbyContent.clientHeight,steps={ArrowDown:40,ArrowUp:-40,PageDown:lobbyContent.clientHeight*.9,PageUp:-lobbyContent.clientHeight*.9};if(e.key in steps){e.preventDefault();lobbyContent.scrollBy({top:steps[e.key],behavior:'smooth'});}else if(e.key==='Home'||e.key==='End'){e.preventDefault();lobbyContent.scrollTo({top:e.key==='Home'?0:max,behavior:'smooth'});}});
   const lobbyMusic=document.getElementById('menuMusicVolume').closest('label');
   lobbyMusic.classList.add('lobbyMusicSetting');
   const musicInput=lobbyMusic.querySelector('input'),musicOutput=lobbyMusic.querySelector('output');
@@ -4661,7 +4703,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     if(id==='stats')renderLobbyStats();
     else if(id==='achievements')renderAchievements();
     else if(id==='logs'){const intro=document.createElement('div');intro.className='lobbyLogs';intro.innerHTML='<h3>Stats & sidebar — test update</h3><p>Personal records for every minigame, a mobile bottom dock, and music volume in Settings.</p><p class="lobbyNote">More update entries will appear here as FMP grows.</p>';lobbyContent.append(intro);}
-    else if(id==='settings'){appendStatsMarkup('<h3 class="lobbySectionTitle">Audio</h3>');lobbyContent.append(lobbyMusic);appendStatsMarkup('<p class="lobbyNote">Adjust the menu music volume. More settings are coming soon.</p>');}
+    else if(id==='settings'){appendStatsMarkup('<h3 class="lobbySectionTitle">Audio</h3>');lobbyContent.append(lobbyMusic);}
     else if(id==='credits'){const credits=document.createElement('div');credits.className='lobbyCreditsContent';credits.innerHTML=document.getElementById('creditsContent').innerHTML;lobbyContent.append(credits);}
     else {const block=document.createElement('div');block.className='lobbySoon';block.innerHTML=`<img src="${lobbyAssets[lobbyAssetKey(id)]}" alt=""><h3>Coming soon</h3><p>${label} will arrive in a future update.</p>`;lobbyContent.append(block);}
     setLobbyPressed(id);if(!lobbyDialog.open)lobbyDialog.show();lobbyContent.scrollTop=0;await animateLobby(true);lobbyDialog.style.transform='scale(1)';document.querySelector(`.lobbyButton[data-lobby="${id}"]`)?.focus({preventScroll:true});
