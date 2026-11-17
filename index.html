@@ -1189,7 +1189,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 #lobbyContent #menuMusicVolume::-webkit-slider-runnable-track,#lobbyContent #menuMusicVolume::-webkit-slider-thumb{background:none}
 #lobbyContent #menuMusicVolume::-moz-range-track,#lobbyContent #menuMusicVolume::-moz-range-thumb{background:none}
 #lobbyContent .musicSettingSlider #menuMusicPercent{left:calc(16px + (100% - 32px)*var(--music-fraction,.35));transition:left .1s linear}
-#lobbyContent{scroll-behavior:smooth}
+#lobbyContent{scroll-behavior:auto}
 @media(prefers-reduced-motion:reduce){.musicSettingSlider::after,.musicSettingSlider #menuMusicPercent{transition:none}#lobbyContent{scroll-behavior:auto}}
 #lobbyContent>.lobbyMusicSetting{display:grid;grid-template-columns:auto minmax(100px,1fr) 4ch;gap:20px;text-align:left;margin:24px 16px}
 #lobbyContent #menuMusicVolume{appearance:none;-webkit-appearance:none;width:100%;min-width:0;height:36px;margin:0;background:transparent;cursor:pointer}
@@ -1245,7 +1245,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 /* Separate texture thumb: native scrolling remains available to touch and keys. */
 #lobbyDialog #lobbyContent{scrollbar-width:none;scrollbar-gutter:auto}
 #lobbyDialog #lobbyContent::-webkit-scrollbar{display:none;width:0;height:0}
-.forsakenScroll{position:absolute;left:1.6%;top:3.5%;width:2.5%;height:93%;z-index:20;touch-action:none;cursor:pointer;background:transparent}
+.forsakenScroll{position:absolute;left:2%;top:3.5%;width:2.5%;height:93%;z-index:20;touch-action:none;cursor:pointer;background:transparent}
 .forsakenScroll[hidden]{display:none}
 .forsakenScrollThumb{display:block;position:absolute;left:12%;top:0;width:76%;min-height:24px;background:var(--achievement-scrollTop) center top/100% 8px no-repeat,var(--achievement-scrollBottom) center bottom/100% 8px no-repeat,var(--achievement-scrollMid) center/100% calc(100% - 12px) no-repeat;pointer-events:auto;cursor:grab}
 .forsakenScroll:active .forsakenScrollThumb{cursor:grabbing}
@@ -4560,25 +4560,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     menuThumb.style.height=height+'px';menuThumb.style.transform=`translateY(${max?lobbyContent.scrollTop/max*(track-height):0}px)`;
   }
   lobbyContent.addEventListener('scroll',syncMenuScroll,{passive:true});
-  let menuWheelTarget=null,menuWheelTimer;
   lobbyContent.addEventListener('wheel',e=>{
     if(e.ctrlKey||e.target.closest('.lobbySizeOptions'))return;
     const max=lobbyContent.scrollHeight-lobbyContent.clientHeight;if(max<=0)return;
     e.preventDefault();const delta=e.deltaY*(e.deltaMode===1?20:e.deltaMode===2?lobbyContent.clientHeight:1);
-    menuWheelTarget=Math.max(0,Math.min(max,(menuWheelTarget??lobbyContent.scrollTop)+delta));
-    lobbyContent.scrollTo({top:menuWheelTarget,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
-    clearTimeout(menuWheelTimer);menuWheelTimer=setTimeout(()=>{menuWheelTarget=null;},250);
+    lobbyContent.scrollBy({top:delta,behavior:'instant'});
   },{passive:false});
   const menuResize=new ResizeObserver(syncMenuScroll);menuResize.observe(lobbyContent);menuResize.observe(menuScroll);
   new MutationObserver(records=>{for(const record of records)for(const child of record.removedNodes)if(child.nodeType===1)menuResize.unobserve(child);for(const child of lobbyContent.children)menuResize.observe(child);syncMenuScroll();}).observe(lobbyContent,{childList:true,subtree:true,characterData:true});
   let scrollDrag=null;
   menuScroll.addEventListener('pointerdown',e=>{if(e.button!==0)return;e.preventDefault();const max=lobbyContent.scrollHeight-lobbyContent.clientHeight;if(max<=0)return;
-    if(e.target!==menuThumb){const rect=menuScroll.getBoundingClientRect();lobbyContent.scrollTo({top:(e.clientY-rect.top-menuThumb.offsetHeight/2)/Math.max(1,rect.height-menuThumb.offsetHeight)*max,behavior:'smooth'});return;}
+    if(e.target!==menuThumb){const rect=menuScroll.getBoundingClientRect();lobbyContent.scrollTo({top:(e.clientY-rect.top-menuThumb.offsetHeight/2)/Math.max(1,rect.height-menuThumb.offsetHeight)*max,behavior:'instant'});return;}
     scrollDrag={y:e.clientY,top:lobbyContent.scrollTop};menuScroll.setPointerCapture(e.pointerId);
   });
   menuScroll.addEventListener('pointermove',e=>{if(!scrollDrag)return;const max=lobbyContent.scrollHeight-lobbyContent.clientHeight;lobbyContent.scrollTo({top:scrollDrag.top+(e.clientY-scrollDrag.y)/Math.max(1,menuScroll.clientHeight-menuThumb.offsetHeight)*max,behavior:'instant'});});
   const endScrollDrag=()=>{scrollDrag=null;};menuScroll.addEventListener('pointerup',endScrollDrag);menuScroll.addEventListener('pointercancel',endScrollDrag);menuScroll.addEventListener('lostpointercapture',endScrollDrag);
-  menuScroll.addEventListener('keydown',e=>{const max=lobbyContent.scrollHeight-lobbyContent.clientHeight,steps={ArrowDown:40,ArrowUp:-40,PageDown:lobbyContent.clientHeight*.9,PageUp:-lobbyContent.clientHeight*.9};if(e.key in steps){e.preventDefault();lobbyContent.scrollBy({top:steps[e.key],behavior:'smooth'});}else if(e.key==='Home'||e.key==='End'){e.preventDefault();lobbyContent.scrollTo({top:e.key==='Home'?0:max,behavior:'smooth'});}});
+  menuScroll.addEventListener('keydown',e=>{const max=lobbyContent.scrollHeight-lobbyContent.clientHeight,steps={ArrowDown:40,ArrowUp:-40,PageDown:lobbyContent.clientHeight*.9,PageUp:-lobbyContent.clientHeight*.9};if(e.key in steps){e.preventDefault();lobbyContent.scrollBy({top:steps[e.key],behavior:'instant'});}else if(e.key==='Home'||e.key==='End'){e.preventDefault();lobbyContent.scrollTo({top:e.key==='Home'?0:max,behavior:'instant'});}});
   const lobbyMusic=document.getElementById('menuMusicVolume').closest('label');
   lobbyMusic.classList.add('lobbyMusicSetting');
   const musicInput=lobbyMusic.querySelector('input'),musicOutput=lobbyMusic.querySelector('output');
