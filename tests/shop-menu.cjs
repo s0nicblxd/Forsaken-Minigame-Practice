@@ -1,6 +1,6 @@
 const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
 (async()=>{
- const root=path.resolve(__dirname,'..'),browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']}),page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],missing=[];
+ const root=path.resolve(__dirname,'..'),browser=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']}),page=await browser.newPage({viewport:{width:1920,height:1080}}),errors=[],missing=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://**/*',r=>r.abort());
  await page.route('http://fmp.test/**',r=>{
@@ -13,6 +13,8 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  await page.goto('http://fmp.test/');await page.evaluate(()=>{document.getElementById('loadingScreen').style.display='none';shopQA.showScreen('menu');});
  await page.locator('[data-lobby="shop"]').click();await page.waitForTimeout(600);
  assert.equal(await page.locator('.shopTab').count(),3);assert((await page.locator('.shopSelection').count())>3);assert.equal(await page.locator('.shopTab[aria-selected=true]').textContent(),'Practice');
+ assert.equal(await page.locator('.shopClose').evaluate(e=>getComputedStyle(e,'::before').display),'none');const closeBefore=await page.locator('.shopClose').boundingBox();await page.locator('.shopClose').hover();await page.waitForTimeout(300);const closeHover=await page.locator('.shopClose').boundingBox();assert(closeHover.width>closeBefore.width);assert.equal(await page.locator('.shopClose').evaluate(e=>getComputedStyle(e,'::before').display),'none');await page.mouse.move(10,10);await page.waitForTimeout(300);
+ assert(await page.locator('.shopSelection').evaluateAll(buttons=>buttons.every(b=>{const r=document.createRange();r.selectNodeContents(b.lastChild);const style=getComputedStyle(b);return r.getBoundingClientRect().width<=b.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)+1;})));
  for(const [category,groups] of [['cosmetics',['Minigames','Profile']],['audio',['Music','Sounds']],['practice',['Puzzles','Challenges']]]){
   await page.locator('#shop-tab-'+category).click();await page.waitForTimeout(550);assert.deepEqual(await page.locator('.shopSubtab').allTextContents(),groups);
   await page.locator('.shopSubtab').last().click();assert.equal(await page.locator('.shopSubtab[aria-pressed=true]').textContent(),groups[1]);
@@ -38,9 +40,9 @@ const {chromium}=require('playwright'),fs=require('fs'),path=require('path'),ass
  // Browser policy blocks file:// navigation; isolate a single HTML response with no asset directory instead.
  const offlineRequests=[];
  await page.route('http://offline.test/**',r=>{const url=new URL(r.request().url());if(url.pathname!=='/'){offlineRequests.push(url.pathname);return r.fulfill({status:404});}return r.fulfill({contentType:'text/html',body:fs.readFileSync(path.join(root,'index.html'),'utf8').replace('  let lobbyClosing=false,lobbyTransitionToken=0;','window.shopQA={showScreen};\n  let lobbyClosing=false,lobbyTransitionToken=0;')});});
- await page.setViewportSize({width:1440,height:1000});await page.goto('http://offline.test/');await page.evaluate(()=>{document.getElementById('loadingScreen').style.display='none';shopQA.showScreen('menu');document.querySelectorAll('.achievementNotification').forEach(e=>e.remove());});await page.locator('[data-lobby="shop"]').click();await page.waitForTimeout(700);
+ await page.setViewportSize({width:1920,height:1080});await page.goto('http://offline.test/');await page.evaluate(()=>{document.getElementById('loadingScreen').style.display='none';shopQA.showScreen('menu');document.querySelectorAll('.achievementNotification').forEach(e=>e.remove());});await page.locator('[data-lobby="shop"]').click();await page.waitForTimeout(700);
  assert.deepEqual(await page.locator('.shopChrome img,.shopEmpty img').evaluateAll(images=>images.filter(i=>!i.complete||i.naturalWidth===0).map(i=>i.src.slice(0,80))),[]);
  for(const panel of ['settings','achievements','logs','credits','inventory','shop']){await page.locator('[data-lobby="'+panel+'"]').click();await page.waitForTimeout(650);assert.deepEqual(await page.locator('#lobbyDialog img').evaluateAll(images=>images.filter(i=>i.getClientRects().length&&(!i.complete||i.naturalWidth===0)).map(i=>i.src.slice(0,80))),[],panel+' images');}
- assert.deepEqual(offlineRequests,[]);await page.screenshot({path:'/workspace/exports/fmp-shop-offline.png'});
+ assert.deepEqual(offlineRequests,[]);await page.evaluate(()=>document.querySelectorAll('.achievementNotification').forEach(e=>e.remove()));await page.screenshot({path:'/workspace/exports/fmp-shop-offline.png'});
  assert.deepEqual(errors,[]);assert.deepEqual(missing,[]);console.log('PASS: categories, subtabs, search, unowned filter, keyboard navigation, rapid switching, close, settings handoff, selection filters, portrait guard, landscape bounds, standalone HTML images without an asset directory; no JS errors or missing assets.');await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

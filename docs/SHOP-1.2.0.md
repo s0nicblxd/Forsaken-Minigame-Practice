@@ -43,3 +43,11 @@ Run `node tests/shop-menu.cjs` with Playwright and Chromium installed. The test 
 ## Orientation support
 
 Portrait view shows a full-screen rotation prompt. Other page roots become inert and game inputs are blocked; their previous inert states are restored on rotation to landscape. This does not reset saved settings or records. No portrait shop layout is maintained.
+
+## Visual audit against UPD and the supplied comparison
+
+Button layers now include the source's texture opacity (0.23), black grunge (0.44), background shading, and slice geometry. Roblox's outline SliceCenter `(60,50,541,544)` on a 586px image becomes CSS `50 45 42 60`; the main frame uses source SliceCenter `(286,34,552,552)` and its larger left inset. Main tab text uses the source's semibold weight. FMP selection labels shrink to fit one line, matching the purpose of TextScaled.
+
+The Shop close control has no category selection brush. Its icon occupies 55% of the control at 0.81 opacity; the outline/texture use a muted red tint based on the reference. Hover changes the control from 7.1% × 9.2% to 10.5% × 10.5% over 0.25 seconds, as in `Shop.Close` source. It is aligned with the tab row to match the supplied screenshot.
+
+Left selection buttons retain image/grunge backgrounds and a small hover scale rather than the category brush. The unowned filter matches `CreateUnownedButton`: the icon fades to 50% while active, with no brush or inversion.
