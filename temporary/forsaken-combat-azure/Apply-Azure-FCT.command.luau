@@ -8,7 +8,7 @@ local function fingerprint(source)
 end
 local plans={
 {path=[====[
-ReplicatedStorage/Assets/Killers/Azure/Behavior]====],before="152916:b00462c2:508367e5",after="165307:78413e99:1bdaceaa",source=[====[
+ReplicatedStorage/Assets/Killers/Azure/Behavior]====],before="152916:b00462c2:508367e5",previous="165307:78413e99:1bdaceaa",after="165439:fb880f31:a80e010c",source=[====[
 
 
 
@@ -36,6 +36,7 @@ local Device = require(ReplicatedStorage.Modules.Device);
 local Projectiles = require(ReplicatedStorage.Modules.Projectiles);
 local sv_AzureConstruct = require(script.sv_AzureConstruct);
 local sv_Golem = require(script.sv_Golem);
+local resolveAzureGrabConfig = require(script.GrabConfigDefaults);
 local spawn = task.spawn;
 local delay = task.delay;
 local u1 = RunService:IsClient();
@@ -963,7 +964,7 @@ if u2 then
 
 	function u77.sv_GrabSurvivor(_, actor, victim)
 		if actor.State.GrabbingFlag then return end
-		local rig, grab = actor.Rig, actor.Config.Grab
+		local rig, grab = actor.Rig, resolveAzureGrabConfig(actor)
 		local function alive(model)
 			return model and model:IsDescendantOf(workspace) and model.PrimaryPart
 				and model:FindFirstChildOfClass("Humanoid") and Util:IsAlive(model)
@@ -2316,7 +2317,7 @@ else
 		local Attachment2 = Instance.new("Attachment");
 		local v398 = p397.Config.Instances.TrajectoryBeam:Clone();
 		local v399 = p397.Config.Instances.TrajectoryTarget:Clone();
-		local Grab = p397.Config.Grab;
+		local Grab = resolveAzureGrabConfig(p397);
 		local ThrowVelocity = Grab.ThrowVelocity;
 		local v400 = workspace.Gravity * Grab.GravityCoefficient;
 		local v401 = RaycastParams.new();
@@ -2685,7 +2686,7 @@ else
 		local u449 = u448.Config.Instances.TrajectoryBeam:Clone();
 		local v450 = u448.Config.Instances.TargetParticle and u448.Config.Instances.TargetParticle:Clone();
 		local u451 = u448.Config.Instances.TrajectoryTarget:Clone();
-		local Grab = u448.Config.Grab;
+		local Grab = resolveAzureGrabConfig(u448);
 		local u452 = RaycastParams.new();
 		u452.RespectCanCollide = true;
 		u452.CollisionGroup = "Killers";
@@ -3604,7 +3605,7 @@ u77.Abilities = {
 
 		Callback = function(u587, p588)                              
 
-			local Grab = u587.Config.Grab;
+			local Grab = resolveAzureGrabConfig(u587);
 
 			if not u2 then
 				return;
@@ -4515,7 +4516,8 @@ u77.Abilities = {
 	}
 };
 
-function u77.Created(p684, u685)              
+function u77.Created(p684, u685)
+ resolveAzureGrabConfig(u685);
 
 	local Config = u685.Config;
 	u685.Maid = Maid.new();
@@ -5269,6 +5271,47 @@ function u77.OnExecution(p762, p763, u764)
 end;
 
 return u77;]====]},
+{path=[====[
+ReplicatedStorage/Assets/Killers/Azure/Behavior/GrabConfigDefaults]====],before=false,after="1616:4dabca51:2601f86c",source=[====[
+local defaults = {
+ Windup = 1, Linger = 0.2, Endlag = 0.5,
+ HookRange = 60, HookSpeed = 270, PullTime = 0.8, HookHitboxSize = 4,
+ ProjectileHitboxSize = Vector3.new(5, 5.5, 6),
+ MissSlowness = 0.3, MissSlownessDuration = 1,
+ CooldownCancel = 5, CooldownMiss = 20, CooldownSuccess = 20,
+ KnockbackPower = 100, RagdollDuration = 1.2, BlastRadius = 20,
+ Damage = 5, ThrowVelocity = 70, GravityCoefficient = 0.425,
+ HitDamage = 10, CloseThrowDistance = 20,
+ ThrowHelpless = 2, CloseThrowHelpless = 4, PlantTriggerDuration = 1.5,
+ SuccessAnimationTimeout = 8, ThrowAnimationTimeout = 8, HoldMaxDuration = 1.5,
+}
+local positive = {
+ HookRange = true, HookSpeed = true, PullTime = true, HookHitboxSize = true,
+ SuccessAnimationTimeout = true, ThrowAnimationTimeout = true,
+}
+local function finite(value)
+ return type(value) == "number" and value == value and value > -math.huge and value < math.huge
+end
+return function(actor)
+ assert(type(actor) == "table" and type(actor.Config) == "table", "Azure actor Config is missing")
+ local existing = actor.Config.Grab
+ local grab = {}
+ if type(existing) == "table" then
+  for key, value in pairs(existing) do grab[key] = value end
+ end
+ for key, fallback in pairs(defaults) do
+  local value = grab[key]
+  if type(fallback) == "number" then
+   if not finite(value) or value < 0 or positive[key] and value <= 0 then grab[key] = fallback end
+  elseif typeof(value) ~= "Vector3" or not finite(value.X) or not finite(value.Y) or not finite(value.Z)
+   or value.X <= 0 or value.Y <= 0 or value.Z <= 0 then
+   grab[key] = fallback
+  end
+ end
+ actor.Config.Grab = grab
+ return grab
+end
+]====]},
 {path=[====[
 ReplicatedStorage/Assets/Killers/Azure/Behavior/sv_AzureConstruct]====],before="12634:ecc03edb:e58ee342",after="16757:1057f0f5:cc7737cc",source=[====[
                                                                                        

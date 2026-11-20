@@ -47,12 +47,20 @@ For cross-killer grabbing such as Sixer, use the build's existing FriendlyFire s
 
 ## Verification completed here
 
-- All 14 resulting scripts and both command scripts compile with Luau.
+- All 15 resulting scripts and both command scripts compile with Luau.
 - Executed the actual Config: previous balance values and uploaded grab animation IDs match.
 - Executed Atropa callbacks: cap, expiry awards for 1–6 stacks, and no expiry bonus on consumption/manual removal/death.
 - Executed sprint helpers: independent stamina-freeze owners and held-key recovery.
 - Executed grab cleanup with a victim disappearing inside a callback: no remaining grab flag, ability lock, root anchor, or PlatformStand.
 - Executed golem-return cleanup: 1.5× playback, bounded release, and idempotent cleanup.
-- Executed the installer against mock Instances: all 14 outputs match, the missing Atropa module is created, reapplication is safe, and source mismatches reject all writes.
+- Executed the installer against mock Instances: all 15 outputs match, the missing Atropa module is created, reapplication is safe, and source mismatches reject all writes.
 
 These checks do not replace Roblox Studio tests of physics, networking, animations, and the playtest cases above.
+
+## Enstrangle nil-configuration repair
+
+If the server reports `number < nil` at the grab windup and the client reports `Vector3 and nil` in the aiming beam, use `Repair-Azure-Grab-Config.command.luau` with the playtest stopped. Those expressions require `Config.Grab.Windup` and `Config.Grab.HookRange`, which the older FCT Config does not define. The full installer already carries these fields, but an older or incomplete runtime Config still needs normalization.
+
+The repair creates `Behavior.GrabConfigDefaults` and routes creation, grab callbacks, aiming, and holding through the resolver. Missing/invalid parameters receive the port's defaults (windup 1s, range 60 studs, hook speed 270, pull time 0.8s, and the remaining grab fields). Valid custom fields, skin settings, and zero windup are preserved. It backs up Behavior, validates the expected source shape and Studio's Source limit before editing, and rolls back on a write failure. Run it once, then start a **fresh playtest**; existing stuck actors and cached requires are not repaired in place.
+
+Verified with Luau: both original nil expressions fail on the actual old FCT Config; the resolver repairs them; complete port Configs and custom tuning remain unchanged; malformed fields and immutable partial tables are handled; the actual Command Bar repair produces the canonical patched Behavior/helper and is safe to repeat. Roblox physics and networking still require a Studio playtest.
