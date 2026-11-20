@@ -1,0 +1,21212 @@
+-- Two Time -> FCTtest2, kit media excluded. Stop Play before running in Studio's Command Bar.
+assert(game:GetService("RunService"):IsStudio() and not game:GetService("RunService"):IsRunning(),"Stop the playtest first.")
+local function fingerprint(source)
+ local a,b=5381,0
+ for i=1,#source do local byte=string.byte(source,i);a=(a*33+byte)%4294967296;b=(b*65599+byte)%4294967296 end
+ return string.format("%d:%08x:%08x",#source,a,b)
+end
+local function find(path)
+ local current=game
+ for name in path:gmatch("[^/]+") do current=current and current:FindFirstChild(name) end
+ return current
+end
+-- Require the already-tested FCT Guest/Hitboxes compatibility fix. Do not replace shared combat code.
+local hitboxes=assert(find("ReplicatedStorage/Modules/Hitboxes"),"Missing FCT Hitboxes module.")
+assert(hitboxes.Source:find("DamageOverride",1,true) and hitboxes.Source:find('hitResponse == "Ignored"',1,true),"Apply the FCT Guest compatibility fix before this port. Nothing changed.")
+local plans={
+{path=[====[
+ReplicatedStorage/Assets/Killers/1x1x1x1/Behavior]====],before="81284:cf395bbd:5b9ddd4a",after="81164:d1348840:8a475999",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local _ = require(game.ReplicatedStorage.GlobalTypes);
+local l_Debris_0 = game:GetService("Debris");
+local l_RunService_0 = game:GetService("RunService");
+local l_TweenService_0 = game:GetService("TweenService");
+local l_ReplicatedStorage_0 = game:GetService("ReplicatedStorage");
+local _ = game:GetService("UserInputService");
+local v6 = {};
+local v7 = require(l_ReplicatedStorage_0.Modules.Sounds);
+local v8 = require(l_ReplicatedStorage_0.Modules.Util);
+local v9 = require(l_ReplicatedStorage_0.Modules.Hitboxes);
+local v10 = require(l_ReplicatedStorage_0.Modules.Projectiles);
+local v11 = require(l_ReplicatedStorage_0.Modules.Statuses);
+local v12 = require(l_ReplicatedStorage_0.Modules.Network);
+local v13 = require(l_ReplicatedStorage_0.Modules.AchievementUtil);
+local v14 = require(l_ReplicatedStorage_0.Modules.Schematics.Lighting);
+local v15 = {
+    "Big",
+    "Flames",
+    "Shockwave",
+    "Small :D",
+    "SmokeBLACK",
+    "SmokeRed"
+};
+local function _(v16) --[[ Line: 29 ]] --[[ Name: hasGlitched ]]
+    -- upvalues: v11 (copy)
+    return v11:PlayerHasStatus(v16, "Glitched");
+end;
+local function _(v18, v19, v20, v21, v22) --[[ Line: 34 ]] --[[ Name: pull ]]
+    -- upvalues: v11 (copy), l_Debris_0 (copy)
+    local l_Humanoid_0 = v18:FindFirstChild("Humanoid");
+    if not l_Humanoid_0 or l_Humanoid_0.Health <= 0 or not v18.PrimaryPart then
+        return;
+    else
+        local l_v18_Pivot_0 = v18:GetPivot();
+        local l_v19_Pivot_0 = v19:GetPivot();
+        local l_Magnitude_0 = (l_v18_Pivot_0.Position - l_v19_Pivot_0.Position).Magnitude;
+        v21 = v21 or 2.5;
+        v22 = v22 or 10;
+        local v27 = nil;
+        if l_Magnitude_0 <= v22 then
+            v27 = l_v19_Pivot_0.Position + l_v19_Pivot_0.LookVector * v21;
+        else
+            local l_Unit_0 = (l_v19_Pivot_0.Position - l_v18_Pivot_0.Position).Unit;
+            v27 = l_v18_Pivot_0.Position + l_Unit_0 * v22;
+        end;
+        local l_Unit_1 = (v27 - l_v18_Pivot_0.Position).Unit;
+        local l_Magnitude_1 = (v27 - l_v18_Pivot_0.Position).Magnitude;
+        local v31 = (v20 or 50) * math.clamp(l_Magnitude_1 / 10, 0.5, 2);
+        if v11:PlayerHasStatus(v18, "Glitched") then
+            v31 = v31 * 1.3;
+        end;
+        local l_Attachment_0 = Instance.new("Attachment");
+        l_Attachment_0.Parent = v18.PrimaryPart;
+        local l_LinearVelocity_0 = Instance.new("LinearVelocity");
+        l_LinearVelocity_0.Parent = v18.PrimaryPart;
+        l_LinearVelocity_0.Attachment0 = l_Attachment_0;
+        l_LinearVelocity_0.MaxForce = 40000;
+        l_LinearVelocity_0.VectorVelocity = l_Unit_1 * v31;
+        l_LinearVelocity_0.RelativeTo = Enum.ActuatorRelativeTo.World;
+        l_Debris_0:AddItem(l_LinearVelocity_0, 0.35);
+        l_Debris_0:AddItem(l_Attachment_0, 0.35);
+        task.delay(0.35, function() --[[ Line: 77 ]]
+            -- upvalues: v18 (copy)
+            if v18.PrimaryPart then
+                v18.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+            end;
+        end);
+        return;
+    end;
+end;
+local function v42(v35, v36) --[[ Line: 84 ]] --[[ Name: toggleSwords ]]
+    if v35 and v35.Parent and v35:FindFirstChild("ExtraModels") then
+        for v37, v38 in pairs({
+            v35.ExtraModels.HaxxedSwordLeft,
+            v35.ExtraModels.HaxxedSwordRight
+        }) do
+            local v39 = v37 == 1 and "L" or "R";
+            v38.Parts[("HaxxedBlade%*2"):format(v39)].Transparency = v36 and 0 or 1;
+            for _, v41 in pairs(v38.Parts[("HaxxedBlade%*"):format(v39)]:GetChildren()) do
+                if v41:IsA("Beam") or v41:IsA("ParticleEmitter") then
+                    v41.Enabled = v36;
+                end;
+            end;
+        end;
+    end;
+end;
+local function v47(v43, v44) --[[ Line: 98 ]] --[[ Name: __getShockwaveDamage ]]
+    -- upvalues: v11 (copy)
+    if not v43.Rig then
+        return;
+    else
+        local l_MassInfectionShockwaveDamage_0 = v43.Config.MassInfectionShockwaveDamage;
+        local v46 = v44:FindFirstChild("Humanoid") ~= nil;
+        if v11:PlayerHasStatus(v44, "Glitched") and v46 then
+            l_MassInfectionShockwaveDamage_0 = l_MassInfectionShockwaveDamage_0 + v43.Config.MassInfectionShockwaveBonusDamage;
+        end;
+        return l_MassInfectionShockwaveDamage_0;
+    end;
+end;
+local function v53(v48, v49, v50, ...) --[[ Line: 124 ]] --[[ Name: pcallMethod ]]
+    local l_status_0, l_result_0 = pcall(function(...) --[[ Line: 125 ]]
+        -- upvalues: v50 (copy), v48 (copy)
+        if v50.Behavior[v48] then
+            return v50.Behavior[v48](v50, ...);
+        else
+            return;
+        end;
+    end, ...);
+    if not l_status_0 then
+        warn((("[%*]: Failed to call .%*() due to: %*"):format(v49, v48, l_result_0)));
+    end;
+    return l_result_0;
+end;
+local function v57(v54, v55) --[[ Line: 138 ]] --[[ Name: zombieCheck ]]
+    -- upvalues: v11 (copy)
+    if v55.Name == "1x1x1x1Zombie" then
+        local _ = v11:PlayerHasStatus(v54.Player, "Speed");
+        v11:ApplyStatus(v54.Rig, "Speed", {
+            Stackable = true,
+            MaxLevel = 1,
+            Level = v54.Config.ZombieKillSpeedLevel,
+            Duration = v54.Config.ZombieKillSpeedDuration
+        });
+        v54:PlayVoiceline("MinionSpeed", {
+            Priority = 3
+        });
+        return true;
+    else
+        return;
+    end;
+end;
+v6.Abilities = {
+    Slash = {
+        LayoutOrder = 1,
+        Icon = "rbxassetid://120590195585579",
+        KeybindType = "MainAbility",
+        Callback = function(v58) --[[ Line: 154 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v9 (copy), v57 (copy), v8 (copy), v11 (copy)
+            if game["Run Service"]:IsServer() then
+                v58.AbilitiesDisabled = true;
+                v7:Play(v58.Config.Sounds.Swing, {
+                    Parent = v58.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.25
+                });
+                task.delay(v58.Config.SlashWindup, function() --[[ Line: 161 ]]
+                    -- upvalues: v9 (ref), v58 (copy), v57 (ref), v8 (ref), v11 (ref), v7 (ref)
+                    local _ = v9:CreateHitbox(v58.Player, { AbilityType = "MainAbility", IsProjectile = false,
+                        Size = Vector3.new(4.5, 6, 7.5, 0),
+                        CFrameOffset = CFrame.new(0, 0, -1.75),
+                        Damage = function(v59) --[[ Line: 165 ]] --[[ Name: Damage ]]
+                            -- upvalues: v58 (ref)
+                            if v59.Name == "1x1x1x1Zombie" then
+                                local l_Humanoid_1 = v59:FindFirstChild("Humanoid");
+                                if l_Humanoid_1 then
+                                    return l_Humanoid_1.MaxHealth;
+                                end;
+                            end;
+                            return v58.Config.SlashDamage;
+                        end,
+                        Time = v58.Config.SlashLinger,
+                        Knockback = 2,
+                        HitMultiple = false,
+                        ExecuteOnKill = true,
+                        Connections = {
+                            Hit = function(v61, v62) --[[ Line: 182 ]] --[[ Name: Hit ]]
+                                -- upvalues: v57 (ref), v58 (ref), v8 (ref), v11 (ref), v7 (ref)
+                                if v61.Name == "1x1x1x1Zombie" then
+                                    v57(v58, v61);
+                                    return;
+                                else
+                                    v57(v58, v61);
+                                    v8:CreateSpeedMultiplier(v61, 1.5, "HitSpeedBonus", 1.25);
+                                    v11:ApplyStatus(v61, "Poisoned", {
+                                        Stackable = true,
+                                        Level = v58.Config.SlashPoisonLevel,
+                                        Duration = v58.Config.SlashPoisonDuration
+                                    });
+                                    v11:ApplyStatus(v61, "Glitched", {
+                                        Stackable = true,
+                                        Level = v58.Config.SlashGlitchLevel,
+                                        Duration = v58.Config.SlashGlitchDuration
+                                    });
+                                    if v62 then
+                                        v7:Play(v58.Config.Sounds.Hit, {
+                                            Parent = v58.Rig.PrimaryPart,
+                                            PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                            Volume = 0.25
+                                        });
+                                    end;
+                                    return;
+                                end;
+                            end
+                        }
+                    });
+                end);
+                task.delay(1, function() --[[ Line: 202 ]]
+                    -- upvalues: v58 (copy)
+                    v58.AbilitiesDisabled = false;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v58.Animations.Slash:Play(0.175);
+                end;
+                return;
+            end;
+        end
+    },
+    MassInfection = {
+        LayoutOrder = 2,
+        Icon = "rbxassetid://112065267803856",
+        KeybindType = "AltAbility1",
+        Callback = function(v64) --[[ Line: 218 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v8 (copy), v9 (copy), v57 (copy), v11 (copy), l_ReplicatedStorage_0 (copy), v47 (copy), v10 (copy), v15 (copy), l_TweenService_0 (copy), l_Debris_0 (copy), l_RunService_0 (copy)
+            if game["Run Service"]:IsServer() then
+                v64.AbilitiesDisabled = true;
+                v7:Play(v64.Config.Sounds.MassInfectionActivate, {
+                    Parent = v64.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.75,
+                    RollOffMaxDistance = 50
+                });
+                local l_MassInfection_0 = v64.Rig.HumanoidRootPart:FindFirstChild("MassInfection");
+                if l_MassInfection_0 then
+                    v8:EmitParticlesFromAttachment(l_MassInfection_0);
+                end;
+                task.delay(1.6, function() --[[ Line: 230 ]]
+                    -- upvalues: v9 (ref), v64 (copy), v57 (ref), v8 (ref), v7 (ref), v11 (ref), l_ReplicatedStorage_0 (ref)
+                    local v66 = {};
+                    v9:CreateHitbox(v64.Player, {
+                        Size = Vector3.new(9.5, 4, 10, 0),
+                        CFrame = v64.Rig:GetPivot(),
+                        CFrameOffset = CFrame.new(0, 0, -2),
+                        Damage = function(v67) --[[ Line: 237 ]] --[[ Name: Damage ]]
+                            -- upvalues: v64 (ref)
+                            if v67.Name == "1x1x1x1Zombie" then
+                                return 0;
+                            else
+                                return v64.Config.MassInfectionSlashDamage;
+                            end;
+                        end,
+                        Time = 0.125,
+                        Knockback = 5,
+                        HitMultiple = true,
+                        Connections = {
+                            Hit = function(v68, _) --[[ Line: 250 ]] --[[ Name: Hit ]]
+                                -- upvalues: v57 (ref), v64 (ref), v8 (ref), v7 (ref), v11 (ref), v66 (copy), l_ReplicatedStorage_0 (ref)
+                                if v68.Name == "1x1x1x1Zombie" then
+                                    return;
+                                else
+                                    v57(v64, v68);
+                                    v8:CreateSpeedMultiplier(v68, 1.5, "HitSpeedBonus", 2.5);
+                                    v7:Play(v64.Config.Sounds.Hit, {
+                                        Parent = v68.PrimaryPart,
+                                        PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                        Volume = 0.3
+                                    });
+                                    if v64.Config.MassInfectionShockwaveEffects then
+                                        for _, v71 in v64.Config.MassInfectionShockwaveEffects do
+                                            v11:ApplyStatus(v68, table.unpack(v71));
+                                        end;
+                                    end;
+                                    v66[v68] = true;
+                                    task.delay(1, function() --[[ Line: 267 ]]
+                                        -- upvalues: v66 (ref), v68 (copy)
+                                        v66[v68] = nil;
+                                    end);
+                                    if tostring(v68.Parent) == "Survivors" then
+                                        require(l_ReplicatedStorage_0.Modules.Actors):IncrementActorStats(v64.Player, {
+                                            Action = "Landed Mass Infection up close",
+                                            RewardType = "DifficultKillerAction"
+                                        });
+                                    end;
+                                    return;
+                                end;
+                            end
+                        }
+                    });
+                    v64._massInfectionCloseHits = v66;
+                end);
+                task.delay(1.7, function() --[[ Line: 288 ]]
+                    -- upvalues: v64 (copy), v7 (ref), v8 (ref), v47 (ref), v57 (ref), v11 (ref), l_ReplicatedStorage_0 (ref), v10 (ref)
+                    if v64.Rig:GetAttribute("Stunned") then
+                        return;
+                    else
+                        local v72 = v64.Config.ShockwaveTemplate:Clone();
+                        v7:Play(v64.Config.Sounds.MassInfectionProjectile, {
+                            Parent = v72.PrimaryPart,
+                            PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                            Volume = 0.3,
+                            Looped = true
+                        });
+                        local l_MassInfection1_0 = v64.Rig.HumanoidRootPart:FindFirstChild("MassInfection1");
+                        if l_MassInfection1_0 then
+                            v8:EmitParticlesFromAttachment(l_MassInfection1_0);
+                        end;
+                        local v78 = {
+                            Size = Vector3.new(8.800000190734863, 5.5, 6.599999904632568, 0),
+                            Damage = function(v74) --[[ Line: 301 ]] --[[ Name: Damage ]]
+                                -- upvalues: v47 (ref), v64 (ref)
+                                if v74.Name == "1x1x1x1Zombie" then
+                                    return 0;
+                                else
+                                    return v47(v64, v74);
+                                end;
+                            end,
+                            Time = v64.Config.MassInfectionShockwaveLifetime,
+                            Knockback = 0.5,
+                            HitMultiple = true,
+                            PredictVelocity = false,
+                            Connections = {
+                                Hit = function(v75) --[[ Line: 315 ]] --[[ Name: Hit ]]
+                                    -- upvalues: v57 (ref), v64 (ref), v8 (ref), v11 (ref), v7 (ref), l_ReplicatedStorage_0 (ref)
+                                    if v75.Name == "1x1x1x1Zombie" then
+                                        return;
+                                    else
+                                        v57(v64, v75);
+                                        v8:RevealPlayerAuraTo(v64.Player, v75, v64.Config.MassInfectionShockwaveAuraDuration);
+                                        if not (v64._massInfectionCloseHits and v64._massInfectionCloseHits[v75]) and v64.Config.MassInfectionSlashEffects then
+                                            for _, v77 in v64.Config.MassInfectionSlashEffects do
+                                                v11:ApplyStatus(v75, table.unpack(v77));
+                                            end;
+                                        end;
+                                        v7:Play(v64.Config.Sounds.EntanglementHit, {
+                                            Parent = v75.PrimaryPart,
+                                            PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                            Volume = 0.25
+                                        });
+                                        if tostring(v75.Parent) == "Survivors" then
+                                            require(l_ReplicatedStorage_0.Modules.Actors):IncrementActorStats(v64.Player, {
+                                                Action = "Landed Mass Infection hit",
+                                                RewardType = "EasyKillerAction"
+                                            });
+                                        end;
+                                        return;
+                                    end;
+                                end
+                            }
+                        };
+                        local v79 = {
+                            Owner = v64.Player,
+                            HitboxConfig = v78,
+                            Lifetime = v64.Config.MassInfectionShockwaveLifetime,
+                            InitialCFrame = v64:GetPivot() * CFrame.Angles(0, 0, 0) * CFrame.new(-0.25, -0.25, -6),
+                            InitialVelocity = v64:GetPivot().LookVector * v64.Config.MassInfectionShockwaveSpeed,
+                            Model = v72
+                        };
+                        v10.new(v79):Launch();
+                        return;
+                    end;
+                end);
+                task.delay(2.75, function() --[[ Line: 364 ]]
+                    -- upvalues: v64 (copy)
+                    v64.AbilitiesDisabled = false;
+                end);
+                task.delay(0.2, function() --[[ Line: 369 ]]
+                    -- upvalues: v64 (copy), v7 (ref)
+                    for v80 = 1, 6 do
+                        v64.Rig.HumanoidRootPart["Chain" .. v80]["Chain" .. v80].Enabled = true;
+                        v64.Rig.HumanoidRootPart["Chain" .. v80]["Orb" .. v80].Enabled = true;
+                        v7:Play(v64.Config.Sounds.Chains, {
+                            Parent = v64.Rig.PrimaryPart,
+                            PlaybackSpeed = 1,
+                            Volume = 0.1,
+                            RollOffMaxDistance = 400
+                        });
+                    end;
+                end);
+                task.delay(1.65, function() --[[ Line: 376 ]]
+                    -- upvalues: v15 (ref), v64 (copy)
+                    for _, v82 in v15 do
+                        local l_FirstChild_0 = v64.Rig.Head.EyesFlare:FindFirstChild(v82);
+                        if l_FirstChild_0 then
+                            l_FirstChild_0.Enabled = true;
+                        end;
+                    end;
+                end);
+                task.delay(1.8, function() --[[ Line: 386 ]]
+                    -- upvalues: v15 (ref), v64 (copy)
+                    for _, v85 in v15 do
+                        local l_FirstChild_1 = v64.Rig.Head.EyesFlare:FindFirstChild(v85);
+                        if l_FirstChild_1 then
+                            l_FirstChild_1.Enabled = false;
+                        end;
+                    end;
+                    for v87 = 1, 6 do
+                        v64.Rig.HumanoidRootPart["Chain" .. v87]["Chain" .. v87].Enabled = false;
+                        v64.Rig.HumanoidRootPart["Chain" .. v87]["Orb" .. v87].Enabled = false;
+                    end;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v64.Animations.MassInfection:Play(0.175, 0.9, nil);
+                    v64.Player.Character:SetAttribute("AbilityStaminaOverride", true);
+                    local l_MassInfectionShockwaveVignette_0 = v64.Config.MassInfectionShockwaveVignette;
+                    local v89 = l_MassInfectionShockwaveVignette_0 and l_MassInfectionShockwaveVignette_0:Clone();
+                    local l_ImageLabel_0 = v89:FindFirstChildOfClass("ImageLabel");
+                    if l_MassInfectionShockwaveVignette_0 then
+                        l_ImageLabel_0.ImageTransparency = 1;
+                        l_TweenService_0:Create(l_ImageLabel_0, TweenInfo.new(1.42, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {
+                            ImageTransparency = 0.81
+                        }):Play();
+                        l_Debris_0:AddItem(v89, 2.4);
+                        v89.Parent = v64.Player.PlayerGui;
+                    end;
+                    local v91 = require(l_ReplicatedStorage_0.Systems.Character.Game.Sprinting);
+                    local l_v8_SpeedMultiplier_0 = v8:CreateSpeedMultiplier(v64.Player, 1, "MassInfection", 2.4, true);
+                    game.TweenService:Create(l_v8_SpeedMultiplier_0, TweenInfo.new(0.35), {
+                        Value = 0.025
+                    }):Play();
+                    task.spawn(function() --[[ Line: 429 ]]
+                        -- upvalues: v64 (copy), l_v8_SpeedMultiplier_0 (copy), l_RunService_0 (ref), v91 (copy)
+                        local v93 = v64.Config.StaminaGain * 1;
+                        task.wait(0.2);
+                        while l_v8_SpeedMultiplier_0 and l_v8_SpeedMultiplier_0.Parent do
+                            if v64.Player.Character and v64.Player.Character:GetAttribute("StaminaPenaltyActive") then
+                                l_RunService_0.Heartbeat:Wait();
+                            else
+                                v91.Stamina = math.clamp(v91.Stamina + v93 * l_RunService_0.Heartbeat:Wait(), v91.MinStamina, v91.StaminaCap or v91.MaxStamina);
+                                v91.__staminaChangedEvent:Fire(v91.Stamina);
+                            end;
+                        end;
+                        if v64.Player.Character then
+                            v64.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                        end;
+                    end);
+                    local l_v8_FOVMultiplier_0 = v8:CreateFOVMultiplier(v64.Player, 1, "MassInfection");
+                    l_Debris_0:AddItem(l_v8_FOVMultiplier_0, 2.4);
+                    l_TweenService_0:Create(l_v8_FOVMultiplier_0, TweenInfo.new(1.7, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0), {
+                        Value = 0.75
+                    }):Play();
+                    task.delay(1.7, function() --[[ Line: 471 ]]
+                        -- upvalues: l_TweenService_0 (ref), l_v8_FOVMultiplier_0 (copy), l_MassInfectionShockwaveVignette_0 (copy), l_ImageLabel_0 (copy), l_v8_SpeedMultiplier_0 (copy), v64 (copy), v8 (ref), l_Debris_0 (ref)
+                        l_TweenService_0:Create(l_v8_FOVMultiplier_0, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0), {
+                            Value = 1
+                        }):Play();
+                        if l_MassInfectionShockwaveVignette_0 then
+                            l_TweenService_0:Create(l_ImageLabel_0, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                                ImageTransparency = 1
+                            }):Play();
+                        end;
+                        l_v8_SpeedMultiplier_0:Destroy();
+                        local l_MassInfectionSpeedMultDist_0 = v64.Config.MassInfectionSpeedMultDist;
+                        local l_MassInfectionSpeedMult_0 = v64.Config.MassInfectionSpeedMult;
+                        local l_Max_0 = l_MassInfectionSpeedMultDist_0.Max;
+                        for _, v99 in ipairs(workspace.Players.Survivors:GetChildren()) do
+                            if v8:IsAlive(v99) then
+                                local l_Magnitude_2 = (v64.Rig.PrimaryPart.Position - v99.PrimaryPart.Position).Magnitude;
+                                if l_Magnitude_2 < l_Max_0 then
+                                    l_Max_0 = l_Magnitude_2;
+                                end;
+                            end;
+                        end;
+                        local v101 = l_MassInfectionSpeedMultDist_0.Max - l_MassInfectionSpeedMultDist_0.Min;
+                        local v102 = math.clamp((l_Max_0 - l_MassInfectionSpeedMultDist_0.Min) / v101, 0, 1);
+                        local v103 = l_MassInfectionSpeedMult_0.Min + math.lerp(0, l_MassInfectionSpeedMult_0.Max - l_MassInfectionSpeedMult_0.Min, v102);
+                        local l_v8_SpeedMultiplier_1 = v8:CreateSpeedMultiplier(v64.Player, v103, "MassInfectionBoost", 1, true);
+                        l_Debris_0:AddItem(l_v8_SpeedMultiplier_1, 1);
+                    end);
+                end;
+                return;
+            end;
+        end
+    },
+    Entanglement = {
+        LayoutOrder = 3,
+        Icon = "rbxassetid://119069138923680",
+        KeybindType = "AltAbility2",
+        Callback = function(v105) --[[ Line: 509 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v53 (copy), v42 (copy), v57 (copy), v11 (copy), l_Debris_0 (copy), v8 (copy), v12 (copy), l_ReplicatedStorage_0 (copy), v10 (copy), l_RunService_0 (copy)
+            if game["Run Service"]:IsServer() then
+                v105.AbilitiesDisabled = true;
+                v7:Play(v105.Config.Sounds.EntanglementActivate, {
+                    Parent = v105.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.5
+                });
+                v53("EntangleStart", ("%*/EntangleStart"):format(script.Parent), v105);
+                task.delay(0.75, function() --[[ Line: 516 ]]
+                    -- upvalues: v42 (ref), v105 (copy), v57 (ref), v7 (ref), v11 (ref), l_Debris_0 (ref), v8 (ref), v12 (ref), l_ReplicatedStorage_0 (ref), v10 (ref)
+                    v42(v105.Rig, false);
+                    local function v124(v106) --[[ Line: 520 ]] --[[ Name: onEntangledHit ]]
+                        -- upvalues: v57 (ref), v105 (ref), v7 (ref), v11 (ref), l_Debris_0 (ref), v8 (ref), v12 (ref), l_ReplicatedStorage_0 (ref)
+                        if v106.Name == "1x1x1x1Zombie" then
+                            local l_Humanoid_2 = v106:FindFirstChild("Humanoid");
+                            if l_Humanoid_2 then
+                                l_Humanoid_2.Health = 0;
+                            end;
+                            v57(v105, v106);
+                            return;
+                        else
+                            v57(v105, v106);
+                            v7:Play(v105.Config.Sounds.Hit, {
+                                Parent = v106.PrimaryPart,
+                                PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                Volume = 0.25
+                            });
+                            if not v106 or not v106:IsA("Model") or not v106:IsDescendantOf(workspace.Players.Survivors) then
+                                return;
+                            else
+                                local l_Humanoid_3 = v106:FindFirstChild("Humanoid");
+                                if l_Humanoid_3 and l_Humanoid_3.Health > 0 and v106.PrimaryPart then
+                                    local l_v106_Pivot_0 = v106:GetPivot();
+                                    local l_Pivot_0 = v105.Player.Character:GetPivot();
+                                    local l_Magnitude_3 = (l_v106_Pivot_0.Position - l_Pivot_0.Position).Magnitude;
+                                    local v112 = v105.Config.EntangelmentInFrontOffset or 2.5;
+                                    local v113 = v105.Config.EntanglementMaxPullDistance or 10;
+                                    local v114 = v105.Config.EntanglementPullFactor or 50;
+                                    local v115 = l_Pivot_0.Position + l_Pivot_0.LookVector * v112;
+                                    local v116 = nil;
+                                    if l_Magnitude_3 <= v113 then
+                                        v116 = v115;
+                                    else
+                                        local l_Unit_2 = (l_Pivot_0.Position - l_v106_Pivot_0.Position).Unit;
+                                        v116 = l_v106_Pivot_0.Position + l_Unit_2 * v113;
+                                    end;
+                                    if (l_Pivot_0.Position - l_v106_Pivot_0.Position).Magnitude < (v116 - l_v106_Pivot_0.Position).Magnitude then
+                                        v116 = v115;
+                                    end;
+                                    local l_Unit_3 = (v116 - l_v106_Pivot_0.Position).Unit;
+                                    local v119 = v114 * math.clamp((v116 - l_v106_Pivot_0.Position).Magnitude / 10, 0.5, 2);
+                                    if v11:PlayerHasStatus(v106, "Glitched") then
+                                        v119 = v119 * 1.3;
+                                    end;
+                                    local l_Attachment_1 = Instance.new("Attachment");
+                                    l_Attachment_1.Parent = v106.PrimaryPart;
+                                    local l_LinearVelocity_1 = Instance.new("LinearVelocity");
+                                    l_LinearVelocity_1.Parent = v106.PrimaryPart;
+                                    l_LinearVelocity_1.Attachment0 = l_Attachment_1;
+                                    l_LinearVelocity_1.MaxForce = 40000;
+                                    l_LinearVelocity_1.VectorVelocity = l_Unit_3 * v119;
+                                    l_LinearVelocity_1.RelativeTo = Enum.ActuatorRelativeTo.World;
+                                    l_Debris_0:AddItem(l_LinearVelocity_1, 0.35);
+                                    l_Debris_0:AddItem(l_Attachment_1, 0.35);
+                                    task.delay(0.35, function() --[[ Line: 592 ]]
+                                        -- upvalues: v106 (copy)
+                                        if v106.PrimaryPart then
+                                            v106.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+                                        end;
+                                    end);
+                                end;
+                                v8:RevealPlayerAuraTo(v105.Player, v106, v105.Config.EntanglementAuraDuration);
+                                for _, v123 in v105.Config.EntanglementEffects do
+                                    v11:ApplyStatus(v106, table.unpack(v123));
+                                end;
+                                v106:SetAttribute("Entangled", true);
+                                v11:ApplyStatus(v106, "Helpless", {
+                                    Level = 1,
+                                    Duration = v105.Config.EntanglementHelplessDuration
+                                });
+                                v11:ApplyStatus(v106, "Slowness", {
+                                    Level = 10,
+                                    Duration = 1
+                                });
+                                v12:FireClientConnection(game.Players:GetPlayerFromCharacter(v106), "Entangled", "REMOTE_EVENT");
+                                if tostring(v106.Parent) == "Survivors" then
+                                    require(l_ReplicatedStorage_0.Modules.Actors):IncrementActorStats(v105.Player, {
+                                        Action = "Landed Entanglement hit",
+                                        RewardType = "RegularKillerAction"
+                                    });
+                                end;
+                                return;
+                            end;
+                        end;
+                    end;
+                    local v125 = {
+                        Size = Vector3.new(4.5, 1.75, 5, 0),
+                        Damage = v105.Config.EntanglementDamage,
+                        Time = v105.Config.EntanglementLifetime,
+                        Knockback = 0.5,
+                        HitMultiple = true,
+                        PredictVelocity = false,
+                        Connections = {
+                            Hit = v124
+                        }
+                    };
+                    local v126 = v105.Config.SwordsTemplate:Clone();
+                    v7:Play(v105.Config.Sounds.EntanglementProjectile, {
+                        Parent = v126.PrimaryPart,
+                        PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                        Volume = 0.25,
+                        Looped = true,
+                        RollOffMaxDistance = 40
+                    });
+                    local v127 = {
+                        Owner = v105.Player,
+                        HitboxConfig = v125,
+                        Lifetime = v105.Config.EntanglementLifetime,
+                        InitialCFrame = v105:GetPivot() * CFrame.Angles(0, 3.141592653589793, 0) * CFrame.new(-0.25, -0.25, 6),
+                        InitialVelocity = v105:GetPivot().LookVector * v105.Config.EntanglementSpeed,
+                        Model = v126
+                    };
+                    v10.new(v127):Launch();
+                end);
+                task.delay(1.5, function() --[[ Line: 653 ]]
+                    -- upvalues: v105 (copy), v42 (ref)
+                    v105.AbilitiesDisabled = false;
+                    v42(v105.Rig, true);
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v105.Animations.Entanglement:Play(0.175, 0.9, nil);
+                    v105.Player.Character:SetAttribute("AbilityStaminaOverride", true);
+                    local v128 = require(l_ReplicatedStorage_0.Systems.Character.Game.Sprinting);
+                    local l_v8_SpeedMultiplier_2 = v8:CreateSpeedMultiplier(v105.Player, 1, "Entanglement", 1.3, true);
+                    game.TweenService:Create(l_v8_SpeedMultiplier_2, TweenInfo.new(0.45), {
+                        Value = 0.1
+                    }):Play();
+                    task.spawn(function() --[[ Line: 674 ]]
+                        -- upvalues: v105 (copy), l_v8_SpeedMultiplier_2 (copy), l_RunService_0 (ref), v128 (copy)
+                        local v130 = os.clock();
+                        local l_StaminaGain_0 = v105.Config.StaminaGain;
+                        task.wait(0.2);
+                        while l_v8_SpeedMultiplier_2 and l_v8_SpeedMultiplier_2.Parent and os.clock() - v130 < 1.1 do
+                            if v105.Player.Character and v105.Player.Character:GetAttribute("StaminaPenaltyActive") then
+                                l_RunService_0.Heartbeat:Wait();
+                            else
+                                v128.Stamina = math.clamp(v128.Stamina + l_StaminaGain_0 * l_RunService_0.Heartbeat:Wait(), v128.MinStamina, v128.StaminaCap or v128.MaxStamina);
+                                v128.__staminaChangedEvent:Fire(v128.Stamina);
+                            end;
+                        end;
+                        if v105.Player.Character then
+                            v105.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                        end;
+                    end);
+                end;
+                return;
+            end;
+        end
+    },
+    UnstableEye = {
+        LayoutOrder = 4,
+        Icon = "rbxassetid://135373963092918",
+        KeybindType = "AltAbility3",
+        Callback = function(v132) --[[ Line: 721 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v8 (copy), v11 (copy), v15 (copy), l_ReplicatedStorage_0 (copy), l_RunService_0 (copy), l_TweenService_0 (copy), l_Debris_0 (copy)
+            if game["Run Service"]:IsServer() then
+                v132.AbilitiesDisabled = true;
+                v7:Play(v132.Config.Sounds.UnstableEyeActivate, {
+                    Parent = v132.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.6,
+                    RollOffMaxDistance = 400
+                });
+                v7:Play(v132.Config.Sounds.UnstableEyeMode, {
+                    Parent = v132.Rig.PrimaryPart,
+                    PlaybackSpeed = 1.25,
+                    Volume = 0.25
+                });
+                task.delay(0.9, function() --[[ Line: 729 ]]
+                    -- upvalues: v132 (copy), v8 (ref), v11 (ref)
+                    local l_Unstable_0 = v132.Rig.HumanoidRootPart:FindFirstChild("Unstable");
+                    if l_Unstable_0 then
+                        v8:EmitParticlesFromAttachment(l_Unstable_0);
+                    end;
+                    for _, v135 in v132.Config.UnstableEyeEffects do
+                        v11:ApplyStatus(v132.Player, table.unpack(v135));
+                    end;
+                end);
+                task.delay(1.5, function() --[[ Line: 741 ]]
+                    -- upvalues: v132 (copy)
+                    v132.AbilitiesDisabled = false;
+                end);
+                task.delay(0.9, function() --[[ Line: 746 ]]
+                    -- upvalues: v15 (ref), v132 (copy)
+                    for _, v137 in v15 do
+                        local l_FirstChild_2 = v132.Rig.Head.EyesFlare:FindFirstChild(v137);
+                        if l_FirstChild_2 then
+                            l_FirstChild_2.Enabled = true;
+                        end;
+                    end;
+                end);
+                task.delay(1.1, function() --[[ Line: 756 ]]
+                    -- upvalues: v15 (ref), v132 (copy)
+                    for _, v140 in v15 do
+                        local l_FirstChild_3 = v132.Rig.Head.EyesFlare:FindFirstChild(v140);
+                        if l_FirstChild_3 then
+                            l_FirstChild_3.Enabled = false;
+                        end;
+                    end;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v132.Animations.UnstableEye:Play(0.175);
+                    v132.Player.Character:SetAttribute("AbilityStaminaOverride", true);
+                    local v142 = require(l_ReplicatedStorage_0.Systems.Character.Game.Sprinting);
+                    if v132.__currentMultiplier then
+                        v132.__currentMultiplier:Destroy();
+                        v132.__currentMultiplier = nil;
+                    end;
+                    local l_v8_SpeedMultiplier_3 = v8:CreateSpeedMultiplier(v132.Player, 1, "UnstableEye", 1, true);
+                    v132.__currentMultiplier = l_v8_SpeedMultiplier_3;
+                    local v144 = nil;
+                    do
+                        local l_v144_0 = v144;
+                        l_v144_0 = l_RunService_0.Heartbeat:Connect(function() --[[ Line: 790 ]]
+                            -- upvalues: l_v8_SpeedMultiplier_3 (copy), l_v144_0 (ref), v132 (copy), v142 (copy), l_TweenService_0 (ref)
+                            if not l_v8_SpeedMultiplier_3 or not l_v8_SpeedMultiplier_3.Parent then
+                                if l_v144_0 then
+                                    l_v144_0:Disconnect();
+                                    l_v144_0 = nil;
+                                end;
+                                if v132.Player.Character then
+                                    v132.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                                end;
+                                return;
+                            elseif v142.IsSprinting then
+                                local v146 = v132.Config.Speed / v132.Config.SprintSpeed;
+                                l_TweenService_0:Create(l_v8_SpeedMultiplier_3, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                                    Value = v146
+                                }):Play();
+                                return;
+                            else
+                                l_v8_SpeedMultiplier_3.Value = 1;
+                                return;
+                            end;
+                        end);
+                        task.delay(1, function() --[[ Line: 814 ]]
+                            -- upvalues: l_v144_0 (ref), v132 (copy)
+                            if l_v144_0 then
+                                l_v144_0:Disconnect();
+                                l_v144_0 = nil;
+                            end;
+                            if v132.Player.Character then
+                                v132.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                            end;
+                        end);
+                        task.spawn(function() --[[ Line: 827 ]]
+                            -- upvalues: v132 (copy), l_v8_SpeedMultiplier_3 (copy), l_RunService_0 (ref), v142 (copy)
+                            local v147 = v132.Config.StaminaGain * 1.05;
+                            task.wait(0.2);
+                            while l_v8_SpeedMultiplier_3 and l_v8_SpeedMultiplier_3.Parent do
+                                if v132.Player.Character and v132.Player.Character:GetAttribute("StaminaPenaltyActive") then
+                                    l_RunService_0.Heartbeat:Wait();
+                                else
+                                    v142.Stamina = math.clamp(v142.Stamina + v147 * l_RunService_0.Heartbeat:Wait(), v142.MinStamina, v142.StaminaCap or v142.MaxStamina);
+                                    v142.__staminaChangedEvent:Fire(v142.Stamina);
+                                end;
+                            end;
+                            if v132.Player.Character then
+                                v132.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                            end;
+                        end);
+                        local l_UnstableEyeVignette_0 = v132.Config.UnstableEyeVignette;
+                        local v149 = l_UnstableEyeVignette_0 and l_UnstableEyeVignette_0:Clone();
+                        local v150 = v149 and v149:FindFirstChildOfClass("ImageLabel");
+                        if l_UnstableEyeVignette_0 and v149 and v150 then
+                            v150.ImageTransparency = 1;
+                            l_Debris_0:AddItem(v149, 3);
+                            v149.Parent = v132.Player.PlayerGui;
+                        end;
+                        local l_v8_FOVMultiplier_1 = v8:CreateFOVMultiplier(v132.Player, 1, "UnstableEye");
+                        l_Debris_0:AddItem(l_v8_FOVMultiplier_1, 1.5);
+                        l_TweenService_0:Create(l_v8_FOVMultiplier_1, TweenInfo.new(0.85, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                            Value = 0.9
+                        }):Play();
+                        task.delay(0.85, function() --[[ Line: 883 ]]
+                            -- upvalues: l_v8_FOVMultiplier_1 (copy), v150 (copy), l_TweenService_0 (ref)
+                            l_v8_FOVMultiplier_1.Value = 0.86;
+                            if v150 then
+                                v150.ImageTransparency = 0.3;
+                                l_TweenService_0:Create(v150, TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                                    ImageTransparency = 1
+                                }):Play();
+                            end;
+                            l_TweenService_0:Create(l_v8_FOVMultiplier_1, TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                                Value = 1
+                            }):Play();
+                        end);
+                        task.delay(0.9, function() --[[ Line: 914 ]]
+                            -- upvalues: v8 (ref), v132 (copy)
+                            for _, v153 in pairs(workspace.Players.Survivors:GetChildren()) do
+                                local l_Humanoid_4 = v153:FindFirstChild("Humanoid");
+                                if l_Humanoid_4 then
+                                    for _, v156 in pairs(v153:GetDescendants()) do
+                                        if v156:IsA("Highlight") and v156.Name == "PlayerAura" then
+                                            v156:Destroy();
+                                        end;
+                                    end;
+                                    local v157 = l_Humanoid_4.Health / l_Humanoid_4.MaxHealth;
+                                    local v158 = Color3.fromHSV(v157 / 3, 0.6, 1);
+                                    v8:RevealPlayerAura(v153, v132.Config.UnstableEyeAuraDuration, v158);
+                                else
+                                    for _, v160 in pairs(v153:GetDescendants()) do
+                                        if v160:IsA("Highlight") and v160.Name == "PlayerAura" then
+                                            v160:Destroy();
+                                        end;
+                                    end;
+                                    v8:RevealPlayerAura(v153, v132.Config.UnstableEyeAuraDuration);
+                                end;
+                            end;
+                        end);
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    RejuvenateTheRotten = {
+        LayoutOrder = 5,
+        Icon = "rbxassetid://102037518703784",
+        KeybindType = "AltAbility4",
+        Charges = 0,
+        Callback = function(v161) --[[ Line: 951 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v53 (copy), v8 (copy), l_ReplicatedStorage_0 (copy), v11 (copy), v15 (copy)
+            if game["Run Service"]:IsServer() then
+                v161.AbilitiesDisabled = true;
+                v7:Play(v161.Config.Sounds.RejuvenateTheRottenActivate, {
+                    Parent = v161.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.75
+                });
+                task.delay(1, function() --[[ Line: 960 ]]
+                    -- upvalues: v161 (copy), v53 (ref), v7 (ref), v8 (ref), l_ReplicatedStorage_0 (ref), v11 (ref)
+                    local l_PrimaryPart_0 = v161.Rig.PrimaryPart;
+                    local l_pairs_0 = pairs;
+                    local v164 = v161.KilledLocations or {};
+                    for v165, v166 in l_pairs_0(v164) do
+                        v161.KilledLocations[v165] = nil;
+                        task.spawn(function() --[[ Line: 965 ]]
+                            -- upvalues: v161 (ref), v53 (ref), v7 (ref), v8 (ref), v166 (copy), l_PrimaryPart_0 (copy), l_ReplicatedStorage_0 (ref), v11 (ref)
+                            local v167 = nil;
+                            if v161.Behavior.GetZombie then
+                                v167 = v53("GetZombie", ("%*/Abilities/RejuvenateTheRotten"):format(script.Parent), v161);
+                            end;
+                            if not v167 or not v161.Behavior.GetZombie then
+                                v167 = v161.Config.ZombieTemplate:IsA("Model") and v161.Config.ZombieTemplate:Clone() or v161.Config.ZombieTemplate:GetChildren()[math.random(1, #v161.Config.ZombieTemplate:GetChildren())]:Clone();
+                            end;
+                            v167:SetAttribute("ExecutionsDisabled", true);
+                            v167:SetAttribute("OverrideRagdollValidation", true);
+                            v167.Name = "1x1x1x1Zombie";
+                            v167:SetAttribute("HitboxPriority", 0);
+                            v167.PrimaryPart.Anchored = true;
+                            v167.Humanoid.Health = v161.Config.ZombieHealth;
+                            v167.Humanoid.EvaluateStateMachine = false;
+                            v167.Parent = workspace.Map.Ingame;
+                            v53("SummonZombie", ("%*/Abilities/RejuvenateTheRotten"):format(script.Parent), v161, v167);
+                            local l_Highlight_0 = Instance.new("Highlight");
+                            l_Highlight_0.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop;
+                            l_Highlight_0.FillColor = Color3.fromRGB(0, 100, 0);
+                            l_Highlight_0.OutlineColor = Color3.fromRGB(0, 150, 0);
+                            l_Highlight_0.FillTransparency = 0.5;
+                            l_Highlight_0.OutlineTransparency = 0;
+                            l_Highlight_0.Adornee = v167;
+                            local l_PlayerGui_0 = v161.Player:FindFirstChild("PlayerGui");
+                            if l_PlayerGui_0 then
+                                local l_ZombieHighlights_0 = l_PlayerGui_0:FindFirstChild("ZombieHighlights");
+                                if not l_ZombieHighlights_0 then
+                                    l_ZombieHighlights_0 = Instance.new("Folder");
+                                    l_ZombieHighlights_0.Name = "ZombieHighlights";
+                                    l_ZombieHighlights_0.Parent = l_PlayerGui_0;
+                                end;
+                                l_Highlight_0.Parent = l_ZombieHighlights_0;
+                            else
+                                l_Highlight_0.Parent = v167;
+                            end;
+                            v167.AncestryChanged:Connect(function() --[[ Line: 1012 ]]
+                                -- upvalues: v167 (ref), l_Highlight_0 (copy)
+                                if not v167.Parent then
+                                    l_Highlight_0:Destroy();
+                                end;
+                            end);
+                            local v171 = v7:Play(v161.Config.Sounds.RejuvenateTheRottenMinionIdle, {
+                                Parent = v167.PrimaryPart,
+                                Looped = true,
+                                Volume = 0
+                            });
+                            game.TweenService:Create(v171, TweenInfo.new(2.5), {
+                                Volume = 0.5
+                            }):Play();
+                            v8:FixCharacter(v167, "Killers");
+                            v8:AddHitboxes(v167, "Killers");
+                            local v172 = {};
+                            for v173, v174 in pairs(v161.Config.ZombieAnimations) do
+                                v172[v173] = v8:LoadAnimationFromID(v167, v174);
+                            end;
+                            v172.Summon:Play(0);
+                            v172.Idle:Play(0);
+                            local l_lookAt_0 = CFrame.lookAt;
+                            local l_v166_0 = v166;
+                            local v177 = Vector3.new(l_PrimaryPart_0.Position.X, v166.Y, l_PrimaryPart_0.Position.Z);
+                            v167:SetPrimaryPartCFrame(l_lookAt_0(l_v166_0, v177));
+                            v7:Play(v161.Config.Sounds.RejuvenateTheRottenRevive, {
+                                Parent = v167.PrimaryPart,
+                                PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                Volume = 0.5
+                            });
+                            local v178 = false;
+                            v172.Summon.Stopped:Connect(function() --[[ Line: 1041 ]]
+                                -- upvalues: v178 (ref)
+                                v178 = true;
+                            end);
+                            local v179 = 0;
+                            while not v178 and v167.Parent and v167.Humanoid.Health > 0 do
+                                v179 = v179 + task.wait();
+                            end;
+                            if not v167.Parent or v167.Humanoid.Health <= 0 then
+                                return;
+                            else
+                                l_lookAt_0 = "";
+                                v167.Humanoid.Running:Connect(function(v180) --[[ Line: 1059 ]]
+                                    -- upvalues: v167 (ref), v161 (ref), l_lookAt_0 (ref), v172 (copy)
+                                    if v180 > 0.01 then
+                                        if v167.Humanoid.WalkSpeed == v161.Config.ZombieWalkSpeed and l_lookAt_0 ~= "Walk" then
+                                            v172.Walk:Play();
+                                            v172.Run:Stop();
+                                            return;
+                                        elseif v167.Humanoid.WalkSpeed == v161.Config.ZombieSprintSpeed and l_lookAt_0 ~= "Run" then
+                                            v172.Walk:Stop();
+                                            v172.Run:Play();
+                                            return;
+                                        end;
+                                    else
+                                        l_lookAt_0 = "";
+                                        v172.Walk:Stop();
+                                        v172.Run:Stop();
+                                    end;
+                                end);
+                                task.spawn(function() --[[ Line: 1078 ]]
+                                    -- upvalues: v161 (ref), v167 (ref), v7 (ref)
+                                    local l_ZombieSounds_0 = v161.Config.ZombieSounds;
+                                    if l_ZombieSounds_0 then
+                                        local v182 = #l_ZombieSounds_0;
+                                        while v167.Parent and v167.PrimaryPart do
+                                            v7:Play(l_ZombieSounds_0[math.random(1, v182)], {
+                                                Parent = v167.PrimaryPart,
+                                                Volume = 0.4,
+                                                PlaybackSpeed = Random.new():NextNumber(0.8, 2)
+                                            });
+                                            task.wait(math.random(10, 25));
+                                        end;
+                                    end;
+                                end);
+                                v167.PrimaryPart.Anchored = false;
+                                v167.Humanoid.EvaluateStateMachine = true;
+                                task.spawn(function() --[[ Line: 1094 ]]
+                                    -- upvalues: l_ReplicatedStorage_0 (ref), v167 (ref), v161 (ref), v172 (copy), v7 (ref), v11 (ref), v8 (ref), v171 (copy)
+                                    local v183 = require(l_ReplicatedStorage_0.Modules.Actors);
+                                    local v184 = 0;
+                                    local v185 = math.random(6, 12);
+                                    local v186 = nil;
+                                    local v187 = nil;
+                                    local v188 = require(l_ReplicatedStorage_0.Modules.SimplePath).new(v167);
+                                    v167:AddTag("Ragdoll");
+                                    while v167.Parent and v167.PrimaryPart and v167.Humanoid.Health > 0 do
+                                        if v186 and v186.PrimaryPart and v186.Humanoid.Health > 0 and not v186:GetAttribute("Undetectable") then
+                                            local l_Magnitude_4 = (v186.PrimaryPart.Position - v167.PrimaryPart.Position).Magnitude;
+                                            if l_Magnitude_4 <= v161.Config.ZombieAttackRange then
+                                                v172.Attack:Play();
+                                                v7:Play(v161.Config.Sounds.Swing, {
+                                                    Parent = v167.PrimaryPart,
+                                                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                                    Volume = 0.25
+                                                });
+                                                local l_Humanoid_5 = v186:FindFirstChild("Humanoid");
+                                                if l_Humanoid_5 then
+                                                    v7:Play(v161.Config.Sounds.RejuvenateTheRottenMinionHit, {
+                                                        Parent = v167.PrimaryPart
+                                                    });
+                                                    local l_Parent_0 = l_Humanoid_5.Parent;
+                                                    local v192 = v11:PlayerHasStatus(l_Parent_0, "Glitched");
+                                                    for _, v194 in v161.Config.ZombieAttackEffects do
+                                                        v11:ApplyStatus(l_Parent_0, table.unpack(v194));
+                                                    end;
+                                                    if v192 then
+                                                        v8:ApplyDamage(l_Parent_0, v161.Config.ZombieAttackDamage, nil, v161.Rig);
+                                                    else
+                                                        l_Humanoid_5.Health = math.max(1, l_Humanoid_5.Health - v161.Config.ZombieAttackDamage);
+                                                    end;
+                                                    v8:RevealPlayerAuraTo(v161.Player, l_Parent_0, v161.Config.ZombieRevealTime);
+                                                end;
+                                                if v187 and v187.Behavior then
+                                                    v187.Behavior.AILastSeen = nil;
+                                                end;
+                                                task.wait(v161.Config.ZombieAttackCooldown);
+                                                continue;
+                                            elseif v161.Config.ZombieLoseFocusRange <= l_Magnitude_4 then
+                                                v186 = nil;
+                                                v187 = nil;
+                                                v188:Stop();
+                                            else
+                                                if v187 and v187.Behavior then
+                                                    v187.Behavior.AILastSeen = os.clock();
+                                                end;
+                                                v167.Humanoid.WalkSpeed = v161.Config.ZombieSprintSpeed;
+                                                v188:Run(v186.PrimaryPart.Position);
+                                            end;
+                                        else
+                                            v186 = nil;
+                                            v187 = nil;
+                                            v167.Humanoid.WalkSpeed = v161.Config.ZombieWalkSpeed;
+                                        end;
+                                        local l_v8_ClosestPlayerFromPosition_0 = v8:GetClosestPlayerFromPosition(v167.PrimaryPart.Position, {
+                                            PlayerSelection = "Survivors",
+                                            MaxDistance = v161.Config.ZombieTargetRange
+                                        });
+                                        if l_v8_ClosestPlayerFromPosition_0 then
+                                            v186 = l_v8_ClosestPlayerFromPosition_0;
+                                            local l_PlayerFromCharacter_0 = game.Players:GetPlayerFromCharacter(l_v8_ClosestPlayerFromPosition_0);
+                                            v187 = l_PlayerFromCharacter_0 and v183.CurrentActors[l_PlayerFromCharacter_0];
+                                        end;
+                                        if v185 <= v184 then
+                                            v184 = 0;
+                                            v185 = math.random(6, 12);
+                                            v167.Humanoid:MoveTo(v167.PrimaryPart.Position + Vector3.new(math.random(-80, 80), 0, math.random(-80, 80)));
+                                        end;
+                                        v167.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true);
+                                        v167.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false);
+                                        v167.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false);
+                                        v184 = v184 + game["Run Service"].Heartbeat:Wait();
+                                    end;
+                                    if v171 and v171.Parent then
+                                        game.TweenService:Create(v171, TweenInfo.new(0.8), {
+                                            PlaybackSpeed = 0
+                                        }):Play();
+                                    end;
+                                    if v188 then
+                                        v188:Destroy();
+                                    end;
+                                end);
+                                return;
+                            end;
+                        end);
+                    end;
+                end);
+                task.delay(v161.Config.RejuvenateEndlag, function() --[[ Line: 1214 ]]
+                    -- upvalues: v161 (copy)
+                    v161.AbilitiesDisabled = false;
+                end);
+                task.delay(0.98, function() --[[ Line: 1219 ]]
+                    -- upvalues: v15 (ref), v161 (copy), v7 (ref)
+                    for _, v198 in v15 do
+                        local l_FirstChild_4 = v161.Rig.Head.EyesFlare:FindFirstChild(v198);
+                        if l_FirstChild_4 then
+                            l_FirstChild_4.Enabled = true;
+                        end;
+                    end;
+                    for v200 = 1, 6 do
+                        v161.Rig.HumanoidRootPart["Chain" .. v200]["Chain" .. v200].Enabled = true;
+                        v7:Play(v161.Config.Sounds.Chains, {
+                            Parent = v161.Rig.PrimaryPart,
+                            PlaybackSpeed = 0.75,
+                            Volume = 0.1
+                        });
+                    end;
+                end);
+                task.delay(1.35, function() --[[ Line: 1234 ]]
+                    -- upvalues: v15 (ref), v161 (copy)
+                    for _, v202 in v15 do
+                        local l_FirstChild_5 = v161.Rig.Head.EyesFlare:FindFirstChild(v202);
+                        if l_FirstChild_5 then
+                            l_FirstChild_5.Enabled = false;
+                        end;
+                    end;
+                end);
+                task.delay(1.98, function() --[[ Line: 1245 ]]
+                    -- upvalues: v161 (copy)
+                    v161.Rig.HumanoidRootPart["Chain" .. 1]["Chain" .. 1].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 2]["Chain" .. 2].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 3]["Chain" .. 3].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 4]["Chain" .. 4].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 5]["Chain" .. 5].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 6]["Chain" .. 6].Enabled = false;
+                end);
+                task.delay(2.1, function() --[[ Line: 1251 ]]
+
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v161.Animations.RejuvenateTheRotten:Play(0.175);
+                    v8:CreateSpeedMultiplier(v161.Player, 0.01, "RejuvenateTheRotten", v161.Config.RejuvenateEndlag, true);
+                end;
+                return;
+            end;
+        end
+    }
+};
+v6.Created = function(_, v205) --[[ Line: 1267 ]] --[[ Name: Created ]]
+    -- upvalues: v12 (copy), v53 (copy)
+    if game["Run Service"]:IsServer() then
+        v205.KilledLocations = {};
+        local function v209(v206) --[[ Line: 1282 ]] --[[ Name: setDeathConnection ]]
+            -- upvalues: v205 (copy)
+            local l_Humanoid_6 = v206:FindFirstChild("Humanoid");
+            local l_PrimaryPart_1 = v206.PrimaryPart;
+            if l_Humanoid_6 and l_PrimaryPart_1 then
+                l_Humanoid_6.Died:Once(function() --[[ Line: 1286 ]]
+                    -- upvalues: v205 (ref), l_PrimaryPart_1 (copy)
+                    v205:IncrementCharges("RejuvenateTheRotten", 1, 1);
+                    table.insert(v205.KilledLocations, l_PrimaryPart_1.Position);
+                end);
+            end;
+        end;
+        for _, v211 in pairs(workspace.Players.Survivors:GetChildren()) do
+            local l_Humanoid_7 = v211:FindFirstChild("Humanoid");
+            local l_PrimaryPart_2 = v211.PrimaryPart;
+            if l_Humanoid_7 and l_PrimaryPart_2 then
+                l_Humanoid_7.Died:Once(function() --[[ Line: 1286 ]]
+                    -- upvalues: v205 (copy), l_PrimaryPart_2 (copy)
+                    v205:IncrementCharges("RejuvenateTheRotten", 1, 1);
+                    table.insert(v205.KilledLocations, l_PrimaryPart_2.Position);
+                end);
+            end;
+        end;
+        local v214 = nil;
+        v214 = workspace.Players.Survivors.ChildAdded:Connect(v209);
+        v205.Rig.AncestryChanged:Connect(function(_, v216) --[[ Line: 1300 ]]
+            -- upvalues: v214 (ref)
+            if not v216 then
+                v214:Disconnect();
+                v214 = nil;
+            end;
+        end);
+        if not v205.Config.HighlightDisabled then
+            local l_Highlight_1 = Instance.new("Highlight");
+            l_Highlight_1.DepthMode = Enum.HighlightDepthMode.Occluded;
+            l_Highlight_1.Parent = v205.Rig;
+            for v218, v219 in pairs(v205.Config.HighlightProperties) do
+                l_Highlight_1[v218] = v219;
+            end;
+        end;
+        v205:SetCooldownOf("UnstableEye", v205.Config.UnstableEyeCooldown / 2);
+        return;
+    else
+        if game["Run Service"]:IsClient() then
+            v12:SetConnection("Entangled", "REMOTE_EVENT", function() --[[ Line: 1319 ]]
+                -- upvalues: v53 (ref), v205 (copy)
+                v53("cl_Entangled", "feel my entanglement", v205);
+            end);
+        end;
+        return;
+    end;
+end;
+v6.OnIntroduction = function(_, v221, v222, v223) --[[ Line: 1332 ]] --[[ Name: OnIntroduction ]]
+    -- upvalues: v14 (copy), l_Debris_0 (copy), v15 (copy), v8 (copy)
+    v14:SetCustomLighting(v221.Config.IntroLighting);
+    local v224 = v221.Config.IntroHeadTemplate:Clone();
+    v224:SetPrimaryPartCFrame(v222:WaitForChild("Right Arm").CFrame * CFrame.Angles(0, 0, 3.141592653589793) * CFrame.new(0, 0.9, 0.1));
+    v224.ArmWeld.Part0 = v222:WaitForChild("Right Arm");
+    v224.Parent = workspace;
+    l_Debris_0:AddItem(v224, 5);
+    task.delay(0.92, function() --[[ Line: 1342 ]]
+        -- upvalues: v224 (copy)
+        local l_Root_0 = v224:FindFirstChild("Root");
+        local v226 = l_Root_0 and l_Root_0:FindFirstChild("Blood");
+        if v226 then
+            v226:Emit(30);
+        end;
+    end);
+    task.delay(0.94, function() --[[ Line: 1350 ]]
+        -- upvalues: v15 (ref), v221 (copy)
+        for _, v228 in v15 do
+            local l_FirstChild_6 = v221.Rig.Head.EyesFlare:FindFirstChild(v228);
+            if l_FirstChild_6 then
+                l_FirstChild_6.Enabled = true;
+            end;
+        end;
+    end);
+    task.delay(0.966, function() --[[ Line: 1362 ]]
+        -- upvalues: v224 (copy)
+        v224.Head:Destroy();
+        v224.Hair:Destroy();
+    end);
+    task.delay(1.2, function() --[[ Line: 1368 ]]
+        -- upvalues: v15 (ref), v221 (copy)
+        for _, v231 in v15 do
+            local l_FirstChild_7 = v221.Rig.Head.EyesFlare:FindFirstChild(v231);
+            if l_FirstChild_7 then
+                l_FirstChild_7.Enabled = false;
+            end;
+        end;
+    end);
+    v8:CreateFOVMultiplier(game.Players.LocalPlayer, 0.6, "1x1x1x1IntroScene", v223);
+    task.delay(v223, function() --[[ Line: 1383 ]]
+        -- upvalues: v14 (ref)
+        v14:SetAsCurrentLighting();
+    end);
+end;
+v6.OnKill = function(v233, v234) --[[ Line: 1388 ]] --[[ Name: OnKill ]]
+    -- upvalues: v13 (copy)
+    if v234.Name == "Shedletsky" then
+        v13:IncrementAchievementProgress(v233.Player, "1x1x1x1Hunt");
+    end;
+end;
+v6.OnExecution = function(_, v236, v237) --[[ Line: 1394 ]] --[[ Name: OnExecution ]]
+    local l_Sword_0 = v237:FindFirstChild("Sword");
+    local l_Humanoid_8 = v237:FindFirstChild("Humanoid");
+    local l_Head_0 = v237:FindFirstChild("Head");
+    local v241 = require(game.ReplicatedStorage.Modules.Ragdolls);
+    if v237.Name == "Shedletsky" then
+        l_Sword_0.Transparency = 0;
+        local _ = workspace:GetServerTimeNow() + 3.23;
+        task.delay(3.23, function() --[[ Line: 1404 ]]
+            -- upvalues: l_Humanoid_8 (copy), v241 (copy), v237 (copy), l_Head_0 (copy)
+            if l_Humanoid_8 then
+                v241.AddProfile(v237, {
+                    Velocity = Vector3.new(0, 50, 0, 0),
+                    KillEffects = {
+                        HeadSquash = true
+                    }
+                });
+                l_Humanoid_8.Health = 0;
+                local l_ipairs_0 = ipairs;
+                local v244 = v237 and v237:GetChildren() or {};
+                for _, v246 in l_ipairs_0(v244) do
+                    if v246:IsA("Accessory") then
+                        v246:Destroy();
+                    end;
+                end;
+                if l_Head_0 then
+                    l_Head_0:Destroy();
+                end;
+            end;
+        end);
+        return;
+    else
+        local _ = workspace:GetServerTimeNow() + 2;
+        task.delay(2, function() --[[ Line: 1423 ]]
+            -- upvalues: v236 (copy), l_Humanoid_8 (copy), v241 (copy), v237 (copy)
+            local l_FirstChild_8 = v236.Rig["Left Arm"]:FindFirstChild("Blood", true);
+            if l_FirstChild_8 then
+                l_FirstChild_8.Enabled = true;
+                task.delay(0.2, function() --[[ Line: 1427 ]]
+                    -- upvalues: l_FirstChild_8 (copy)
+                    l_FirstChild_8.Enabled = false;
+                end);
+            end;
+            if l_Humanoid_8 then
+                v241.AddProfile(v237, {
+                    Velocity = v236.Rig.PrimaryPart.CFrame.LookVector.Unit * 35,
+                    KillEffects = {
+                        HeadSquash = true
+                    }
+                });
+                l_Humanoid_8.Health = 0;
+            end;
+        end);
+        return;
+    end;
+end;
+v6.OnVictory = function(_, v250, v251, v252, v253) --[[ Line: 1441 ]] --[[ Name: OnVictory ]]
+    -- upvalues: v14 (copy), v8 (copy), l_TweenService_0 (copy), l_RunService_0 (copy)
+    local l_LocalPlayer_0 = game.Players.LocalPlayer;
+    if v250 == "Start" then
+        v14:SetCustomLighting(v251.Config.OutroLighting);
+        local v255 = os.clock();
+        local l_OutroVFXFolder_0 = v251.Config.OutroVFXFolder;
+        local _ = v251.Cache.VictoryKillerTrack;
+        local l_VictoryCameraTrack_0 = v251.Cache.VictoryCameraTrack;
+        local v259 = {};
+        task.spawn(function() --[[ Line: 1454 ]]
+            -- upvalues: l_OutroVFXFolder_0 (copy), v252 (copy), v259 (copy), l_VictoryCameraTrack_0 (copy), v8 (ref), v255 (copy), l_TweenService_0 (ref)
+            local v260 = workspace.Misc:WaitForChild("KillerCutsceneBackground", 5);
+            local l_Dummies_0 = v260:FindFirstChild("Dummies");
+            if v260 and l_Dummies_0 then
+                for _, v263 in ipairs(l_OutroVFXFolder_0:GetChildren()) do
+                    if v263:IsA("Attachment") then
+                        local l_v263_Attribute_0 = v263:GetAttribute("adornee");
+                        local l_v263_Attribute_1 = v263:GetAttribute("dummyName");
+                        local v266 = l_v263_Attribute_1 and v260.Dummies[l_v263_Attribute_1] or v252;
+                        local v267 = v263:Clone();
+                        v267.Parent = v266[l_v263_Attribute_0];
+                        v259[v263.Name] = v267;
+                    end;
+                end;
+                l_VictoryCameraTrack_0:GetMarkerReachedSignal("emit"):Connect(function(v268) --[[ Line: 1473 ]]
+                    -- upvalues: v259 (ref), v8 (ref)
+                    assert(v259[v268], (("No attachment called %* in VFX folder."):format(v268)));
+                    v8:EmitParticles(v259[v268]);
+                end);
+                local v269 = os.clock() - v255;
+                local l_Shockwave_0 = v260.Shockwave;
+                task.delay(math.max(0.1, 1.1 - v269), function() --[[ Line: 1482 ]]
+                    -- upvalues: l_TweenService_0 (ref), l_Shockwave_0 (copy), v260 (copy)
+                    local v271 = l_TweenService_0:Create(l_Shockwave_0.Root, TweenInfo.new(0.4), {
+                        CFrame = v260.ShockwaveHitPoint.CFrame
+                    });
+                    v271:Play();
+                    v271.Completed:Wait();
+                    local v272 = 0.02;
+                    while l_Shockwave_0 and l_Shockwave_0.Parent do
+                        l_Shockwave_0:PivotTo(l_Shockwave_0:GetPivot() * CFrame.new(0, 0, v272 * -70));
+                        v272 = task.wait();
+                    end;
+                end);
+            end;
+        end);
+        task.spawn(function() --[[ Line: 1498 ]]
+            -- upvalues: l_TweenService_0 (ref)
+            local v273 = game.Lighting:WaitForChild("1xCC", 5);
+            if v273 then
+                l_TweenService_0:Create(v273, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    Saturation = 0.125
+                }):Play();
+                task.wait(2.8);
+                l_TweenService_0:Create(v273, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    Contrast = 0.2,
+                    Brightness = 0.04,
+                    TintColor = Color3.new(0.666667, 1, 0.717647)
+                }):Play();
+                task.wait(0.2);
+                l_TweenService_0:Create(v273, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Contrast = 0,
+                    Brightness = 0.04,
+                    Saturation = 0.4,
+                    TintColor = Color3.new(1, 0.309804, 0.309804)
+                }):Play();
+                task.wait(0.2);
+                l_TweenService_0:Create(v273, TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Contrast = 0,
+                    Brightness = 0,
+                    Saturation = 0,
+                    TintColor = Color3.new(1, 1, 1)
+                }):Play();
+                task.wait(1.3);
+                l_TweenService_0:Create(v273, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    Contrast = 0.1,
+                    Brightness = -0.1
+                }):Play();
+                task.wait(0.3);
+                l_TweenService_0:Create(v273, TweenInfo.new(1.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                    Contrast = 0.3,
+                    Brightness = 0.2,
+                    Saturation = 0.3,
+                    TintColor = Color3.new(0.721569, 1, 0.752941)
+                }):Play();
+            end;
+        end);
+        local l_CurrentCamera_0 = workspace.CurrentCamera;
+        l_LocalPlayer_0:SetAttribute("FOVMultipliersDisabled", true);
+        l_RunService_0:BindToRenderStep("1x1x1x1Outro", 1, function() --[[ Line: 1543 ]]
+            -- upvalues: l_CurrentCamera_0 (copy)
+            l_CurrentCamera_0.FieldOfView = 50;
+        end);
+        v8:PlayDummyCutsceneAnimations(v251, v253, "Victory");
+        return;
+    else
+        l_RunService_0:UnbindFromRenderStep("1x1x1x1Outro");
+        l_LocalPlayer_0:SetAttribute("FOVMultipliersDisabled", nil);
+        v14:SetAsCurrentLighting();
+        return;
+    end;
+end;
+v6.cl_Entangled = function(v275) --[[ Line: 1556 ]] --[[ Name: cl_Entangled ]]
+    -- upvalues: v8 (copy), l_Debris_0 (copy), l_TweenService_0 (copy), l_RunService_0 (copy)
+    local l_v8_SettingValue_0 = v8:GetSettingValue("EpilepsyMode", game.Players.LocalPlayer);
+    local function v283(v277) --[[ Line: 1559 ]] --[[ Name: generate ]]
+        -- upvalues: l_v8_SettingValue_0 (copy)
+        local v278 = {};
+        for _ = 1, 18 do
+            local v280 = Random.new();
+            local v281 = v280:NextInteger(0, 1);
+            local v282 = Instance.new("Frame", v277);
+            v282.Size = UDim2.fromScale(v280:NextNumber() / 2 + 0.2 + (l_v8_SettingValue_0 and 0.1 or 0), v280:NextNumber() / 3 + 0.15 + (l_v8_SettingValue_0 and 0.05 or 0));
+            v282.BackgroundColor3 = l_v8_SettingValue_0 and Color3.new(0, 0, 0) or Color3.new(v281 / 8, math.clamp(v281 - v280:NextNumber(0, 0.1), 0, 1), v281 / 8);
+            v282.Position = UDim2.fromScale(v280:NextNumber(), v280:NextNumber());
+            v282.AnchorPoint = Vector2.new(0.5, 0.5);
+            v282.BorderSizePixel = 0;
+            v282.ZIndex = 3;
+            table.insert(v278, v282);
+        end;
+        return v278;
+    end;
+    local l_PopupsFolder_0 = v275.Config.PopupsFolder;
+    local v285 = {};
+    for _ = 1, v275.Config.EntanglementPopupCount do
+        local l_l_PopupsFolder_0_Children_0 = l_PopupsFolder_0:GetChildren();
+        local v288 = l_l_PopupsFolder_0_Children_0[math.random(1, #l_l_PopupsFolder_0_Children_0)];
+        local l_ImageLabel_1 = Instance.new("ImageLabel");
+        for _, v291 in ipairs({
+            "Image",
+            "Size",
+            "BackgroundTransparency",
+            "AnchorPoint",
+            "ImageColor3"
+        }) do
+            l_ImageLabel_1[v291] = v288[v291];
+        end;
+        table.insert(v285, l_ImageLabel_1);
+    end;
+    local l_TemporaryUI_0 = game.Players.LocalPlayer.PlayerGui:FindFirstChild("TemporaryUI");
+    for _, v294 in pairs(v285) do
+        local v295 = {};
+        local v296 = math.random(120, 260) / 100;
+        local v297 = TweenInfo.new(v296 - 0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In);
+        local v298 = math.random(90, 130) / 100;
+        local v299 = UDim2.fromOffset(v294.Size.X.Offset * v298, v294.Size.Y.Offset * v298);
+        v294.Name = "1x1x1x1Popup";
+        v294.ImageTransparency = 1;
+        v294.Selectable = false;
+        v294.Size = v299;
+        v294.Position = UDim2.fromScale(0.5, 0.5) + UDim2.fromScale(math.random(-100, 100) / 300, math.random(-100, 100) / 300);
+        v294:SetAttribute("OGPos", v294.Position);
+        v294.Parent = l_TemporaryUI_0;
+        l_Debris_0:AddItem(v294, v296);
+        do
+            local l_v295_0 = v295;
+            task.spawn(function() --[[ Line: 1612 ]]
+                -- upvalues: v294 (copy), l_TemporaryUI_0 (copy), l_v295_0 (ref), v283 (copy), l_TweenService_0 (ref), v297 (copy)
+                local v301 = os.clock();
+                while v294 and v294.Parent == l_TemporaryUI_0 and os.clock() - v301 < 0.15 do
+                    for _, v303 in ipairs(l_v295_0) do
+                        v303:Destroy();
+                    end;
+                    table.clear(l_v295_0);
+                    l_v295_0 = v283(v294);
+                    task.wait();
+                end;
+                v294.ImageTransparency = 0;
+                l_TweenService_0:Create(v294, v297, {
+                    ImageTransparency = 1
+                }):Play();
+                for _, v305 in ipairs(l_v295_0) do
+                    v305:Destroy();
+                end;
+            end);
+        end;
+    end;
+    local v306 = os.clock();
+    local v312 = l_RunService_0.RenderStepped:Connect(function(_) --[[ Line: 1632 ]]
+        -- upvalues: v285 (copy), v306 (copy)
+        for _, v309 in pairs(v285) do
+            if v309 and v309.Parent then
+                local l_v309_Attribute_0 = v309:GetAttribute("OGPos");
+                local v311 = os.clock() - v306;
+                v309.Position = l_v309_Attribute_0 + UDim2.fromScale(math.random(-100, 100) / (10000 + v311 * 12000), math.random(-100, 100) / (10000 + v311 * 12000));
+            end;
+        end;
+    end);
+    task.delay(3, function() --[[ Line: 1642 ]]
+        -- upvalues: v312 (copy)
+        v312:Disconnect();
+    end);
+end;
+return v6;
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Killers/Azure/Behavior]====],before="164061:3c4ac9dd:c4d70668",after="160512:8c42226b:bc66ddc0",source=[====[
+
+
+
+
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage");
+local RunService = game:GetService("RunService");
+local TweenService = game:GetService("TweenService");
+local Players = game:GetService("Players");
+local Debris = game:GetService("Debris");
+game:GetService("Lighting");
+game:GetService("UserInputService");
+local Sounds = require(ReplicatedStorage.Modules.Sounds);
+local Actors = require(ReplicatedStorage.Modules.Actors);
+local Ragdolls = require(ReplicatedStorage.Modules.Ragdolls);
+local Lighting = require(ReplicatedStorage.Modules.Schematics.Lighting);
+local Util = require(ReplicatedStorage.Modules.Util);
+local Sprinting = require(ReplicatedStorage.Systems.Character.Game.Sprinting);
+local Hitboxes = require(ReplicatedStorage.Modules.Hitboxes);
+local Maid = require(ReplicatedStorage.Modules.Misc.Maid);
+local Statuses = require(ReplicatedStorage.Modules.Statuses);
+local Network = require(ReplicatedStorage.Modules.Network);
+require(ReplicatedStorage.Modules.AchievementUtil);
+local Device = require(ReplicatedStorage.Modules.Device);
+local Projectiles = require(ReplicatedStorage.Modules.Projectiles);
+local sv_AzureConstruct = require(script.sv_AzureConstruct);
+local sv_Golem = require(script.sv_Golem);
+local resolveAzureGrabConfig = require(script.GrabConfigDefaults);
+local AnimationSupport = require(script.OptionalAnimations);
+local spawn = task.spawn;
+local delay = task.delay;
+local u1 = RunService:IsClient();
+local u2 = RunService:IsServer();
+local u3 = RunService:IsStudio();
+TweenInfo.new(1);
+Random.new();
+TweenInfo.new(0.2);
+local u4;
+
+if u1 then
+	u4 = Players.LocalPlayer;
+else
+	u4 = u1;
+end;
+
+local u5 = {
+	DivotSize = 3,
+	DivotSizeDeviance = 0.25,
+	DivotDepth = 0,
+	WidthDeviance = 0.12,
+	Tweens = true,
+	AwayRotation = -45,
+	AwayRotationDeviance = 1,
+	RandomRotation = 25,
+	TimeInterval = 0.01,
+	TweenConfig = TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+};
+
+local function changeProp(p6, p7, p8)
+	if p8 ~= p6[p7] then
+		p6[p7] = p8;
+	end;
+end;
+
+local function reconcile(p9, p10)
+	for i, v in pairs(p10) do
+		if p9[i] == nil then
+			p9[i] = v;
+		end;
+	end;
+
+	return p9;
+end;
+
+local function cWait(p11, p12, ...)
+
+	local v13 = os.clock();
+
+	while os.clock() - v13 < p11 do
+		if p12(...) then
+			return true;
+		end;
+
+		RunService.PostSimulation:Wait();
+	end;
+
+	return p12(...) and true or false;
+end;
+
+local function checkForPathInDict(p14, p15)
+	local v16 = string.split(p15, "/");
+
+	for i = 1, #v16 do
+		if not p14[v16[i]] then
+			return false;
+		end;
+
+		p14 = p14[v16[i]];
+	end;
+
+	return true;
+end;
+
+local function flattenVector(p17)
+	return Vector3.new(p17.X, 0, p17.Z);
+end;
+
+local function sv_reward(p18, p19, p20)
+
+	Actors:IncrementActorStats(p18.Player, {
+		Action = p20,
+		RewardType = p19 .. "KillerAction"
+	});
+end;
+
+local function flRandom(p21, p22)
+	return p21 + Random.new():NextNumber() * (p22 - p21);
+end;
+
+local function __displayWarn(p23)
+end;
+
+local function __getStunValidator(u24)
+
+	return function()
+
+		return (not Util:IsAlive(u24.Rig) or u24.Rig:GetAttribute("Stunned")) and true or false;
+	end;
+end;
+
+local u25 = {};
+
+local function freezeStamina(u26, p27)
+
+	local u28 = os.clock();
+	u25[u26] = u28;
+	Sprinting:SetStaminaFrozen(u26, true);
+	task.delay(p27, function()
+
+		if u25[u26] ~= u28 then
+			return;
+		end;
+
+		u25[u26] = nil;
+		Sprinting:SetStaminaFrozen(u26, false);
+	end);
+end;
+
+local function beamProjectile(p29, p30, p31, p32)
+	local v33 = p32 ^ 2;
+	local v34 = p30 * p32;
+	local v35 = 0.5 * p29 * v33 + v34 + p31;
+	local v36 = v35 - (p29 * v33 + v34) / 3;
+	local v37 = (0.125 * p29 * v33 + 0.5 * v34 + p31 - 0.125 * (p31 + v35)) / 0.375 - v36;
+	local magnitude = (v37 - p31).magnitude;
+	local magnitude2 = (v36 - v35).magnitude;
+	local unit = (p31 - v35).unit;
+	local unit2 = (v37 - p31).unit;
+	local unit3 = unit2:Cross(unit).unit;
+	local unit4 = (v36 - v35).unit;
+	local unit5 = unit4:Cross(unit).unit;
+	local unit6 = unit3:Cross(unit2).unit;
+	local v38 = CFrame.new(p31.x, p31.y, p31.z, unit2.x, unit3.x, unit6.x, unit2.y, unit3.y, unit6.y, unit2.z, unit3.z, unit6.z);
+	local v39 = CFrame.new(v35.x, v35.y, v35.z, unit4.x, unit5.x, unit6.x, unit4.y, unit5.y, unit6.y, unit4.z, unit5.z, unit6.z);
+
+	return magnitude, -magnitude2, v38, v39;
+end;
+
+local function getTrajectoryPoints(p40, p41, p42, p43)
+
+	local v44 = p42;
+	local v45 = {};
+
+	for i = 0.05, 5, 0.05 do
+		local v46 = p40 * 0.5 * i ^ 2 + p41 * i + p42;
+		local v47 = vector.create(v46.x, v46.y, v46.z);
+		local v48 = v47 - v44;
+		local v49 = workspace:Raycast(v44, v48, p43);
+
+		if v49 then
+			local v50 = i - 0.05 + (v49.Position - v44).Magnitude / v48.Magnitude * 0.05;
+			table.insert(v45, v49.Position);
+
+			return v45, beamProjectile(p40, p41, p42, v50);
+		end;
+
+		table.insert(v45, v47);
+		v44 = v47;
+	end;
+
+	return v45, beamProjectile(p40, p41, p42, 5);
+end;
+
+local clientDrawnConstructs = {};
+
+local function __pcallMethod(u51, u52, ...)
+	local success, result = pcall(function(...)
+
+		if u52.Behavior[u51] then
+			return u52.Behavior[u51](u52.Behavior, u52, ...);
+		end;
+	end, ...);
+
+	if success then
+		return result;
+	end;
+
+	warn((`[Azure]: Failed to call .{u51}() due to: {result}, {debug.traceback()}`));
+end;
+
+local function __playSound(p53, p54, p55)
+
+	local v56 = Util:CopyTable(p55 or {
+		Volume = 0.35,
+		PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+	});
+
+	if not (p55 and (p55.Parent or p55.Position)) then
+		v56.Parent = p53.Rig.PrimaryPart;
+	end;
+
+	return Sounds:Play(p53.Config.Sounds[p54], v56);
+end;
+
+local u57 = {
+	GroundBulb = 3,
+	Vine = 3
+};
+
+local function getConstructLimit(p58, p59)
+
+	local v60 = p58.Config.ConstructLimits or (p58.Config.MaxConstructs or p58.Config.TrapLimits);
+
+	if v60 then
+		v60 = v60[p59];
+	end;
+
+	if typeof(v60) == "number" then
+		return v60;
+	end;
+
+	local v61 = p58.Config.ConstructConfigs and p58.Config.ConstructConfigs[p59];
+
+	if v61 then
+		v61 = v61.Limit or (v61.MaxAmount or v61.MaxCount);
+	end;
+
+	return typeof(v61) ~= "number" and (u57[p59] or 3) or v61;
+end;
+
+local function __cullConstruct(p62, p63, p64)
+	local v65 = {};
+
+	for _, v in pairs(p62.State.Constructs) do
+		if p63 == v.Type then
+			table.insert(v65, v);
+		end;
+	end;
+
+	if p64 <= #v65 then
+		table.sort(v65, function(p66, p67)
+			return (p66.CreationIndex or 0) < (p67.CreationIndex or 0);
+		end);
+		v65[1]:Destroy();
+	end;
+
+	table.clear(v65);
+end;
+
+local function hasActiveGolem(p68)
+	local v69 = p68.State and p68.State.Golems and next(p68.State.Golems) ~= nil;
+
+	return v69;
+end;
+
+local u77 = {
+	getTentacles = function(p70, p71)
+		return p71.Rig:FindFirstChild("AZURETENTACLESRIG"):FindFirstChild("Tentacles");
+	end,
+
+	getGrabbingTentacle = function(p72, p73, p74)
+		return p74:FindFirstChild("Top.R");
+	end,
+
+	OnStunnedAbsolute = function(p75, p76)
+
+		if p76 and (p76.State and p76.State.ControllingGolem) then
+			Statuses:ApplyStatus(p76.Rig, "Slowness", {
+				Level = 2,
+				Duration = 2.5,
+				AppliedFrom = "Azure"
+			});
+			Statuses:ApplyStatus(p76.Rig, "Helpless", {
+				Level = 1,
+				Duration = 2.5,
+				AppliedFrom = "Azure"
+			});
+		end;
+	end
+};
+
+if u2 then
+	function u77.sv_IsNearPlantSpawn(_, actor, position)
+		local radius = actor.Config.PlantSpawnExclusionRadius or 20
+
+		for _, part in workspace:GetDescendants() do
+			if not part:IsA("BasePart") then continue end
+			local isSpawn = part:IsA("SpawnLocation")
+			local ancestor = part.Parent
+			while not isSpawn and ancestor and ancestor ~= workspace do
+				isSpawn = ancestor.Name == "SpawnPoints" or ancestor.Name == "BotSpawns"
+				ancestor = ancestor.Parent
+			end
+			if isSpawn and (part.Position - position).Magnitude <= radius then
+				return true
+			end
+		end
+		return false
+	end;
+
+	function u77.sv_GetBlockingConstruct(p78, p79, p80)
+		local PlacementRadius = p79.Config.PlacementRadius;
+		local PlacementYFactor = p79.Config.PlacementYFactor;
+
+		for _, v in pairs(p79.State.Constructs) do
+			local v81 = v.Root and v.Root.Position;
+
+			if v81 and ((v81 - p80) * Vector3.new(1, PlacementYFactor, 1)).Magnitude <= PlacementRadius then
+				return v;
+			end;
+		end;
+
+		return nil;
+	end;
+
+	function u77.sv_AddOblationProgress(p82, p83, p84)
+
+		if p83.State and (p83.State.Golems and next(p83.State.Golems) ~= nil) then
+			return;
+		end;
+
+		local v85 = math.max(0, tonumber(p84) or 0);
+		local v86 = p83.State.OblationProgress + v85;
+		local v87 = math.floor(v86 / 100);
+
+		if p83.State.Oblation >= p83.Config.Oblation.Max and v87 > 0 then
+			p83.State.OblationProgress = 99;
+
+			return;
+		end;
+
+		if v87 > 0 then
+			__pcallMethod("sv_IncreaseOblation", p83, v87);
+		end;
+
+		p83.State.OblationProgress = v86 % 100;
+	end;
+
+	function u77.sv_IncreaseOblation(p88, p89, p90)
+		if p89.State and (p89.State.Golems and next(p89.State.Golems) ~= nil) then
+			return;
+		end;
+
+		p89.State.Oblation = math.clamp(p89.State.Oblation + (p90 or 1), 0, p89.Config.Oblation.Max);
+		p89.Rig:SetAttribute("Oblation", p89.State.Oblation);
+	end;
+
+	function u77.sv_DecreaseOblation(p91, p92, p93)
+		p92.State.Oblation = math.clamp(p92.State.Oblation - (p93 or 1), 0, p92.Config.Oblation.Max);
+		p92.Rig:SetAttribute("Oblation", p92.State.Oblation);
+	end;
+
+	function u77.sv_CreateConstruct(p94, u95, p96, p97)
+
+		local v98 = Util:CopyTable(p97 or {});
+		v98.Meta = Util:CopyTable(u95.Config.ConstructConfigs[p96]);
+		local u99 = sv_AzureConstruct.new(p96, u95, v98);
+		u95.State.ConstructCreationIndex = (u95.State.ConstructCreationIndex or 0) + 1;
+		u99.CreationIndex = u95.State.ConstructCreationIndex;
+		local UUID = u99.UUID;
+		local u100 = Util:CopyTable(p97 or {});
+		u100.UUID = u99.UUID;
+		u100.Type = p96;
+		u100.Root = u99.Root;
+		u95:PCallAllClients("CreateConstruct", u100);
+		u99:AddCallback("PostNetwork", function(p101, ...)
+
+			u95:PCallAllClients("ConstructEvent", u100, p101, ...);
+		end, "FireAllClients");
+		u95.State.Constructs[UUID] = u99;
+		u99:AddCallback("OnDestroyed", function()
+
+			u95:PCallAllClients("DestroyConstruct", u100);
+			u95.State.Constructs[UUID] = nil;
+		end, "RemoveFromActor");
+		u99.Prompt.Triggered:Connect(function(u102)
+
+			local Character = u102.Character;
+			local v103 = not Util:IsAlive(Character) and "You\'re dead." or ((tostring(Character.Parent) ~= "Survivors" and not workspace:GetAttribute("FriendlyFire")) and "You\'re no survivor." or (Character:GetAttribute("AzureQTEActive") and "You\'re busy." or (vector.magnitude(Character.PrimaryPart.Position - u99.Root.Position) > 10 and "Move closer." or (u99.QTEActive and "Someone\'s already working on this." or ((Character.PrimaryPart.Anchored or checkForPathInDict(u99 or {}, "newConstruct/Callbacks/ServerQTEEnd/QTEEndedServer")) and "You can\'t do that right now." or (not u99.QTEEnabled and "It\'s angry." or (not u99:HasLOS(Character) and "You can\'t see it." or nil)))))));
+
+			if v103 then
+				Network:FireClientConnection(u102, `{u95.Player.Name}AzureQTEWarning`, "REMOTE_EVENT", v103);
+
+				return;
+			end;
+
+			u99.QTETokenIndex = (u99.QTETokenIndex or 0) + 1;
+			local QTETokenIndex = u99.QTETokenIndex;
+			local u104 = Character:FindFirstChildOfClass("Humanoid");
+			local u105 = Maid.new();
+			local Health = u104.Health;
+			u99:ToggleQTEEnabled("BeingWorkedOn", false);
+			Character:SetAttribute("AzureQTEActive", true);
+			u99:StartQTE(u102);
+			Network:FireClientConnection(u102, `{u95.Player.Name}AzureBeginQTE`, "REMOTE_EVENT", u99.Root);
+			u105:Add(Character.AncestryChanged:Connect(function()
+
+				u99:EndQTE();
+			end));
+			u105:Add(u104.HealthChanged:Connect(function()
+
+				if Health > u104.Health then
+					u99:EndQTE();
+				end;
+
+				Health = u104.Health;
+			end));
+			u105:Add(Character.PrimaryPart:GetPropertyChangedSignal("Position"):Connect(function()
+
+				if vector.magnitude(Character.PrimaryPart.Position - u99.Root.Position) > 7.5 then
+					u99:EndQTE();
+				end;
+			end));
+			u99:AddCallback("ServerQTEEnd", function()
+
+				u99:ToggleQTEEnabled("BeingWorkedOn", true);
+				Character:SetAttribute("AzureQTEActive", nil);
+
+				if u102 then
+					Network:FireClientConnection(u102, `{u95.Player.Name}AzureForceQTEStop`, "REMOTE_EVENT", u99.Root, QTETokenIndex);
+				end;
+
+				u105:Destroy();
+				u99:RemoveCallback("ServerQTEEnd", "QTEEndedServer");
+			end, "QTEEndedServer");
+		end);
+		u95.Maid:Add(u99);
+
+		return u99;
+	end;
+
+	function u77.sv_OnMeleeHit(p106, p107, p108)
+		for _, v in pairs(p107.State.Constructs) do
+			if v.Type == "Vine" and p108 == v.AttachedCharacter then
+				v:FireConnection("Release", p108);
+			end;
+		end;
+	end;
+
+	function u77.sv_CreateGolemRig(p109, p110, p111)
+		local v112 = p110.Config.Instances.Golem:Clone();
+
+		for _, descendant in ipairs(v112:GetDescendants()) do
+			if descendant:IsA("BasePart") then
+				descendant.CanCollide = false;
+				descendant.Massless = true;
+				descendant.RootPriority = -10;
+			end;
+		end;
+
+		v112:PivotTo(p110:GetPivot());
+		v112.Parent = p110.Rig;
+		v112.PrimaryPart.RootJoint.Part0 = p110.Rig.PrimaryPart;
+		v112.PrimaryPart.RootJoint.Parent = p110.Rig.PrimaryPart;
+		v112.PrimaryPart:Destroy();
+
+		return v112;
+	end;
+
+	function u77.sv_ToggleAzureVisible(p113, p114, p115)
+		if p115 then
+			for _, descendant in ipairs(p114.Rig:GetDescendants()) do
+				if (descendant:IsA("BasePart") or descendant:IsA("Decal")) and descendant:GetAttribute("OGTransparency") then
+					descendant.Transparency = descendant:GetAttribute("OGTransparency");
+				elseif (descendant:IsA("ParticleEmitter") or (descendant:IsA("Beam") or (descendant:IsA("Trail") or descendant:IsA("BillboardGui")))) and descendant:GetAttribute("OGEnabled") then
+					descendant.Enabled = descendant:GetAttribute("OGEnabled");
+				end;
+			end;
+
+			return;
+		end;
+
+		for _, descendant in ipairs(p114.Rig:GetDescendants()) do
+			if descendant:IsA("BasePart") or descendant:IsA("Decal") then
+				descendant:SetAttribute("OGTransparency", descendant.Transparency);
+				descendant.Transparency = 1;
+			elseif descendant:IsA("ParticleEmitter") or (descendant:IsA("Beam") or (descendant:IsA("Trail") or descendant:IsA("BillboardGui"))) then
+				descendant:SetAttribute("OGEnabled", descendant.Enabled);
+				descendant.Enabled = false;
+			end;
+		end;
+	end;
+
+	function u77.sv_CreateAzureStatue(p116, p117, p118)
+
+		local v119 = p117.Config.Instances.KillerFlower:Clone();
+		v119:PivotTo(p118);
+		v119.Parent = workspace.Map;
+		p117:PCallAllClients("AnimateAzureStatue", v119, false);
+		local v120 = p117.Rig:Clone();
+
+		for _, descendant in ipairs(v120:GetDescendants()) do
+			if descendant:IsA("BasePart") then
+				descendant.Massless = true;
+				descendant.CanCollide = false;
+				descendant.CanQuery = false;
+			end;
+		end;
+
+		v120.PrimaryPart.Anchored = true;
+		v120.Parent = workspace.Map;
+		local v121 = AnimationSupport.Load(Util, v120, p117.Config.Animations.GolemStateEnter, false, "GolemStateEnter");
+		local u122 = AnimationSupport.Load(Util, v120, p117.Config.Animations.GolemStateIdle, false, "GolemStateIdle");
+		v121.Stopped:Once(function()
+
+			u122:Play();
+		end);
+		p117.State.FakeAzureStatue = v120;
+		v121:Play();
+
+		return v119;
+	end;
+
+	function u77.sv_CreateGolemStatue(p123, p124, p125)
+		local v126 = p125:Clone();
+
+		for _, descendant in ipairs(v126:GetDescendants()) do
+			if descendant:IsA("BasePart") then
+				descendant.Anchored = true;
+				descendant.CanCollide = false;
+				descendant.CanQuery = false;
+				descendant.Material = Enum.Material.Slate;
+				descendant.Color = Color3.new(0.2, 0.2, 0.2);
+			elseif descendant:IsA("Decal") or (descendant:IsA("SurfaceAppearance") or descendant:IsA("JointInstance")) then
+				descendant:Destroy();
+			end;
+		end;
+
+		p124.Config.Instances.GolemStatue.SurfaceAppearance:Clone().Parent = v126["Cube.001"];
+		v126.Parent = workspace.Map.Ingame;
+
+		return v126;
+	end;
+
+	function u77.sv_DestroyAzureStatue(p127, u128, p129)
+
+		Debris:AddItem(p129, 1);
+		u128:PCallAllClients("AnimateAzureStatue", p129, true);
+		u128.Rig:PivotTo(u128.State.FakeAzureStatue:GetPivot());
+		u128.State.FakeAzureStatue:Destroy();
+		u128.State.FakeAzureStatue = nil;
+		local rig = u128.Rig
+		local root = rig.PrimaryPart
+		local humanoid = rig:FindFirstChildOfClass("Humanoid")
+		if not root or not humanoid then return end
+		local key = "AzureReturn_" .. tostring(os.clock())
+		local finished, track, stopped, died = false, nil, nil, nil
+		local function release()
+			if finished then return end
+			finished = true
+			if stopped then stopped:Disconnect() end
+			if died then died:Disconnect() end
+			if track then track:Stop(0.1); track:Destroy() end
+
+			Util:RemoveStackableProperty(root, "Anchored", key)
+			if root.Parent and not root.Anchored then
+				local ok, err = pcall(function()
+					if u128.Player and u128.Player.Parent == game:GetService("Players") then
+						root:SetNetworkOwner(u128.Player)
+					else
+						root:SetNetworkOwnershipAuto()
+					end
+				end)
+				if not ok then warn("[Azure return] Physics handoff: " .. tostring(err)) end
+			end
+		end
+		Util:GiveStackableProperty(root, "Anchored", key)
+
+		task.delay(5, release)
+		died = humanoid.Died:Connect(release)
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if not animator then release(); return end
+		local ok, err = pcall(function()
+			track = AnimationSupport.Load(Util, rig, u128.Config.Animations.GolemStateExit, false, "GolemStateExit")
+			track.Looped = false
+			stopped = track.Stopped:Connect(release)
+			track:Play(0, 1, 1.5)
+		end)
+		if not ok then
+			release()
+			warn("[Azure return] Exit animation failed: " .. tostring(err))
+		end
+	end;
+
+	function u77.sv_DestroyGolemStatue(p131, p132, p133)
+		p133:Destroy();
+	end;
+
+	local function sv_getGolemTransferCooldown(p134)
+		return p134.Config.Golem.TransferCooldown or (p134.Config.GolemTransferCooldown or 3);
+	end;
+
+	local u135 = nil;
+
+	local function sv_clearGolemSpawnLock(p136, p137)
+		if p137 and p137 ~= p136.Cache.GolemSpawnLockToken then
+			return;
+		end;
+
+		if not p136.State.GolemSpawnLocked then
+			return;
+		end;
+
+		p136.State.GolemSpawnLocked = nil;
+		p136.Cache.GolemSpawnLockToken = nil;
+		p136.AbilitiesDisabled = false;
+		p136.DisabledAbilities = nil;
+		p136:PCallLocal("SetGolemSpawnAbilityLocks", false);
+	end;
+
+	local function sv_startGolemSpawnLock(u138, u139, p140, u141)
+
+		if p140 <= 0 then
+			if u141 and u135 then
+				u135(u138, u139);
+			end;
+
+			return;
+		end;
+
+		local u142 = os.clock();
+		u138.State.GolemSpawnLocked = true;
+		u138.Cache.GolemSpawnLockToken = u142;
+		u138:PCallLocal("SetGolemSpawnAbilityLocks", true);
+		u138.AbilitiesDisabled = true;
+		u138.DisabledAbilities = {
+			Slash = true,
+			Sow = true,
+			Blossom = true,
+			Grab = true,
+			Unravel = true
+		};
+		task.delay(p140, function()
+
+			if not u138.State or u138.State.ControllingGolem ~= u139 then
+				return;
+			end;
+
+			local v143 = u138;
+			local v144 = u142;
+
+			if (not v144 or v144 == v143.Cache.GolemSpawnLockToken) and v143.State.GolemSpawnLocked then
+				v143.State.GolemSpawnLocked = nil;
+				v143.Cache.GolemSpawnLockToken = nil;
+				v143.AbilitiesDisabled = false;
+				v143.DisabledAbilities = nil;
+				v143:PCallLocal("SetGolemSpawnAbilityLocks", false);
+			end;
+
+			if u141 and (u138.State and (u138.State.ControllingGolem == u139 and u135)) then
+				u135(u138, u139);
+			end;
+		end);
+	end;
+
+	local function sv_updateGolemLifetimeDisplay(p145, p146)
+		if p146 and (p146.UUID and p146.RemainingLifetime) then
+			p145:PCallLocal("UpdateGolemLifetime", p146.UUID, p146.RemainingLifetime);
+		end;
+	end;
+
+	local function sv_pauseGolemLifetime(p147, p148)
+		if not p148 then
+			return;
+		end;
+
+		if p148.LifetimeStartedAt then
+			local v149 = os.clock() - p148.LifetimeStartedAt;
+			p148.RemainingLifetime = math.max((p148.RemainingLifetime or 0) - v149, 0);
+			p148.LifetimeStartedAt = nil;
+		end;
+
+		p148.LifetimeToken = (p148.LifetimeToken or 0) + 1;
+
+		if p148 and (p148.UUID and p148.RemainingLifetime) then
+			p147:PCallLocal("UpdateGolemLifetime", p148.UUID, p148.RemainingLifetime);
+		end;
+	end;
+
+	u135 = function(u150, u151)
+		if not u151 then
+			return false;
+		end;
+
+		local v152 = u151.RemainingLifetime or u151.Lifetime;
+
+		if not v152 or v152 <= 0 then
+			u151:Destroy();
+
+			return false;
+		end;
+
+		u151.RemainingLifetime = v152;
+		u151.LifetimeStartedAt = os.clock();
+		u151.LifetimeToken = (u151.LifetimeToken or 0) + 1;
+		local LifetimeToken = u151.LifetimeToken;
+
+		if u151 and (u151.UUID and u151.RemainingLifetime) then
+			u150:PCallLocal("UpdateGolemLifetime", u151.UUID, u151.RemainingLifetime);
+		end;
+
+		task.delay(v152, function()
+
+			if u151.LifetimeToken ~= LifetimeToken then
+				return;
+			end;
+
+			if u150.State and (u150.State.Golems and (u150.State.Golems[u151.UUID] == u151 and u151.BeingControlled)) then
+				u151.RemainingLifetime = 0;
+				u151:Destroy();
+			end;
+		end);
+
+		return true;
+	end;
+
+	function u77.sv_ControlGolem(p153, p154, p155, p156)
+
+		if p154.State.ControllingGolem then
+			return;
+		end;
+
+		local v157 = p156 == "Newborn" and true or p156 == "EmpoweredNewborn";
+		local v158 = p154.Config.GolemSpawn.Windup or 0;
+		local v159;
+
+		if v157 then
+			v159 = v158 > 0;
+		else
+			v159 = v157;
+		end;
+
+		if v159 then
+			local v160 = p155.RemainingLifetime or p155.Lifetime;
+
+			if not v160 or v160 <= 0 then
+				p155:Destroy();
+
+				return;
+			end;
+
+			p155.RemainingLifetime = v160;
+			p155.LifetimeStartedAt = nil;
+			p155.LifetimeToken = (p155.LifetimeToken or 0) + 1;
+
+			if p155 and (p155.UUID and p155.RemainingLifetime) then
+				p154:PCallLocal("UpdateGolemLifetime", p155.UUID, p155.RemainingLifetime);
+			end;
+		elseif not u135(p154, p155) then
+			return;
+		end;
+
+		if p155.Statue then
+			__pcallMethod("sv_DestroyGolemStatue", p154, p155.Statue);
+			p155.Statue = nil;
+		end;
+
+
+
+		Util:GiveInvincible(p154.Rig, "AzureInflorescence_" .. tostring(os.clock()), 5);
+		p155.BeingControlled = true;
+		Util:GiveStackableAttribute(p154.Rig, "StunnedDisabled", "Golem");
+		p154.Config.StatusData = {
+			TotalTimeMult = 0.75,
+			ExcludeIfAppliedFrom = "Azure"
+		};
+		local v161 = p154.Rig.PrimaryPart.CFrame * CFrame.new(0, -p154.Rig.PrimaryPart.Size.Y / 2 * 3, 0);
+		local v162 = __pcallMethod("sv_CreateAzureStatue", p154, v161);
+		p154.State.GolemReturnDummy = {
+			Rig = v162,
+			CFrame = p154.Rig.PrimaryPart.CFrame
+		};
+
+		if v162 then
+			p154.Maid:Add(v162);
+		end;
+
+		__playSound(p154, "GolemAzureLeave", {
+			Position = v161.Position
+		});
+		local v163 = Util:CopyTable({
+			Volume = 0.35,
+			PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+		});
+		v163.Parent = p154.Rig.PrimaryPart;
+		Sounds:Play(p154.Config.Sounds.GolemControlled, v163);
+		p154.Maid:Add(v162);
+		__pcallMethod("sv_ToggleAzureVisible", p154, false);
+		local CFrame2 = p154.Rig.PrimaryPart.CFrame;
+		p154:PivotTo(p155.CFrame);
+		local Empowered = p155.Empowered;
+		local v164 = __pcallMethod("sv_CreateGolemRig", p154, p156 == "EmpoweredNewborn");
+
+		if v164 then
+			p154.Maid:Add(v164);
+		end;
+
+		if Empowered then
+			local v165 = Util:CopyTable({
+				Volume = 0.35,
+				PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+			});
+			v165.Parent = p154.Rig.PrimaryPart;
+			Sounds:Play(p154.Config.Sounds.GolemEnragedSpawn, v165);
+			local v166 = __playSound(p154, "GolemEnragedIdle", {
+				Looped = true
+			});
+			game.Debris:AddItem(v166, p154.Config.Golem.EnragedLifetime);
+		end;
+
+		p154.State.CurrentGolemRig = v164;
+		p154.State.ControllingGolem = p155;
+		p154.Rig:SetAttribute("FootstepOverride", "GolemFootsteps");
+		Util:CreateSpeedMultiplier(p154.Player, 0, "AzureGolemControl", p156 == "Control" and 0 or p154.Config.GolemSpawn.Windup, true);
+		Util:CreateSpeedMultiplier(p154.Player, p154.Config.Golem.WalkspeedMultiplier, "GolemDefaultWalkspeed");
+		Util:SetSpeedCap(p154.Rig, "GolemSpeedy", p154.Config.Golem.WalkspeedMultiplier * p154.Config.SprintSpeed + 5);
+		local v167 = {
+			Slash = p154.Config.Smash.Cooldown,
+			Sow = p154.Config.GolemShockwave.Cooldown,
+			Blossom = p154.Config.GolemFissure.Cooldown
+		};
+		p154.Cache.BaseCooldownTicks = {};
+		p154.Cache.GolemTimeFlag = os.clock();
+
+		for _, v in ipairs({ "Slash", "Sow", "Blossom" }) do
+			p154.Cache.BaseCooldownTicks[v] = p154:IsOnCooldown(v);
+			local v168 = p155.Cooldowns[v] or 0;
+			local v169 = os.clock() - v168;
+			p154:SetCooldownOf(v, (math.max(0, (v167[v] or 3) - v169)));
+		end;
+
+		p154:PCallLocal("ControlGolem", p155.UUID, p155.Empowered, p155.RemainingLifetime, not v159, CFrame2);
+
+		if v157 then
+			sv_startGolemSpawnLock(p154, p155, v158, v159);
+			p154:PlayVoiceline("CreateGolem", {
+				Priority = 2
+			});
+		else
+			p154:SetCooldownOf("Unravel", p154.Config.Golem.TransferCooldown or (p154.Config.GolemTransferCooldown or 3));
+		end;
+
+		for _, v in pairs(p154.State.RootDistances) do
+			v.Origin = p154.Rig.PrimaryPart.Position + Vector3.new(0, -p154.Rig.PrimaryPart.Size.Y / 2 * 3, 0);
+		end;
+	end;
+
+	function u77.sv_ReleaseGolem(p170, p171, p172)
+
+		if not p171.State.ControllingGolem or p172 ~= p171.State.ControllingGolem then
+			return;
+		end;
+
+		p171.Config.StatusData = nil;
+		Util:RemoveStackableAttribute(p171.Rig, "StunnedDisabled", "Golem");
+		Util:GiveInvincible(p171.Rig, "GolemSwitch_" .. tostring(os.clock()), p171.Config.Golem.InvulnOnSwitch);
+		local GolemReturnDummy = p171.State.GolemReturnDummy;
+
+		if not GolemReturnDummy then
+			return;
+		end;
+
+		p172.CFrame = p171:GetPivot();
+		p172.BeingControlled = false;
+
+		if p172 then
+			if p172.LifetimeStartedAt then
+				local v173 = os.clock() - p172.LifetimeStartedAt;
+				p172.RemainingLifetime = math.max((p172.RemainingLifetime or 0) - v173, 0);
+				p172.LifetimeStartedAt = nil;
+			end;
+
+			p172.LifetimeToken = (p172.LifetimeToken or 0) + 1;
+
+			if p172 and (p172.UUID and p172.RemainingLifetime) then
+				p171:PCallLocal("UpdateGolemLifetime", p172.UUID, p172.RemainingLifetime);
+			end;
+		end;
+
+		Util:SetSpeedCap(p171.Rig, "GolemSpeedy", 223, 0);
+		__playSound(p171, "GolemReleased", {
+			Position = p172.CFrame.Position
+		});
+		p171:PlayVoiceline("ReleaseGolem", {
+			Priority = 2
+		});
+		local v174 = __pcallMethod("sv_CreateGolemStatue", p171, p171.State.CurrentGolemRig);
+		p171.State.CurrentGolemRig:Destroy();
+		p171.State.CurrentGolemRig = nil;
+		p172.Statue = v174;
+		local CFrame2 = p171.Rig.PrimaryPart.CFrame;
+		__pcallMethod("sv_DestroyAzureStatue", p171, GolemReturnDummy.Rig);
+		p171.State.GolemReturnDummy = nil;
+		p171.State.ControllingGolem = nil;
+		p171.Rig:SetAttribute("FootstepOverride", nil);
+		Util:CreateSpeedMultiplier(p171.Player, 1, "AzureGolemControl", 0);
+		Util:CreateSpeedMultiplier(p171.Player, 1, "GolemDefaultWalkspeed", 0);
+
+		for _, v in ipairs({ "Slash", "Sow", "Blossom" }) do
+			local v175 = (p171.Cache.BaseCooldownTicks[v] or 0) - (os.clock() - p171.Cache.GolemTimeFlag);
+			p171:SetCooldownOf(v, (math.max(v175, 0)));
+			p171.Cache.BaseCooldownTicks[v] = p171:IsOnCooldown(v);
+		end;
+
+		p171.Cache.BaseCooldownTicks = nil;
+		p171.Cache.GolemTimeFlag = nil;
+		p171:PCallLocal("ReleaseGolem", p172.UUID, v174, p172.CFrame, p172.RemainingLifetime, CFrame2);
+
+		if p171.State.GolemSpawnLocked then
+			p171.State.GolemSpawnLocked = nil;
+			p171.Cache.GolemSpawnLockToken = nil;
+			p171.AbilitiesDisabled = false;
+			p171.DisabledAbilities = nil;
+			p171:PCallLocal("SetGolemSpawnAbilityLocks", false);
+		end;
+
+		p171:SetCooldownOf("Unravel", p171.Config.Golem.TransferCooldown or (p171.Config.GolemTransferCooldown or 3));
+		__pcallMethod("sv_ToggleAzureVisible", p171, true);
+		local v176 = Util:CopyTable({
+			Volume = 0.35,
+			PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+		});
+		v176.Parent = p171.Rig.PrimaryPart;
+		Sounds:Play(p171.Config.Sounds.GolemAzureReturn, v176);
+
+		for _, v in pairs(p171.State.RootDistances) do
+			v.Origin = p171:GetPivot().Position;
+		end;
+	end;
+
+
+	function u77.sv_GrabSurvivor(_, actor, victim)
+		if actor.State.GrabbingFlag then return end
+		local rig, grab = actor.Rig, resolveAzureGrabConfig(actor)
+		local function alive(model)
+			return model and model:IsDescendantOf(workspace) and model.PrimaryPart
+				and model:FindFirstChildOfClass("Humanoid") and Util:IsAlive(model)
+		end
+		if not alive(rig) or not alive(victim) then
+			u77:sv_MissGrab(actor)
+			return
+		end
+		local root, humanoid = rig.PrimaryPart, rig:FindFirstChildOfClass("Humanoid")
+		local victimRoot, victimHumanoid = victim.PrimaryPart, victim:FindFirstChildOfClass("Humanoid")
+		local victimActor = Util:GetActor(victim)
+		local tracks, connections, objects, physics = {}, {}, {}, {}
+		local phase, cleaned, detached = "pull", false, false
+		local ragdolled = false
+		local oldAnchored, oldAutoRotate = root.Anchored, humanoid.AutoRotate
+		local oldPlatformStand = victimHumanoid.PlatformStand
+		local invincibleKey = "AzureGrab_" .. tostring(os.clock())
+		local freeze, victimSpeed, attachment
+		local frozen = false
+		local invincibleUntil
+		local function safe(fn)
+			local ok, err = pcall(fn)
+			if not ok then warn("[Azure Enstrangle] cleanup: " .. tostring(err)) end
+		end
+		local function valid()
+			return not cleaned and not actor.Destroyed and alive(rig) and alive(victim)
+				and rig.PrimaryPart == root and victim.PrimaryPart == victimRoot
+				and (phase == "flight" or not rig:GetAttribute("Stunned"))
+		end
+		local function speedLock(model, name)
+			assert(valid(), "Grab cancelled before applying movement lock")
+			local folder = model:FindFirstChild("SpeedMultipliers")
+			if not folder then
+				folder = Instance.new("Folder")
+				folder.Name = "SpeedMultipliers"
+				folder.Parent = model
+			end
+			local previous = folder:FindFirstChild(name)
+			if previous then previous:Destroy() end
+			local value = Instance.new("NumberValue")
+			value.Name = name
+			value.Value = 0
+			value.Parent = folder
+			return value
+		end
+		local function own(object)
+			table.insert(objects, object)
+			return object
+		end
+		local function unfreeze()
+			if not frozen then return end
+			frozen = false
+			if freeze then freeze:Destroy(); freeze = nil end
+			if root.Parent then
+				root.Anchored = oldAnchored
+				root.AssemblyLinearVelocity = Vector3.zero
+				root.AssemblyAngularVelocity = Vector3.zero
+
+
+				if not oldAnchored then
+					safe(function()
+						if actor.Player and actor.Player.Parent == game:GetService("Players") then
+							root:SetNetworkOwner(actor.Player)
+						else
+							root:SetNetworkOwnershipAuto()
+						end
+					end)
+				end
+			end
+			if humanoid.Parent then humanoid.AutoRotate = oldAutoRotate end
+		end
+		local function detach()
+			if detached then return end
+			detached = true
+			for _, object in objects do safe(function() object:Destroy() end) end
+			for part, props in physics do
+				if part.Parent then
+					part.Massless = props.Massless
+					part.CanCollide = props.CanCollide
+				end
+			end
+			for name, track in tracks do
+				if name ~= "GrabThrow" and name ~= "GrabVictimThrow" then
+					safe(function() track:Stop(0.05) end)
+				end
+			end
+		end
+		local function cleanup()
+			if cleaned then return end
+			cleaned = true
+			for _, connection in connections do connection:Disconnect() end
+			safe(detach)
+			safe(unfreeze)
+			for _, track in tracks do
+				safe(function() track:Stop(0); track:Destroy() end)
+			end
+			if phase ~= "impact" or not invincibleUntil or os.clock() >= invincibleUntil then
+				safe(function() Util:RemoveInvincible(rig, invincibleKey) end)
+			end
+			if victimSpeed then safe(function() victimSpeed:Destroy() end) end
+			safe(function() Util:RemoveStackableAttribute(victim, "Airborne", "AzureGrab") end)
+			safe(function()
+				victim:SetAttribute("AzureGrabbed", nil)
+				victim:SetAttribute("IgnoreNoclip", nil)
+				if victimHumanoid.Parent and not ragdolled then victimHumanoid.PlatformStand = oldPlatformStand end
+				if victimRoot.Parent and not victimRoot.Anchored then victimRoot:SetNetworkOwnershipAuto() end
+			end)
+			if victimActor then safe(function() victimActor:DisableAbilities("AzureGrabbing", false) end) end
+			safe(function() rig:SetAttribute("MoveAnimationOverwrite", nil) end)
+			actor.State.GrabbingFlag = nil
+			actor.State.ThrowRequest = nil
+			actor.State.AzureGrabCleanup = nil
+			actor.AbilitiesDisabled = false
+			actor.DisabledAbilities = {}
+			safe(function() actor:PCallLocal("SetGrabAbilityLocks", false) end)
+			safe(function() actor:PCallLocal("SetGrabStaminaRegenReduction", false) end)
+			safe(function() actor:PCallLocal("SetGrabSprintDisabled", false) end)
+			safe(function() Network:FireClientConnection(actor.Player, "SetTrackingMousePosition", "REMOTE_EVENT", Vector3.new(0, 0, -1)) end)
+			safe(function() actor:PCallAllClients("OnHomingStopped") end)
+			safe(function() actor:PCallLocal("OnHomingStopped") end)
+			safe(function() actor:PCallAllClients("OnThrowEnded", victim) end)
+			safe(function() actor:PCallLocal("ResetGrabVisuals") end)
+			if ragdolled and phase ~= "impact" and alive(victim) then
+				safe(function() Ragdolls.DisableRagdoll(victim) end)
+			end
+		end
+		actor.State.GrabbingFlag = true
+		actor.State.ThrowRequest = nil
+		actor.State.AzureGrabCleanup = cleanup
+
+		for _, model in {rig, victim} do
+			table.insert(connections, model.Destroying:Connect(cleanup))
+			table.insert(connections, model.AncestryChanged:Connect(function()
+				if not model:IsDescendantOf(workspace) then cleanup() end
+			end))
+			local hum = model:FindFirstChildOfClass("Humanoid")
+			table.insert(connections, hum.Died:Connect(cleanup))
+		end
+
+		local function load(name, model)
+			assert(valid(), "Grab cancelled before loading animation")
+			local track = AnimationSupport.Load(Util, model, actor.Config.Animations[name], false, name)
+			track.Looped = name:match("Idle$") ~= nil or name:match("Walk$") ~= nil
+				or name:match("Run$") ~= nil or name == "GrabPullingLoop" or name == "GrabVictimHooked"
+			track.Priority = Enum.AnimationPriority.Action
+			tracks[name] = track
+			return track
+		end
+		local function waitTrack(track, maxTime, update, marker)
+			local began, stopped, reached = os.clock(), false, false
+			local stoppedConnection = track.Stopped:Connect(function() stopped = true end)
+			table.insert(connections, stoppedConnection)
+			local markerConnection
+			if marker then
+				markerConnection = track:GetMarkerReachedSignal(marker):Connect(function() reached = true end)
+				table.insert(connections, markerConnection)
+			end
+			track:Play(0.025)
+			while valid() do
+				local elapsed = os.clock() - began
+				if update then update(elapsed) end
+
+				local deadline = track.Length > 0 and math.min(track.Length + 0.25, maxTime) or maxTime
+				if reached or stopped or elapsed >= deadline then break end
+				task.wait()
+			end
+			stoppedConnection:Disconnect()
+			if markerConnection then markerConnection:Disconnect() end
+			return valid()
+		end
+		local function applyImpact(result, velocity, releasedAt)
+			if not valid() then return end
+			local position, normal = result.Position, result.Normal
+
+
+			local hitboxFolder = workspace:FindFirstChild("Hitboxes")
+			if hitboxFolder then
+				local display = Instance.new("Part")
+				display.Name = tostring(actor.Player) .. "Hitbox"
+				display.Shape = Enum.PartType.Ball
+				display.Size = Vector3.new(1, 1, 1) * grab.BlastRadius * 2
+				display.CFrame = CFrame.new(position)
+				display.Color = Color3.new(0.5, 1, 0.5)
+				display.Transparency = 1
+				display.Anchored = true
+				display.CanCollide = false
+				display.CanTouch = false
+				display.CanQuery = false
+				display.CastShadow = false
+				display.Parent = hitboxFolder
+				Debris:AddItem(display, 0.36)
+			end
+			phase = "impact"
+			local close = (position - root.Position).Magnitude <= (grab.CloseThrowDistance or 20)
+			if close then
+				local helpless = Statuses:ApplyStatus(rig, "Helpless", {
+					Level = 1, Duration = grab.CloseThrowHelpless or 4
+				})
+
+				if helpless then helpless.TimeRequired = grab.CloseThrowHelpless or 4 end
+				local slowness = Statuses:ApplyStatus(rig, "Slowness", {Level = 2, Duration = 2})
+				if slowness then slowness.TimeRequired = 2 end
+			end
+			victim:SetAttribute("AzureGrabbed", nil)
+
+			victim:SetAttribute("AzureThrowLandedUntil", os.clock() + (grab.PlantTriggerDuration or 1.5))
+			local bounce = (velocity - 2 * velocity:Dot(normal) * normal) / 4
+			victim:PivotTo(CFrame.new(position + normal * 2))
+			Ragdolls.AddProfile(victim, {Velocity = bounce})
+			Ragdolls.EnableRagdoll(victim, grab.RagdollDuration)
+			victimRoot.AssemblyLinearVelocity = bounce
+			__playSound(actor, "GrabImpact", {RollOffMaxDistance = 300, Position = position})
+			actor:PCallAllClients("OnGroundExplode", position, result.Instance)
+			local effect = actor.Config.Instances.SlamVFX:Clone()
+			effect.Parent = workspace.Terrain
+			effect.CFrame = CFrame.new(position, position + normal) * CFrame.Angles(math.pi / 2, 0, 0)
+			Debris:AddItem(effect, 4)
+			Util:EmitParticles(effect)
+
+			local healthBefore = victimHumanoid.Health + (victimHumanoid:GetAttribute("Overheal") or 0)
+			Util:ApplyDamage(victim, grab.Damage, nil, actor.Rig)
+			local healthAfter = victimHumanoid.Health + (victimHumanoid:GetAttribute("Overheal") or 0)
+			if healthBefore > healthAfter then
+				__pcallMethod("sv_AddOblationProgress", actor, (healthBefore - healthAfter) * actor.Config.Oblation.BuildPerDamage)
+			end
+			Actors:IncrementActorStats(actor.Player, {Action = "Threw Survivor", RewardType = "EasyKillerAction"})
+			local nearby = workspace.Players.Survivors:GetChildren()
+			if workspace:GetAttribute("FriendlyFire") then
+				for _, other in workspace.Players.Killers:GetChildren() do table.insert(nearby, other) end
+			end
+			for _, other in nearby do
+				if other == victim or other == rig or not alive(other) then continue end
+				local delta = other.PrimaryPart.Position - position
+				if delta.Magnitude > grab.BlastRadius then continue end
+				local horizontal = Vector3.new(delta.X, 0, delta.Z)
+				local direction = horizontal.Magnitude > 0.001 and horizontal.Unit or Vector3.zero
+				local knockback = (direction + Vector3.new(0, 0.6, 0)) * grab.KnockbackPower
+				other.PrimaryPart.AssemblyLinearVelocity = knockback
+				Ragdolls.AddProfile(other, {Velocity = knockback})
+				Ragdolls.EnableRagdoll(other, grab.RagdollDuration)
+				Actors:IncrementActorStats(actor.Player, {
+					Action = tostring(other.Parent) == "Killers" and "Threw Survivor into Killer" or "Threw Survivor into Survivor",
+					RewardType = "EasyKillerAction"
+				})
+			end
+		end
+		local ok, err = xpcall(function()
+			__pcallMethod("sv_OnMeleeHit", actor, victim)
+			if not valid() then return end
+			actor.AbilitiesDisabled = false
+			actor.DisabledAbilities = {Slash = true, Sow = true, Blossom = true, Unravel = true}
+			actor:PCallLocal("SetGrabAbilityLocks", true, true)
+			actor:PCallLocal("SetGrabStaminaRegenReduction", true)
+			actor:PCallLocal("SetGrabSprintDisabled", true)
+			victimSpeed = speedLock(victim, "AzureGrab")
+			Util:GiveStackableAttribute(victim, "Airborne", "AzureGrab")
+			victim:SetAttribute("AzureGrabbed", true)
+			victim:SetAttribute("IgnoreNoclip", true)
+			victimHumanoid.PlatformStand = true
+			if victimActor then victimActor:DisableAbilities("AzureGrabbing", true) end
+			for _, part in victim:GetDescendants() do
+				if part:IsA("BasePart") then
+					physics[part] = {Massless = part.Massless, CanCollide = part.CanCollide}
+					part.Massless = true
+					part.CanCollide = false
+				end
+			end
+			if not victimRoot.Anchored then victimRoot:SetNetworkOwner(nil) end
+			attachment = own(Instance.new("Attachment", root))
+			local victimAttachment = own(Instance.new("Attachment", victimRoot))
+			local align = own(Instance.new("AlignPosition", victimRoot))
+			align.Attachment0, align.Attachment1 = victimAttachment, attachment
+			align.Responsiveness, align.RigidityEnabled = 200, true
+			local orientation = own(Instance.new("AlignOrientation", victimRoot))
+			orientation.Attachment0, orientation.Attachment1 = victimAttachment, attachment
+			orientation.Responsiveness, orientation.RigidityEnabled = 200, true
+			local initial = victimRoot.Position
+			local reelDirection = root.CFrame.LookVector
+			local victimRotation = victimRoot.CFrame.Rotation
+			local offset = CFrame.new(0, 0, -3)
+			attachment.CFrame = root.CFrame:ToObjectSpace(CFrame.new(initial))
+			local function pull(elapsed)
+				local targetPosition = root.Position + reelDirection * 3
+				local alpha = TweenService:GetValue(math.clamp(elapsed / grab.PullTime, 0, 1), Enum.EasingStyle.Cubic, Enum.EasingDirection.InOut)
+				local position = initial:Lerp(targetPosition, alpha)
+				attachment.CFrame = root.CFrame:ToObjectSpace(CFrame.new(position) * victimRotation)
+			end
+			__playSound(actor, "Grabbed", {Parent = victimRoot})
+			Sounds:Play(actor.Config.Sounds.Grab, {Parent = root, Volume = 0.35})
+			actor:PlayVoiceline("GrabHit", {Priority = 2})
+			load("GrabVictimHooked", victim):Play(0.025)
+			load("GrabPullingLoop", rig):Play(0.025)
+			local pullStart = os.clock()
+			while valid() and os.clock() - pullStart < grab.PullTime do
+				pull(os.clock() - pullStart)
+				task.wait()
+			end
+			if not valid() then return end
+			attachment.CFrame = offset
+			tracks.GrabVictimHooked:Stop(0.05)
+			tracks.GrabPullingLoop:Stop(0.05)
+			phase = "success"
+			actor:PCallLocal("SetGrabSprintDisabled", true)
+			frozen = true
+			freeze = speedLock(rig, "AzureGrabSuccess")
+			root.AssemblyLinearVelocity = Vector3.zero
+			root.AssemblyAngularVelocity = Vector3.zero
+			root.Anchored = true
+			humanoid.AutoRotate = false
+			Util:GiveInvincible(rig, invincibleKey)
+			local success = load("GrabShootSuccess", rig)
+			load("GrabVictimSuccess", victim):Play(0.025)
+			if not waitTrack(success, grab.SuccessAnimationTimeout or 8) then return end
+			tracks.GrabShootSuccess:Stop(0.05)
+			tracks.GrabVictimSuccess:Stop(0.05)
+			unfreeze()
+			invincibleUntil = os.clock() + 0.5
+			task.delay(0.5, function() safe(function() Util:RemoveInvincible(rig, invincibleKey) end) end)
+			phase = "hold"
+			actor.DisabledAbilities = {Sow = true, Blossom = true, Unravel = true}
+			actor:PCallLocal("SetGrabAbilityLocks", true, false)
+			actor:PCallLocal("SetGrabSprintDisabled", false)
+			actor:SetCooldownOf("Slash", 0)
+			actor:SetCooldownOf("Grab", 0)
+			rig:SetAttribute("MoveAnimationOverwrite", "Grab")
+			for _, name in {"GrabIdle", "GrabWalk", "GrabRun"} do load(name, rig) end
+			for _, name in {"GrabVictimIdle", "GrabVictimWalk", "GrabVictimRun"} do load(name, victim) end
+			Network:FireClientConnection(actor.Player, "SetTrackingMousePosition", "REMOTE_EVENT")
+			actor:PCallAllClients("OnHomingStart")
+			actor:PCallLocal("OnHomingStart")
+			actor.State.ThrowRequest = false
+			local holdStart, movement = os.clock(), nil
+			while valid() and actor.State.ThrowRequest == false and os.clock() - holdStart < grab.HoldMaxDuration do
+				local speed = root.AssemblyLinearVelocity.Magnitude
+				local nextMovement = speed > 12 and "Run" or speed > 1 and "Walk" or "Idle"
+				if nextMovement ~= movement then
+					if movement then
+						tracks["Grab" .. movement]:Stop(0.1)
+						tracks["GrabVictim" .. movement]:Stop(0.1)
+					end
+					tracks["Grab" .. nextMovement]:Play(0.1)
+					tracks["GrabVictim" .. nextMovement]:Play(0.1)
+					movement = nextMovement
+				end
+				task.wait()
+			end
+			local cancelled = actor.State.ThrowRequest == "Cancel"
+			actor.State.ThrowRequest = nil
+			actor:PCallAllClients("OnHomingStopped")
+			actor:PCallLocal("OnHomingStopped")
+			if not valid() then return end
+			if cancelled then
+
+				phase = "cancelled"
+				detach()
+				victimRoot.AssemblyLinearVelocity = Vector3.zero
+				victimRoot.AssemblyAngularVelocity = Vector3.zero
+				actor:SetCooldownOf("Grab", grab.CooldownCancel or grab.CooldownMiss)
+				cleanup()
+				local helpless = Statuses:ApplyStatus(rig, "Helpless", {Level = 1, Duration = 2})
+				if helpless then helpless.TimeRequired = 2 end
+				return
+			end
+			phase = "release"
+			actor.AbilitiesDisabled = true
+			local throwTrack = load("GrabThrow", rig)
+			local victimThrow = load("GrabVictimThrow", victim)
+			for _, name in {"GrabIdle", "GrabWalk", "GrabRun", "GrabVictimIdle", "GrabVictimWalk", "GrabVictimRun"} do
+				tracks[name]:Stop(0.05)
+			end
+			throwTrack:Play(0.025)
+			if not waitTrack(victimThrow, grab.ThrowAnimationTimeout or 8, nil, "Throw") then return end
+
+			if not valid() then return end
+			local direction = actor.State.MousePosition
+			if typeof(direction) ~= "Vector3" or direction.Magnitude < 0.001
+				or direction.Magnitude ~= direction.Magnitude or direction.Magnitude == math.huge then
+				direction = root.CFrame.LookVector
+			end
+			direction = direction.Unit
+			Network:FireClientConnection(actor.Player, "SetTrackingMousePosition", "REMOTE_EVENT", direction)
+			detach()
+			phase = "flight"
+			actor:PCallLocal("SetGrabStaminaRegenReduction", false)
+			rig:SetAttribute("MoveAnimationOverwrite", nil)
+			actor:PCallLocal("SetGrabAbilityLocks", false)
+			actor.AbilitiesDisabled = false
+			actor.DisabledAbilities = {}
+			actor:SetCooldownOf("Grab", grab.CooldownSuccess)
+			local releasedAt = os.clock()
+			local helpless = Statuses:ApplyStatus(rig, "Helpless", {Level = 1, Duration = grab.ThrowHelpless or 2})
+			if helpless then helpless.TimeRequired = grab.ThrowHelpless or 2 end
+			Ragdolls.EnableRagdoll(victim)
+			ragdolled = true
+			victimRoot:SetNetworkOwner(nil)
+			local velocity = direction * grab.ThrowVelocity
+			victimRoot.AssemblyLinearVelocity = velocity
+			Sounds:Play(actor.Config.Sounds.GrabThrow, {Parent = root, Volume = 0.35})
+			__playSound(actor, "GrabThrown", {Parent = victimRoot})
+			actor:PlayVoiceline("GrabThrow", {Priority = 2})
+			local trail = actor.Config.Instances.ThrowTrailVFX:Clone()
+			for _, child in trail:GetChildren() do
+				child.Parent = victim:FindFirstChild("Torso") or victimRoot
+				own(child)
+			end
+			trail:Destroy()
+			actor:PCallAllClients("OnThrown", victim)
+			local params = RaycastParams.new()
+			params.FilterDescendantsInstances = {workspace.Players}
+			params.CollisionGroup = workspace:GetAttribute("FriendlyFire") and "Default" or "Survivors"
+			params.RespectCanCollide = true
+			local previousPosition = victimRoot.Position
+			while valid() and os.clock() - releasedAt < 3 do
+				local dt = task.wait()
+				if not valid() then return end
+				velocity -= Vector3.new(0, workspace.Gravity * grab.GravityCoefficient * dt, 0)
+				local displacement = victimRoot.Position - previousPosition
+				local result = displacement.Magnitude > 0.001 and workspace:Raycast(previousPosition, displacement, params)
+				result = result or workspace:Raycast(victimRoot.Position, velocity * dt * 2, params)
+				if not result and os.clock() - releasedAt > 0.2 then
+					result = workspace:Raycast(victimRoot.Position, Vector3.new(0, -3.4, 0), params)
+				end
+				if result then applyImpact(result, velocity, releasedAt); return end
+				previousPosition = victimRoot.Position
+				victimRoot.AssemblyLinearVelocity = velocity
+			end
+			if valid() then
+				phase = "impact"
+				Ragdolls.EnableRagdoll(victim, grab.RagdollDuration)
+			end
+		end, debug.traceback)
+		if phase == "pull" or phase == "success" or phase == "hold" or phase == "release" then
+			safe(function() actor:SetCooldownOf("Grab", grab.CooldownMiss) end)
+		end
+
+		for _, object in objects do safe(function() object:Destroy() end) end
+		cleanup()
+		if not ok then warn("[Azure Enstrangle] " .. tostring(err)) end
+	end;
+
+	function u77.sv_MissGrab(p255, p256)
+
+		p256:PCallLocal("SetGrabSprintDisabled", false);
+		p256:PCallLocal("SetGrabStaminaRegenReduction", false);
+		p256:PCallLocal("SetGrabAbilityLocks", false);
+		p256.State.GrabWindingUp = false;
+		p256.State.GrabReadyToFire = false;
+		p256:SetCooldownOf("Grab", p256.Config.Grab.CooldownMiss);
+		Util:CreateSpeedMultiplier(p256.Rig, p256.Config.Grab.MissSlowness, "AzureGrabMissed", p256.Config.Grab.MissSlownessDuration);
+		p256.AbilitiesDisabled = false;
+		p256.DisabledAbilities = {};
+	end;
+
+	function u77.sv_UpdateFlowers(p257, p258, p259, p260)
+		p258:PCallAllClients("UpdateFlowers", p259, p260);
+	end;
+else
+	local function getRandomRotationCF(p261)
+		local Angles = CFrame.Angles;
+		local v262 = Random.new():NextNumber(-p261, p261);
+		local v263 = math.rad(v262);
+		local v264 = Random.new():NextNumber(-p261, p261);
+		local v265 = math.rad(v264);
+		local v266 = Random.new():NextNumber(-p261, p261);
+
+		return Angles(v263, v265, (math.rad(v266)));
+	end;
+
+	local function getRandomScaleVector(p267)
+		local v268 = p267 or 0.25;
+		local v269 = Random.new():NextNumber(1 - v268, v268 + 1);
+		local v270 = Random.new():NextNumber(1 - v268, v268 + 1);
+		local v271 = Random.new();
+
+		return Vector3.new(v269, v270, v271:NextNumber(1 - v268, v268 + 1));
+	end;
+
+	local function getAbilityIcon(p272)
+
+		local v273 = u4 and u4:FindFirstChild("PlayerGui");
+
+		if v273 then
+			v273 = v273:FindFirstChild("MainUI");
+		end;
+
+		if v273 then
+			v273 = v273:FindFirstChild("AbilityContainer");
+		end;
+
+		if v273 then
+			v273 = v273:FindFirstChild(p272);
+		end;
+
+		return v273;
+	end;
+
+	local function setAbilityCount(p274, p275, p276, p277)
+
+		local v278 = u4 and u4:FindFirstChild("PlayerGui");
+
+		if v278 then
+			v278 = v278:FindFirstChild("MainUI");
+		end;
+
+		if v278 then
+			v278 = v278:FindFirstChild("AbilityContainer");
+		end;
+
+		if v278 then
+			v278 = v278:FindFirstChild(p275);
+		end;
+
+		if v278 then
+			v278 = v278:FindFirstChild("Charges");
+		end;
+
+		if not v278 then
+			return;
+		end;
+
+		p274.Cache.AbilityCountTextColors = p274.Cache.AbilityCountTextColors or {};
+
+		if not p274.Cache.AbilityCountTextColors[p275] then
+			p274.Cache.AbilityCountTextColors[p275] = v278.TextColor3;
+		end;
+
+		local v279 = math.min(p276, p277);
+		v278.Text = v279 <= 0 and "" or tostring(v279);
+		local v280;
+
+		if p277 <= v279 then
+			v280 = Color3.fromRGB(255, 70, 70);
+		else
+			v280 = p274.Cache.AbilityCountTextColors[p275];
+		end;
+
+		v278.TextColor3 = v280;
+	end;
+
+	local function setAbilityIconVisible(p281, p282, p283)
+
+		local v284 = u4 and u4:FindFirstChild("PlayerGui");
+
+		if v284 then
+			v284 = v284:FindFirstChild("MainUI");
+		end;
+
+		if v284 then
+			v284 = v284:FindFirstChild("AbilityContainer");
+		end;
+
+		if v284 then
+			v284 = v284:FindFirstChild(p282);
+		end;
+
+		if not v284 then
+			return;
+		end;
+
+		p281.Cache.HiddenAbilityIconSizes = p281.Cache.HiddenAbilityIconSizes or {};
+		local HiddenAbilityIconSizes = p281.Cache.HiddenAbilityIconSizes;
+
+		if p283 then
+			if HiddenAbilityIconSizes[p282] then
+				v284.Size = HiddenAbilityIconSizes[p282];
+				HiddenAbilityIconSizes[p282] = nil;
+			end;
+
+			v284.Visible = true;
+
+			return;
+		end;
+
+		if not HiddenAbilityIconSizes[p282] then
+			HiddenAbilityIconSizes[p282] = v284.Size;
+		end;
+
+		v284.Visible = false;
+		v284.Size = UDim2.fromScale(0, 0);
+	end;
+
+	local function updateConstructCounters(p285)
+
+		local v286 = p285.State.ConstructCounts or {};
+		setAbilityCount(p285, "Sow", v286.GroundBulb or 0, (getConstructLimit(p285, "GroundBulb")));
+		setAbilityCount(p285, "Blossom", v286.Vine or 0, (getConstructLimit(p285, "Vine")));
+	end;
+
+	local function getGolemLifetimeBarData(p287)
+		local Golems = p287.State.Golems;
+
+		if not Golems then
+			return nil;
+		end;
+
+		local v288 = p287.State.ControllingGolem or p287.State.SelectedGolem;
+
+		if v288 then
+			v288 = Golems[v288];
+		end;
+
+		return v288;
+	end;
+
+	local function updateGolemLifetimeBar(p289)
+		local Unravel = p289.Behavior.Abilities.Unravel;
+		local Golems = p289.State.Golems;
+		local v290;
+
+		if Golems then
+			v290 = p289.State.ControllingGolem or p289.State.SelectedGolem;
+
+			if v290 then
+				v290 = Golems[v290];
+			end;
+		else
+			v290 = nil;
+		end;
+
+		if not (v290 and (v290.Lifetime and v290.RemainingLifetime)) then
+			Unravel.ChargeDuration = nil;
+			Unravel.CurrentRecharge = nil;
+			Unravel.RechargeInverted = nil;
+			Unravel.RechargePaused = nil;
+
+			return;
+		end;
+
+		local v291 = math.clamp(v290.RemainingLifetime, 0, v290.Lifetime);
+
+		if p289.State.ControllingGolem and v290.LifetimeStartedAt then
+			local v292 = v291 - (os.clock() - v290.LifetimeStartedAt);
+			v291 = math.max(v292, 0);
+		end;
+
+		Unravel.ChargeDuration = v290.Lifetime;
+		Unravel.CurrentRecharge = math.clamp(v290.Lifetime - v291, 0, v290.Lifetime);
+		Unravel.RechargeInverted = true;
+		Unravel.RechargePaused = not (p289.State.ControllingGolem and v290.LifetimeStartedAt);
+	end;
+
+	function u77.lcl_DenyBuild(p293, p294, p295, message)
+
+		Util:CreateWarning("AzureBuildNo", message or "Move further away from your other plants.");
+		__playSound(p294, "BuildDenied", {
+			Parent = workspace
+		});
+	end;
+
+	function u77.lcl_SetGolemSpawnAbilityLocks(p296, p297, u298)
+
+		task.defer(function()
+
+			for _, v in ipairs({ "Slash", "Sow", "Blossom", "Unravel" }) do
+				Util:ToggleLockForAbilityIcon(v, "GolemSpawn", u298);
+			end;
+		end);
+	end;
+
+	function u77.lcl_ResetGrabVisuals(_, actor)
+		if actor.State then
+			actor.State.GrabAimingSequence = nil
+			actor.State.GrabAimingBeam = nil
+			actor.State.TrackingMousePosition = nil
+			actor.State.GrabbedRoot = nil
+		end
+		actor.LookFlag = nil
+		if actor.Cache then
+			actor.Cache.AzureFacingToken = nil
+			actor.Cache.AzureAimRenderToken = nil
+			actor.Cache.AzureHoldRenderToken = nil
+		end
+		RunService:UnbindFromRenderStep("AzureCameraUpdate")
+		RunService:UnbindFromRenderStep("AzureCameraUpdateHoming")
+		RunService:UnbindFromRenderStep("MouseTracking")
+		local rig = actor.Rig
+		local hum = rig and rig:FindFirstChildOfClass("Humanoid")
+		if not hum then return end
+		rig:SetAttribute("AzureGrabFacing", nil)
+		rig:SetAttribute("DirectionalMovementDisabled", nil)
+		rig:SetAttribute("MoveAnimationOverwrite", nil)
+		local animator = hum:FindFirstChildOfClass("Animator")
+		if animator then
+			local ids = {}
+			for name, id in actor.Config.Animations do
+				if name:match("^Grab") and typeof(id) == "string" then ids[id] = true end
+			end
+			for _, track in animator:GetPlayingAnimationTracks() do
+				if track.Animation and ids[track.Animation.AnimationId] then track:Stop(0) end
+			end
+		end
+		if actor.Destroyed or hum.Health <= 0 or not rig:IsDescendantOf(workspace) then return end
+		local shiftLock = require(ReplicatedStorage.Systems.Player.Game.SmoothShiftLock)
+		hum.AutoRotate = not shiftLock:IsEnabled()
+		actor.Moving = nil
+		if actor.AnimationType == false or rig:GetAttribute("Ragdolling") then return end
+		local prefix = actor.AnimationType or (hum.Health - (hum:GetAttribute("FakeDamage") or 0) <= hum.MaxHealth / 2 and "Injured" or "")
+		local root = rig.PrimaryPart
+		local moving = root and Vector3.new(root.AssemblyLinearVelocity.X, 0, root.AssemblyLinearVelocity.Z).Magnitude > 0.5
+		local name = moving and (Sprinting.IsSprinting and "Run" or "Walk") or "Idle"
+		local track = actor.Animations and actor.Animations[prefix .. name]
+		if track and not track.IsPlaying then track:Play(0.1) end
+	end;
+
+	function u77.lcl_SetGrabSprintDisabled(_, actor, disabled)
+		actor.Cache = actor.Cache or {}
+		if disabled then
+			actor.Cache.AzureGrabResumeSprint = actor.Cache.AzureGrabResumeSprint or Sprinting.IsSprinting
+		end
+		Network:FireConnection("DisableSprinting", "AzureGrab", disabled)
+		if disabled then
+
+			if Sprinting.__speedMultiplier then
+				TweenService:Create(Sprinting.__speedMultiplier, TweenInfo.new(0), {Value = 1}):Play()
+			end
+			if Sprinting.__FOVMultiplier then
+				TweenService:Create(Sprinting.__FOVMultiplier, TweenInfo.new(0.1), {Value = 1}):Play()
+			end
+		end
+		if not disabled then
+			local resumeMobile = actor.Cache.AzureGrabResumeSprint
+			actor.Cache.AzureGrabResumeSprint = nil
+			if Sprinting.CanSprint and Sprinting.BindsEnabled then
+				if Device:GetPlayerDevice() == "Mobile" then
+					if resumeMobile and not Sprinting.IsSprinting and Sprinting.__sprintHandler then
+						Sprinting.__sprintHandler("Sprinting", Enum.UserInputState.Begin)
+					end
+				else
+					Sprinting:SyncHeldKey()
+				end
+			end
+		end
+	end;
+
+	function u77.lcl_SetGrabAbilityLocks(p299, p300, u301, lockSlash)
+
+		task.defer(function()
+
+			for _, v in ipairs({ "Sow", "Blossom", "Unravel" }) do
+				Util:ToggleLockForAbilityIcon(v, "AzureGrab", u301);
+			end;
+			Util:ToggleLockForAbilityIcon("Slash", "AzureGrab", u301 and lockSlash == true);
+		end);
+	end;
+
+	function u77.lcl_SetGrabStaminaRegenReduction(p302, p303, p304)
+
+		if p304 then
+			if p303.Cache.AzureGrabStaminaGain == nil then
+				p303.Cache.AzureGrabStaminaGain = Sprinting.StaminaGain or 20;
+			end;
+
+			Sprinting.StaminaGain = p303.Cache.AzureGrabStaminaGain * 0.25;
+		elseif p303.Cache.AzureGrabStaminaGain ~= nil then
+			Sprinting.StaminaGain = p303.Cache.AzureGrabStaminaGain;
+			p303.Cache.AzureGrabStaminaGain = nil;
+		end;
+
+		if not p304 then
+			p303.Cache.AzureGrabConnected = nil;
+		end;
+	end;
+
+	function u77.lcl_RegisterSeeker(p305, p306, p307)
+
+		p306.State.ActiveSeekers = p306.State.ActiveSeekers or {};
+		local Part = Instance.new("Part");
+		Part.CanCollide = false;
+		Part.CanQuery = true;
+		Part.CanTouch = true;
+		Part.Transparency = u3 and 0.9 or 1;
+		Part.Size = Vector3.new(8, 8, 8);
+		Part.Anchored = true;
+		Part.Name = "SeekerHoverHitbox";
+		Part.Parent = workspace.Map.Ingame;
+		Part.Shape = Enum.PartType.Ball;
+		Part.CFrame = p307.CFrame;
+		Part:SetAttribute("UUID", p307.UUID);
+		p306.State.ActiveSeekers[p307.UUID] = {
+			Selectable = false,
+			HoverHitbox = Part
+		};
+	end;
+
+	function u77.lcl_UnregisterSeeker(p308, p309, p310)
+		p309.State.ActiveSeekers = p309.State.ActiveSeekers or {};
+		local v311 = p309.State.ActiveSeekers[p310.UUID];
+
+		if v311 then
+			v311.HoverHitbox:Destroy();
+			table.clear(v311);
+			p309.State.ActiveSeekers[p310.UUID] = nil;
+		end;
+	end;
+
+	function u77.lcl_CreateGolemStatueHighlight(p312, p313, p314)
+		local Highlight = Instance.new("Highlight");
+		Highlight.FillTransparency = 0.9;
+		Highlight.OutlineTransparency = 0.7;
+		Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop;
+		Highlight.FillColor = Color3.new(0.341176, 0.12549, 0.384314);
+		Highlight.Parent = p314;
+
+		return Highlight;
+	end;
+
+	function u77.lcl_ToggleStatueHighlight(p315, p316, p317, p318)
+		p317.FillTransparency = p318 and 0.1 or 0.9;
+		p317.OutlineTransparency = p318 and 0.1 or 0.7;
+		local v319;
+
+		if p318 then
+			v319 = Color3.new(0.701961, 0, 1);
+		else
+			v319 = Color3.new(0.341176, 0.12549, 0.384314);
+		end;
+
+		p317.FillColor = v319;
+	end;
+
+	function u77.lcl_CreateGolem(p320, p321, p322)
+
+		if not p321.State.Golems then
+			return;
+		end;
+
+		local Part = Instance.new("Part");
+		Part.CanCollide = false;
+		Part.CanQuery = true;
+		Part.CanTouch = true;
+		Part.Transparency = u3 and 0.9 or 1;
+		Part.Size = Vector3.new(8, 8, 8);
+		Part.Anchored = true;
+		Part.Name = "GolemHoverHitbox";
+		Part.Parent = workspace.Map.Ingame;
+		Part.Shape = Enum.PartType.Ball;
+		Part.CFrame = p322.CFrame;
+		Part:SetAttribute("UUID", p322.UUID);
+		p321.State.Golems[p322.UUID] = {
+			Selectable = false,
+			HoverHitbox = Part,
+			Lifetime = p322.Lifetime,
+			RemainingLifetime = p322.RemainingLifetime or p322.Lifetime
+		};
+		updateGolemLifetimeBar(p321);
+		AnimationSupport.Track(p321, "GolemSpawn"):Play();
+		Util:ApplyCameraShake(0.25, 4.8);
+		p321.Behavior:EnableStomping(p321);
+		local MassInfectionShockwaveVignette = p321.Config.Instances.MassInfectionShockwaveVignette;
+		local u323;
+
+		if MassInfectionShockwaveVignette then
+			u323 = MassInfectionShockwaveVignette:Clone();
+		else
+			u323 = MassInfectionShockwaveVignette;
+		end;
+
+		u323.Name = "AZURELONGSHINE";
+		u323.Parent = p321.Player.PlayerGui;
+		local u324 = u323:FindFirstChildOfClass("ImageLabel");
+
+		if MassInfectionShockwaveVignette then
+			u324.ImageTransparency = 1;
+			TweenService:Create(u324, TweenInfo.new(4.8, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+				ImageTransparency = 0.9
+			}):Play();
+			task.delay(4.8, function()
+
+				TweenService:Create(u324, TweenInfo.new(1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+					ImageTransparency = 1
+				}):Play();
+			end);
+			task.delay(5.8, function()
+
+				u323:Destroy();
+			end);
+		end;
+	end;
+
+	function u77.lcl_UpdateGolemLifetime(p325, p326, p327, p328)
+
+		local v329 = p326.State.Golems and p326.State.Golems[p327];
+
+		if not v329 then
+			return;
+		end;
+
+		v329.RemainingLifetime = p328;
+
+		if p327 == p326.State.ControllingGolem then
+			v329.LifetimeStartedAt = os.clock();
+		else
+			v329.LifetimeStartedAt = nil;
+		end;
+
+		updateGolemLifetimeBar(p326);
+	end;
+
+	function u77.lcl_DestroyGolem(p330, p331, p332)
+
+		__pcallMethod("lcl_SetGolemSpawnAbilityLocks", p331, false);
+		local v333 = p331.State.Golems[p332];
+
+		if not v333 then
+			return;
+		end;
+
+		if v333.HoverHitbox then
+			v333.HoverHitbox:Destroy();
+		end;
+
+		if v333.Highlight then
+			v333.Highlight:Destroy();
+			v333.Highlight = nil;
+		end;
+
+		p331.State.Golems[p332] = nil;
+		table.clear(v333);
+
+		if not next(p331.State.Golems) then
+			p331.Behavior.Abilities.Unravel.ChargeDuration = nil;
+			p331.Behavior.Abilities.Unravel.CurrentRecharge = nil;
+			p331.Behavior.Abilities.Unravel.RechargeInverted = nil;
+			p331.Behavior.Abilities.Unravel.RechargePaused = nil;
+		end;
+
+		local MassInfectionShockwaveVignette = p331.Config.Instances.MassInfectionShockwaveVignette;
+		local u334;
+
+		if MassInfectionShockwaveVignette then
+			u334 = MassInfectionShockwaveVignette:Clone();
+		else
+			u334 = MassInfectionShockwaveVignette;
+		end;
+
+		u334.Name = "AZUREQUICKSHINE";
+		u334.Parent = p331.Player.PlayerGui;
+		local u335 = u334:FindFirstChildOfClass("ImageLabel");
+
+		if MassInfectionShockwaveVignette then
+			u335.ImageTransparency = 1;
+			TweenService:Create(u335, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+				ImageTransparency = 0.9
+			}):Play();
+			task.delay(0.2, function()
+
+				TweenService:Create(u335, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+					ImageTransparency = 1
+				}):Play();
+			end);
+			task.delay(1, function()
+
+				u334:Destroy();
+			end);
+		end;
+	end;
+
+	function u77.lcl_ControlGolem(p336, u337, p338, p339, p340, p341, p342)
+
+		local v343 = u337.State.Golems[p338];
+
+		if not v343 then
+			return;
+		end;
+
+		v343.RemainingLifetime = p340 or v343.RemainingLifetime;
+		local v344;
+
+		if p341 == false then
+			v344 = nil;
+		else
+			v344 = os.clock();
+		end;
+
+		v343.LifetimeStartedAt = v344;
+		v343.Statue = nil;
+
+		if v343.Highlight then
+			v343.Highlight:Destroy();
+			v343.Highlight = nil;
+		end;
+
+		if p339 then
+			Util:ToggleLockForAbilityIcon("Unravel", "PowerGolem", true);
+		else
+			u337.Behavior.Abilities.Unravel.Name = "Burrowing";
+			u337.Behavior.Abilities.Unravel.Icon = "rbxassetid://118807424032527";
+		end;
+
+		u337.Behavior.Abilities.Slash.Name = "Pummeling";
+		u337.Behavior.Abilities.Slash.Icon = "rbxassetid://140315649585204";
+		u337.Behavior.Abilities.Sow.Name = "Blooming";
+		u337.Behavior.Abilities.Sow.Icon = "rbxassetid://137117538410289";
+		u337.Behavior.Abilities.Blossom.Name = "Unearthing";
+		u337.Behavior.Abilities.Blossom.Icon = "rbxassetid://93057344813136";
+		setAbilityIconVisible(u337, "Grab", false);
+		Util:ToggleLockForAbilityIcon("Grab", "Golem", true);
+		u337.Cache.CachedStaminaData = {
+			Stamina = Sprinting.Stamina,
+			MaxStamina = Sprinting.MaxStamina
+		};
+		u337.Cache.LastStamina = Sprinting.Stamina;
+		local Stamina = u337.Config.Golem.Stamina;
+		local v345 = v343.LastExited or 0;
+		local v346 = (v343.LastStamina or 40) + (os.clock() - v345) * u337.Config.Golem.StaminaGainIdle;
+		local v347 = math.clamp(v346, 0, Stamina);
+		Sprinting.MaxStamina = Stamina;
+		Sprinting.Stamina = v347;
+
+		if p342 == nil then
+			TweenService:Create(Util:CreateCameraOffset(u337.Rig, Vector3.new(0, 0, 0), "Golem"), TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Value = Vector3.new(0, 4, 0)
+			}):Play();
+		else
+			local u348 = p342.Position + Vector3.new(0, 1.5, 0);
+			local u349 = Util:CreateCameraOffset(u337.Rig, Vector3.new(0, 0, 0), "Golem");
+			local NumberValue = Instance.new("NumberValue");
+			NumberValue.Value = 0;
+			TweenService:Create(NumberValue, TweenInfo.new(0.75), {
+				Value = 1
+			}):Play();
+			local u350 = nil;
+			u350 = RunService.RenderStepped:Connect(function(p351)
+
+				local Value = NumberValue.Value;
+				u349.Value = (u337.Rig.PrimaryPart.CFrame * CFrame.new(0, 1.5, 0)):PointToObjectSpace(u348):Lerp(Vector3.new(0, 4, 0), NumberValue.Value);
+
+				if Value >= 1 then
+					u350:Disconnect();
+				end;
+			end);
+		end;
+
+		local MassInfectionShockwaveVignette = u337.Config.Instances.MassInfectionShockwaveVignette;
+		local u352;
+
+		if MassInfectionShockwaveVignette then
+			u352 = MassInfectionShockwaveVignette:Clone();
+		else
+			u352 = MassInfectionShockwaveVignette;
+		end;
+
+		u352.Name = "AZUREQUICKSHINE";
+		u352.Parent = u337.Player.PlayerGui;
+		local u353 = u352:FindFirstChildOfClass("ImageLabel");
+
+		if MassInfectionShockwaveVignette then
+			u353.ImageTransparency = 1;
+			TweenService:Create(u353, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+				ImageTransparency = 0.9
+			}):Play();
+			task.delay(0.2, function()
+
+				TweenService:Create(u353, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+					ImageTransparency = 1
+				}):Play();
+			end);
+			task.delay(1, function()
+
+				u352:Destroy();
+			end);
+		end;
+
+		u337.State.ControllingGolem = p338;
+		u337.AnimationType = "Golem";
+		updateGolemLifetimeBar(u337);
+	end;
+
+	function u77.lcl_ReleaseGolem(p354, u355, p356, p357, p358, p359, p360)
+
+		local v361 = u355.State.Golems[p356];
+
+		if not v361 then
+			return;
+		end;
+
+		v361.HoverHitbox.CFrame = p358;
+		v361.Statue = p357;
+		v361.Highlight = __pcallMethod("lcl_CreateGolemStatueHighlight", u355, p357);
+		v361.RemainingLifetime = p359 or v361.RemainingLifetime;
+		v361.LifetimeStartedAt = nil;
+		v361.LastExited = os.clock();
+		v361.LastStamina = Sprinting.Stamina;
+		u355.Behavior.Abilities.Unravel.Name = "Inflorescence";
+		u355.Behavior.Abilities.Unravel.Icon = "rbxassetid://109425766636886";
+		u355.Behavior.Abilities.Slash.Name = "Perforating";
+		u355.Behavior.Abilities.Slash.Icon = "rbxassetid://123556520269026";
+		u355.Behavior.Abilities.Sow.Name = "Seeker Bulb";
+		u355.Behavior.Abilities.Sow.Icon = "rbxassetid://109787679155717";
+		u355.Behavior.Abilities.Blossom.Name = "Stigmatize";
+		u355.Behavior.Abilities.Blossom.Icon = "rbxassetid://117545955019424";
+		local v362 = u355.Cache.CachedStaminaData or {};
+		local v363 = v362.MaxStamina or u355.Config.MaxStamina;
+		local v364 = math.clamp(v362.Stamina or (u355.Cache.LastStamina or v363), 0, v363);
+		Sprinting.MaxStamina = v363;
+		Sprinting.Stamina = v364;
+
+		if p360 == nil then
+			TweenService:Create(Util:CreateCameraOffset(u355.Rig, Vector3.new(0, 4, 0), "Golem", 0.75), TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+				Value = Vector3.new(0, 0, 0)
+			}):Play();
+		else
+			local u365 = p360.Position + Vector3.new(0, 1.5, 0);
+			local u366 = Util:CreateCameraOffset(u355.Rig, Vector3.new(0, 0, 0), "Golem");
+			local NumberValue = Instance.new("NumberValue");
+			NumberValue.Value = 0;
+			TweenService:Create(NumberValue, TweenInfo.new(0.75), {
+				Value = 1
+			}):Play();
+			local u367 = nil;
+			u367 = RunService.RenderStepped:Connect(function(p368)
+
+				local Value = NumberValue.Value;
+				u366.Value = (u355.Rig.PrimaryPart.CFrame * CFrame.new(0, 1.5, 0)):PointToObjectSpace(u365 + Vector3.new(0, 4, 0)):Lerp(Vector3.new(0, 0, 0), NumberValue.Value);
+
+				if Value >= 1 then
+					u367:Disconnect();
+				end;
+			end);
+		end;
+
+		Util:ToggleLockForAbilityIcon("Grab", "Golem", false);
+		setAbilityIconVisible(u355, "Grab", true);
+		local v369 = u4 and u4:FindFirstChild("PlayerGui");
+
+		if v369 then
+			v369 = v369:FindFirstChild("MainUI");
+		end;
+
+		if v369 then
+			v369 = v369:FindFirstChild("AbilityContainer");
+		end;
+
+		if v369 then
+			v369 = v369:FindFirstChild("Grab");
+		end;
+
+		if v369 then
+			u355.Cache.HiddenAbilityIconSizes = u355.Cache.HiddenAbilityIconSizes or {};
+			local HiddenAbilityIconSizes = u355.Cache.HiddenAbilityIconSizes;
+
+			if HiddenAbilityIconSizes.Grab then
+				v369.Size = HiddenAbilityIconSizes.Grab;
+				HiddenAbilityIconSizes.Grab = nil;
+			end;
+
+			v369.Visible = true;
+		end;
+
+		u355.State.ControllingGolem = nil;
+		u355.AnimationType = nil;
+		updateGolemLifetimeBar(u355);
+		local MassInfectionShockwaveVignette = u355.Config.Instances.MassInfectionShockwaveVignette;
+		local u370;
+
+		if MassInfectionShockwaveVignette then
+			u370 = MassInfectionShockwaveVignette:Clone();
+		else
+			u370 = MassInfectionShockwaveVignette;
+		end;
+
+		u370.Name = "AZUREQUICKSHINE";
+		u370.Parent = u355.Player.PlayerGui;
+		local u371 = u370:FindFirstChildOfClass("ImageLabel");
+
+		if MassInfectionShockwaveVignette then
+			u371.ImageTransparency = 1;
+			TweenService:Create(u371, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+				ImageTransparency = 0.9
+			}):Play();
+			task.delay(0.2, function()
+
+				TweenService:Create(u371, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+					ImageTransparency = 1
+				}):Play();
+			end);
+			task.delay(1, function()
+
+				u370:Destroy();
+			end);
+		end;
+	end;
+
+	function u77.lcl_OnHomingStopped(p372, p373)
+		p373.LookFlag = nil;
+		p373.Cache.HomingInstances = nil;
+	end;
+
+	function u77.lcl_OnHomingStart(p374, u375)
+
+		local Attachment = Instance.new("Attachment", u375.Rig.PrimaryPart);
+		local u376 = u375.Config.Instances.HomingLooker:Clone();
+		u376.Attachment0 = Attachment;
+		u376.CFrame = u375.Rig.PrimaryPart.CFrame;
+		u376.Parent = u375.Rig.PrimaryPart;
+		local u377 = Util:CreateFOVMultiplier(u375.Player, 1, "ScopeAzure");
+		TweenService:Create(u377, TweenInfo.new(1.2, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+			Value = 0.75
+		}):Play();
+		u375.LookFlag = true;
+		local facingToken = {};
+		u375.Cache.AzureFacingToken = facingToken;
+		u375.Rig:SetAttribute("AzureGrabFacing", true);
+		u375.Rig.Humanoid.AutoRotate = false;
+		u375.Rig:SetAttribute("DirectionalMovementDisabled", true);
+		task.spawn(function()
+
+			local u378 = Util:CreateCameraOffset(u375.Rig, Vector3.new(0, 0, 0), "AzureGrabAiming");
+			TweenService:Create(u378, TweenInfo.new(0.3), {
+				Value = Vector3.new(-2.5, 1, 0)
+			}):Play();
+			u375.Cache.AzureHoldRenderToken = facingToken;
+			RunService:BindToRenderStep("AzureCameraUpdateHoming", Enum.RenderPriority.Camera.Value + 2, function()
+				if u375.Cache.AzureFacingToken ~= facingToken then return end;
+
+				local LookVector = workspace.CurrentCamera.CFrame.LookVector;
+				local v379 = Vector3.new(LookVector.X, 0, LookVector.Z);
+
+				if v379.Magnitude < 0.001 or v379 ~= v379 then
+					return;
+				end;
+
+				u376.CFrame = CFrame.new(u375.Rig.PrimaryPart.Position, u375.Rig.PrimaryPart.Position + v379);
+			end);
+
+			while u375.LookFlag and u375.Cache.AzureFacingToken == facingToken and u375.Rig:IsDescendantOf(workspace) do
+				RunService.Heartbeat:Wait();
+			end;
+
+			if u375.Cache.AzureHoldRenderToken == facingToken then
+				RunService:UnbindFromRenderStep("AzureCameraUpdateHoming");
+				u375.Cache.AzureHoldRenderToken = nil;
+			end;
+			if u375.Cache.AzureFacingToken ~= facingToken then
+				Attachment:Destroy(); u376:Destroy(); u378:Destroy(); u377:Destroy();
+				return;
+			end;
+			u375.Cache.AzureFacingToken = nil;
+			TweenService:Create(u378, TweenInfo.new(0.3), {
+				Value = Vector3.new(0, 0, 0)
+			}):Play();
+			TweenService:Create(u377, TweenInfo.new(0.3), {
+				Value = 1
+			}):Play();
+			task.delay(0.3, function()
+
+				u378:Destroy();
+				u377:Destroy();
+			end);
+			RunService:UnbindFromRenderStep("AzureCameraUpdateHoming");
+			Attachment:Destroy();
+			u376:Destroy();
+			u375.Rig:SetAttribute("AzureGrabFacing", nil);
+			local humanoid = u375.Rig:FindFirstChildOfClass("Humanoid");
+			if humanoid then humanoid.AutoRotate = true end;
+			u375.Rig:SetAttribute("DirectionalMovementDisabled", nil);
+		end);
+	end;
+
+	function u77.lcl_InitHomingUI(p380, p381, p382)
+
+		local v383 = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out);
+
+		for _, descendant in pairs(p382:GetDescendants()) do
+			if descendant:IsA("ImageLabel") then
+				local v384 = {
+					ImageTransparency = descendant.ImageTransparency
+				};
+				descendant.ImageTransparency = 1;
+				TweenService:Create(descendant, v383, v384):Play();
+			elseif descendant:IsA("TextLabel") then
+				local v385 = {
+					TextTransparency = descendant.TextTransparency,
+					TextStrokeTransparency = descendant.TextStrokeTransparency
+				};
+				descendant.TextTransparency = 1;
+				descendant.TextStrokeTransparency = 1;
+				TweenService:Create(descendant, v383, v385):Play();
+			end;
+		end;
+	end;
+
+	function u77.lcl_UpdateHomingUI(p386, p387, p388, p389)
+		local v390 = math.clamp(p389, 0, 1);
+		local RingFrame = p388.RingFrame;
+		local LeftFill = RingFrame.LeftClip.LeftFill;
+		local RightFill = RingFrame.RightClip.RightFill;
+		local UIGradient = LeftFill.UIGradient;
+		local UIGradient2 = RightFill.UIGradient;
+		local v391 = v390 * 360;
+
+		if v390 <= 0 then
+			LeftFill.Visible = false;
+			RightFill.Visible = false;
+
+			return;
+		end;
+
+		RightFill.Visible = true;
+
+		if v391 <= 180 then
+			LeftFill.Visible = false;
+			UIGradient2.Enabled = true;
+			UIGradient2.Rotation = v391;
+
+			return;
+		end;
+
+		UIGradient2.Enabled = true;
+		UIGradient2.Rotation = 180;
+		LeftFill.Visible = true;
+		UIGradient.Enabled = true;
+		UIGradient.Rotation = v391;
+	end;
+
+	function u77.lcl_DestroyHomingUI(p392, p393, p394)
+
+		local v395 = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In);
+
+		for _, descendant in pairs(p394:GetDescendants()) do
+			if descendant:IsA("ImageLabel") then
+				TweenService:Create(descendant, v395, {
+					ImageTransparency = 1
+				}):Play();
+			elseif descendant:IsA("TextLabel") then
+				TweenService:Create(descendant, v395, {
+					TextTransparency = 1,
+					TextStrokeTransparency = 1
+				}):Play();
+			end;
+		end;
+
+		game.Debris:AddItem(p394, 0.6);
+	end;
+
+	function u77.lcl_StartMouseTracking(p396, p397)
+
+		local Attachment = Instance.new("Attachment");
+		local Attachment2 = Instance.new("Attachment");
+		local v398 = p397.Config.Instances.TrajectoryBeam:Clone();
+		local v399 = p397.Config.Instances.TrajectoryTarget:Clone();
+		local Grab = resolveAzureGrabConfig(p397);
+		local ThrowVelocity = Grab.ThrowVelocity;
+		local v400 = workspace.Gravity * Grab.GravityCoefficient;
+		local v401 = RaycastParams.new();
+		v401.RespectCanCollide = true;
+		v401.CollisionGroup = "Killers";
+		v401.FilterType = Enum.RaycastFilterType.Exclude;
+		v401.FilterDescendantsInstances = workspace.Players:GetDescendants();
+		Attachment2.Parent = workspace.Terrain;
+		v398.Parent = workspace.Map.Ingame;
+		v399.Parent = workspace.Map.Ingame;
+		v398.Attachment0 = Attachment;
+		v398.Attachment1 = Attachment2;
+		local v402 = {};
+		local v403 = 0;
+
+		for _, descendant in ipairs(p397.Rig:GetDescendants()) do
+			if descendant:IsA("BasePart") then
+				table.insert(v402, descendant);
+			end;
+		end;
+
+		local v404 = 0;
+
+		while p397.State and p397.State.TrackingMousePosition do
+			if p397.State.MousePosition then
+				local v405 = p397.State.GrabbedRoot or p397.Rig.PrimaryPart;
+				if not v405 or not v405.Parent then break end;
+				local _, v406, v407, v408, v409 = getTrajectoryPoints(Vector3.new(0, 1, 0) * -v400, (p397.State.MousePosition or Vector3.new(0, 0, 1)).Unit * ThrowVelocity, v405.CFrame.Position, v401);
+				local v410 = math.max(0, 0.75 - v404);
+				v404 = v404 + math.clamp(v403 * 2, 0, v410);
+				Attachment.Parent = v405;
+				v398.CurveSize0 = v406;
+				v398.CurveSize1 = v407;
+				Attachment.CFrame = Attachment.Parent.CFrame:inverse() * v408;
+				Attachment2.CFrame = Attachment2.Parent.CFrame:inverse() * v409;
+				v399:PivotTo(v409);
+				v403 = task.wait();
+			else
+				task.wait();
+			end;
+		end;
+
+		spawn(function()
+			for _ = 1, 16 do
+				task.wait();
+			end;
+		end);
+		Attachment:Destroy();
+		Attachment2:Destroy();
+		v398:Destroy();
+		v399:Destroy();
+	end;
+
+	function u77.cl_UpdateFlowers(p411, u412, p413, p414)
+
+		local function createOneFlower(p415)
+
+			local u416 = u412.Config.Instances.InfectionFlower:Clone();
+			local v417 = math.random(0, 1);
+			local v418 = v417 == 0 and -1 or v417;
+			local v419 = p415:FindFirstChild("Torso") or p415:FindFirstChild("UpperTorso");
+
+			if v419 ~= nil then
+				local v420 = CFrame.new((math.random() - 0.5) * v419.Size.X, (math.random() - 0.5) * v419.Size.Y, v418 * v419.Size.Z / 2) * CFrame.Angles(v418 == -1 and -1.5707963267948966 or 1.5707963267948966, 0, 0) * CFrame.Angles(0, math.random() * 2 * 3.141592653589793, 0);
+				local NumberValue = Instance.new("NumberValue");
+				NumberValue.Name = "SizeValue";
+				NumberValue:GetPropertyChangedSignal("Value"):Connect(function()
+
+					u416:ScaleTo((math.max(NumberValue.Value, 0.01)));
+				end);
+				NumberValue.Value = 0.01;
+				NumberValue.Parent = u416;
+				local Weld = Instance.new("Weld");
+				Weld.C0 = v420;
+				Weld.Part0 = v419;
+				Weld.Part1 = u416.PrimaryPart;
+				Weld.Parent = u416.PrimaryPart;
+
+				for _, descendant in pairs(u416:GetDescendants()) do
+					if descendant:IsA("BasePart") and descendant ~= u416.PrimaryPart then
+						local Weld2 = Instance.new("Weld");
+						Weld2.C0 = u416.PrimaryPart.CFrame:ToObjectSpace(descendant.CFrame);
+						Weld2.Part0 = u416.PrimaryPart;
+						Weld2.Part1 = descendant;
+						Weld2.Parent = descendant;
+						descendant.Anchored = false;
+					end;
+				end;
+
+				u416.PrimaryPart.Anchored = false;
+				u416.Parent = p415;
+				TweenService:Create(NumberValue, TweenInfo.new(0.5), {
+					Value = 0.6
+				}):Play();
+
+				return {
+					Character = p415,
+					FlowerModel = u416,
+					FlowerSize = NumberValue,
+					FlowerWeld = Weld
+				};
+			end;
+		end;
+
+		local function deleteOneFlower(p421)
+
+			local v422 = u412.State.FlowersGenerated[p421];
+
+			if v422 == nil then
+				return;
+			end;
+
+			local u423 = v422.Flowers[1];
+
+			if u423 == nil then
+				return;
+			end;
+
+			TweenService:Create(u423.FlowerSize, TweenInfo.new(1), {
+				Value = 0
+			}):Play();
+			task.delay(1, function()
+
+				u423.FlowerModel:Destroy();
+			end);
+			table.remove(v422.Flowers, 1);
+			v422.Count = v422.Count - 1;
+		end;
+
+		local function deleteAllFlowers(p424)
+
+			local v425 = u412.State.FlowersGenerated[p424];
+
+			if v425 == nil then
+				return;
+			end;
+
+			for _ = #v425.Flowers, 1, -1 do
+				deleteOneFlower(p424);
+			end;
+		end;
+
+		local v426 = u412.State.FlowersGenerated[p413];
+
+		if v426 == nil then
+			v426 = {
+				Count = 0,
+				Flowers = {}
+			};
+			u412.State.FlowersGenerated[p413] = v426;
+		end;
+
+		if p414 ~= v426.Count then
+			if p414 < v426.Count then
+				for _ = #v426.Flowers, p414 + 1, -1 do
+					deleteOneFlower(p413);
+				end;
+			elseif v426.Count < p414 then
+				for _ = 1, p414 - v426.Count do
+					local v427 = createOneFlower(p413);
+					table.insert(v426.Flowers, v427);
+					v426.Count = v426.Count + 1;
+				end;
+			end;
+		end;
+
+		if v426.Count == 0 then
+			u412.State.FlowersGenerated[p413] = nil;
+		end;
+	end;
+
+	function u77.lcl_HighlightCharacterInReachForGrab(p428, p429, p430, p431)
+
+		p429.State.HighlightedCharacters = p429.State.HighlightedCharacters or {};
+
+		if p429.State.HighlightedCharacters[p430] then
+			return;
+		end;
+
+		if p430:GetAttribute("Undetectable") == true then
+			return;
+		end;
+
+		local Highlight = Instance.new("Highlight");
+		Highlight.Name = "AzureReachHighlight";
+		Highlight.FillTransparency = 1;
+		Highlight.FillColor = Color3.fromRGB(255, 0, 251);
+		Highlight.OutlineTransparency = 0.5;
+		Highlight.OutlineColor = Color3.fromRGB(255, 0, 251);
+		Highlight.DepthMode = Enum.HighlightDepthMode.Occluded;
+		Highlight.Parent = p430;
+		p429.State.HighlightedCharacters[p430] = Highlight;
+		local v432 = TweenService:Create(Highlight, TweenInfo.new(0.2), {
+			FillTransparency = 0,
+			OutlineTransparency = 0
+		});
+		v432:Play();
+		v432.Completed:Connect(function(p433)
+
+			if p433 == Enum.PlaybackState.Completed then
+				TweenService:Create(Highlight, TweenInfo.new(0.4), {
+					FillColor = Color3.fromRGB(0, 0, 0)
+				}):Play();
+				TweenService:Create(Highlight, TweenInfo.new(0.8), {
+					FillTransparency = 0.75,
+					OutlineTransparency = 0.5
+				}):Play();
+			end;
+		end);
+	end;
+
+	function u77.lcl_RemoveHighlightCharacterInReachForGrab(p434, p435, p436, p437)
+
+		p435.State.HighlightedCharacters = p435.State.HighlightedCharacters or {};
+		local u438 = p435.State.HighlightedCharacters[p436];
+
+		if u438 == nil then
+			return;
+		end;
+
+		TweenService:Create(u438, TweenInfo.new(0.4), {
+			FillTransparency = 1,
+			OutlineTransparency = 1
+		}):Play();
+		task.delay(0.4, function()
+
+			u438:Destroy();
+		end);
+		p435.State.HighlightedCharacters[p436] = nil;
+	end;
+
+	function u77.lcl_StartGrabAiming(p439, u440)
+
+		local Attachment = Instance.new("Attachment", u440.Rig.PrimaryPart);
+		local u441 = u440.Config.Instances.HomingLooker:Clone();
+		u441.PrimaryAxisOnly = false;
+		u441.Responsiveness = 200;
+		u441.Attachment0 = Attachment;
+		u441.CFrame = u440.Rig.PrimaryPart.CFrame;
+		u441.Parent = u440.Rig.PrimaryPart;
+		u440.State.GrabAimingSequence = true;
+		local facingToken = {};
+		u440.Cache.AzureFacingToken = facingToken;
+		u440.Rig:SetAttribute("AzureGrabFacing", true);
+		local lastAimSent = -math.huge;
+		u440.State.HighlightedCharacters = u440.State.HighlightedCharacters or {};
+		local u442 = Util:CreateFOVMultiplier(u440.Player, 1, "AzureScopeGrab");
+		TweenService:Create(u442, TweenInfo.new(1, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+			Value = 0.75
+		}):Play();
+		u440.LookFlag = true;
+		u440.Rig.Humanoid.AutoRotate = false;
+		task.spawn(function()
+
+			local u443 = Util:CreateCameraOffset(u440.Rig, Vector3.new(0, 0, 0), "AzureGrabAiming");
+			TweenService:Create(u443, TweenInfo.new(0.55, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+				Value = Vector3.new(2.5, 1, 0)
+			}):Play();
+
+			for _, child in pairs(workspace.Players.Survivors:GetChildren()) do
+				if (u440.Rig.PrimaryPart.Position - child:GetPivot().Position).Magnitude >= u440.Config.Grab.HookRange or child:GetAttribute("Undetectable") then
+					__pcallMethod("lcl_RemoveHighlightCharacterInReachForGrab", u440, child, true);
+				else
+					__pcallMethod("lcl_HighlightCharacterInReachForGrab", u440, child, true);
+				end;
+			end;
+			if workspace:GetAttribute("FriendlyFire") then
+				for _, child in pairs(workspace.Players.Killers:GetChildren()) do
+					if child == u440.Rig then continue end
+					if (u440.Rig.PrimaryPart.Position - child:GetPivot().Position).Magnitude >= u440.Config.Grab.HookRange or child:GetAttribute("Undetectable") then
+						__pcallMethod("lcl_RemoveHighlightCharacterInReachForGrab", u440, child, true);
+					else
+						__pcallMethod("lcl_HighlightCharacterInReachForGrab", u440, child, true);
+					end;
+				end;
+			end
+
+			u440.Cache.AzureAimRenderToken = facingToken;
+			RunService:BindToRenderStep("AzureCameraUpdate", Enum.RenderPriority.Camera.Value + 5, function()
+				if u440.Cache.AzureFacingToken ~= facingToken then return end;
+
+				if not (u440.Rig and u440.Rig.PrimaryPart) then
+					return;
+				end;
+
+				local LookVector = workspace.CurrentCamera.CFrame.LookVector;
+				if os.clock() - lastAimSent >= 0.05 then
+					lastAimSent = os.clock();
+					Network:FireServerConnection(`{u440.Player.Name}AzureUpdateMouse`, "REMOTE_EVENT", LookVector);
+				end;
+				local v444 = Vector3.new(LookVector.X, 0, LookVector.Z);
+
+				if v444.Magnitude < 0.001 or v444 ~= v444 then
+					return;
+				end;
+
+
+
+				u441.CFrame = CFrame.lookAt(u440.Rig.PrimaryPart.Position, u440.Rig.PrimaryPart.Position + v444);
+
+				for _, child in pairs(workspace.Players.Survivors:GetChildren()) do
+					if (u440.Rig.PrimaryPart.Position - child:GetPivot().Position).Magnitude >= u440.Config.Grab.HookRange or child:GetAttribute("Undetectable") then
+						__pcallMethod("lcl_RemoveHighlightCharacterInReachForGrab", u440, child);
+					else
+						__pcallMethod("lcl_HighlightCharacterInReachForGrab", u440, child);
+					end;
+				end;
+				if workspace:GetAttribute("FriendlyFire") then
+					for _, child in pairs(workspace.Players.Killers:GetChildren()) do
+						if child == u440.Rig then continue end
+						if (u440.Rig:GetPivot().Position - child:GetPivot().Position).Magnitude >= u440.Config.Grab.HookRange or child:GetAttribute("Undetectable") then
+							__pcallMethod("lcl_RemoveHighlightCharacterInReachForGrab", u440, child);
+						else
+							__pcallMethod("lcl_HighlightCharacterInReachForGrab", u440, child);
+						end;
+					end;
+				end
+			end);
+
+			while u440.State.GrabAimingSequence == true and u440.Cache.AzureFacingToken == facingToken and u440.Rig:IsDescendantOf(workspace) do
+				RunService.Heartbeat:Wait();
+			end;
+
+			if u440.Cache.AzureAimRenderToken == facingToken then
+				RunService:UnbindFromRenderStep("AzureCameraUpdate");
+				u440.Cache.AzureAimRenderToken = nil;
+			end;
+			if u440.Cache.AzureFacingToken ~= facingToken then
+				Attachment:Destroy(); u441:Destroy(); u443:Destroy(); u442:Destroy();
+				return;
+			end;
+			u440.Cache.AzureFacingToken = nil;
+			for i, _ in pairs(u440.State.HighlightedCharacters) do
+				__pcallMethod("lcl_RemoveHighlightCharacterInReachForGrab", u440, i);
+			end;
+
+			TweenService:Create(u443, TweenInfo.new(0.5, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
+				Value = Vector3.new(0, 0, 0)
+			}):Play();
+			TweenService:Create(u442, TweenInfo.new(0.3), {
+				Value = 1
+			}):Play();
+			task.delay(0.5, function()
+
+				u443:Destroy();
+				u442:Destroy();
+			end);
+			RunService:UnbindFromRenderStep("AzureCameraUpdate");
+			Attachment:Destroy();
+			u441:Destroy();
+			u440.Rig:SetAttribute("AzureGrabFacing", nil);
+			local humanoid = u440.Rig:FindFirstChildOfClass("Humanoid");
+			if humanoid then humanoid.AutoRotate = true end;
+		end);
+	end;
+
+	function u77.lcl_EndGrabAiming(p445, u446)
+		u446.State.GrabAimingSequence = nil;
+
+	end;
+
+	function u77.lcl_StartGrabAimingBeamEffect(p447, u448)
+		u448.State.GrabAimingBeam = true;
+		local Attachment = Instance.new("Attachment");
+		local Attachment2 = Instance.new("Attachment");
+		local u449 = u448.Config.Instances.TrajectoryBeam:Clone();
+		local v450 = u448.Config.Instances.TargetParticle and u448.Config.Instances.TargetParticle:Clone();
+		local u451 = u448.Config.Instances.TrajectoryTarget:Clone();
+		local Grab = resolveAzureGrabConfig(u448);
+		local u452 = RaycastParams.new();
+		u452.RespectCanCollide = true;
+		u452.CollisionGroup = "Killers";
+		u452.FilterType = Enum.RaycastFilterType.Exclude;
+		u452.FilterDescendantsInstances = workspace.Players:GetDescendants();
+		Attachment2.Parent = workspace.Terrain;
+		u449.Parent = workspace.Map.Ingame;
+
+		if v450 then
+			v450.Parent = Attachment2;
+		end;
+
+		u451.Parent = workspace.Map.Ingame;
+		u449.Attachment0 = Attachment;
+		u449.Attachment1 = Attachment2;
+		local BillboardGui = Instance.new("BillboardGui");
+		BillboardGui.Name = "HomingScopeBillboard";
+		BillboardGui.Adornee = u451;
+		BillboardGui.Size = UDim2.new(2, 0, 2, 0);
+		BillboardGui.StudsOffset = Vector3.new(0, 0.5, 0);
+		BillboardGui.AlwaysOnTop = true;
+		BillboardGui.LightInfluence = 0;
+		BillboardGui.Parent = u451;
+		local v453 = u448.Config.Instances.HomingScopeEffect:Clone();
+		v453.BackgroundTransparency = 1;
+		v453.Size = UDim2.new(1, 0, 1, 0);
+		v453.Parent = BillboardGui;
+		task.spawn(function()
+
+			while u448.State.GrabAimingBeam ~= nil do
+				local v454 = u448.State.GrabbedRoot or u448.Rig.PrimaryPart;
+
+
+
+				if not v454 or not v454.Parent then
+					break;
+				end;
+
+				local Position = v454.CFrame.Position;
+				local v455 = workspace.CurrentCamera.CFrame.LookVector * Grab.HookRange;
+				local v456 = workspace:Raycast(Position, v455, u452);
+				local v457;
+
+				if v456 then
+					v457 = v456.Position;
+				else
+					v457 = Position + v455;
+				end;
+
+				local Rotation = CFrame.lookAt(v457, Position).Rotation;
+				Attachment.Parent = v454;
+				Attachment.CFrame = CFrame.new(0, 0, 0);
+				Attachment2.CFrame = CFrame.new(v457) * Rotation;
+				u451:PivotTo(CFrame.new(v457) * Rotation);
+				task.wait();
+			end;
+
+			Attachment:Destroy();
+			Attachment2:Destroy();
+			u449:Destroy();
+			u451:Destroy();
+		end);
+	end;
+
+	function u77.lcl_EndGrabAimingBeamEffect(p458, u459)
+		u459.State.GrabAimingBeam = nil;
+	end;
+
+	function u77.lcl_ClearRemoveAllFlowers(p460, p461)
+
+		local FlowersGenerated = p461.State.FlowersGenerated;
+
+		if FlowersGenerated == nil then
+			return;
+		end;
+
+		for i, _ in pairs(FlowersGenerated) do
+			u77:cl_UpdateFlowers(p461, i, 0);
+		end;
+	end;
+
+	function u77.cl_ListenForCrackRoots(p462, u463, u464)
+
+		local CrackVisualiserOptions = u463.Config.CrackVisualiserOptions;
+		local u465 = {};
+		local u466 = {};
+		local u467 = true;
+
+		for i, v in pairs(u5) do
+			if CrackVisualiserOptions[i] == nil then
+				CrackVisualiserOptions[i] = v;
+			end;
+		end;
+
+		local function onChildAdded(p468)
+
+			if u465[p468] then
+				return;
+			end;
+
+			u465[p468] = true;
+			local DivotSize = CrackVisualiserOptions.DivotSize;
+
+			for i = 0, p468.Size.Z, DivotSize / 2 do
+				for i2 = -1, 1, 2 do
+					local v469 = DivotSize * getRandomScaleVector(CrackVisualiserOptions.DivotSizeDeviance);
+					local Part = Instance.new("Part");
+					local v470 = p468.Size.X * CrackVisualiserOptions.WidthMultiplier;
+					local v471 = v470 * i2 * 0.75 + Random.new():NextNumber(-v470 * CrackVisualiserOptions.WidthDeviance, v470 * CrackVisualiserOptions.WidthDeviance);
+					local v472 = CFrame.new(v471, -CrackVisualiserOptions.DivotDepth, -i + p468.Size.Z / 2);
+					local AwayRotation = CrackVisualiserOptions.AwayRotation;
+					local AwayRotationDeviance = CrackVisualiserOptions.AwayRotationDeviance;
+					local fromAxisAngle = CFrame.fromAxisAngle;
+					local v473 = p468.CFrame.RightVector * i2;
+					local v474 = Random.new():NextNumber(AwayRotation - AwayRotationDeviance, AwayRotation + AwayRotationDeviance);
+					local v475 = fromAxisAngle(v473, (math.rad(v474))) * getRandomRotationCF(CrackVisualiserOptions.RandomRotation);
+
+					if CrackVisualiserOptions.Tweens and CrackVisualiserOptions.TweenConfig then
+						Part.CFrame = p468.CFrame * v472 * getRandomRotationCF(360) - p468.CFrame.YVector * 3;
+						TweenService:Create(Part, CrackVisualiserOptions.TweenConfig, {
+							Size = v469,
+							CFrame = p468.CFrame * v472 * v475
+						}):Play();
+					else
+						Part.CFrame = p468.CFrame * v472 * v475;
+						Part.Size = v469;
+					end;
+
+					Part.CanCollide = false;
+					Part.CanQuery = false;
+					Part.CanTouch = false;
+					Part.Material = p468.Material;
+					Part.Color = p468.Color;
+					Part.Anchored = true;
+					Part.Parent = workspace.Map;
+					table.insert(u466, Part);
+
+					if CrackVisualiserOptions.TimeInterval > 0 then
+						task.wait(CrackVisualiserOptions.TimeInterval);
+					end;
+
+					if not u464.Parent then
+						break;
+					end;
+				end;
+			end;
+		end;
+
+		u464.ChildAdded:Connect(onChildAdded);
+
+		for _, child in u464:GetChildren() do
+			onChildAdded(child);
+		end;
+
+		task.spawn(function()
+
+			local v476 = tostring(u464) .. "SpeedMultiplier";
+
+			while true do
+				while true do
+					if not u467 then
+						return;
+					end;
+
+					local Character = u4.Character;
+
+					if (tostring(Character.Parent) ~= "Survivors" and not workspace:GetAttribute("FriendlyFire")) or not Util:IsAlive(Character) then
+						break;
+					end;
+
+					local SpeedMultipliers = Character:FindFirstChild("SpeedMultipliers");
+
+					if SpeedMultipliers then
+						local v477 = OverlapParams.new();
+						v477.FilterType = Enum.RaycastFilterType.Include;
+						v477.FilterDescendantsInstances = { Character.PrimaryPart };
+						local v478 = false;
+
+						for i, _ in pairs(u465) do
+							if #workspace:GetPartsInPart(i, v477) > 0 then
+								v478 = true;
+								break;
+							end;
+						end;
+
+						if v478 then
+							if not SpeedMultipliers:FindFirstChild(v476) then
+								Util:CreateSpeedMultiplier(Character, u463.Config.GolemFissure.VictimSpeedMult, v476);
+							end;
+						elseif SpeedMultipliers:FindFirstChild(v476) then
+							SpeedMultipliers:FindFirstChild(v476):Destroy();
+						end;
+
+						task.wait(0.016666666666666666);
+
+						if not u467 and SpeedMultipliers:FindFirstChild(v476) then
+							SpeedMultipliers:FindFirstChild(v476):Destroy();
+						end;
+					else
+						task.wait();
+					end;
+				end;
+
+				task.wait();
+			end;
+		end);
+		u464.AncestryChanged:Connect(function()
+
+			u467 = nil;
+
+			for _, v in ipairs(u466) do
+				if CrackVisualiserOptions.Tweens and CrackVisualiserOptions.TweenConfig then
+					TweenService:Create(v, CrackVisualiserOptions.TweenConfig, {
+						Size = Vector3.new(0, 0, 0)
+					}):Play();
+					Debris:AddItem(v, 3);
+				else
+					v:Destroy();
+				end;
+			end;
+		end);
+	end;
+
+	function u77.cl_OnHomingStart(p479, p480)
+
+		if p480.Player == u4 then
+			return;
+		end;
+
+		__playSound(p480, "GrabWarning", {
+			RollOffMaxDistance = 100
+		});
+		local v481 = p480.Config.Instances.EyeGlintVFX:Clone();
+		v481.Parent = p480.Rig.Head;
+		v481.VFX:Emit(6);
+		game.Debris:AddItem(v481, 2);
+		local v482 = p480.Config.Instances.HomingSpotlightOthers:Clone();
+		local v483 = {
+			Angle = v482.Angle,
+			Range = v482.Range,
+			Color = v482.Color,
+			Brightness = v482.Brightness
+		};
+		v482.Color = Color3.new(1, 1, 1);
+		v482.Range = 0;
+		v482.Angle = 0;
+		v482.Brightness = 1;
+		v482.Parent = p480.Rig.PrimaryPart;
+		TweenService:Create(v482, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), v483):Play();
+		p480.Cache = p480.Cache or {};
+		p480.Cache.HomeInstances = {
+			SpotLight = v482
+		};
+	end;
+
+	function u77.cl_OnHomingStopped(p484, p485)
+
+		if p485.Player == u4 then
+			return;
+		end;
+
+		local v486 = p485.Cache and p485.Cache.HomeInstances and p485.Cache.HomeInstances.SpotLight;
+
+		if not v486 then
+			return;
+		end;
+
+		TweenService:Create(v486, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Angle = 0,
+			Brightness = 0,
+			Range = 0
+		}):Play();
+		game.Debris:AddItem(v486, 0.9);
+		table.clear(p485.Cache.HomeInstances);
+		p485.Cache.HomeInstances = nil;
+	end;
+
+	function u77.cl_UpdateTentacleTrackingPart(p487, u488, u489)
+
+		u488.State.GrabbedRoot = u489;
+		local PreAnimation = RunService.PreAnimation;
+
+		if u488.UpdateTentacleConnection then
+			u488.UpdateTentacleConnection:Disconnect();
+			u488.UpdateTentacleConnection = nil;
+		end;
+
+		if u488.BezierBoneTracker then
+			u488.BezierBoneTracker:Destroy();
+			u488.BezierBoneTracker = nil;
+		end;
+
+		local v490 = __pcallMethod("getTentacles", u488);
+
+		if not v490 and u3 then
+			warn("[Azure]: This Azure has no tentacles!");
+		end;
+
+		local v491 = __pcallMethod("getGrabbingTentacle", u488, v490);
+
+		if v491 then
+			local v492 = v491;
+
+			while v491 do
+				if v491:IsA("Bone") then
+					v491.Transform = CFrame.identity;
+				end;
+
+				v491 = v491:FindFirstChildOfClass("Bone");
+			end;
+
+			v491 = v492;
+		end;
+
+		if not (u489 and v491) then
+			if u3 then
+				warn("[Azure]: Failed to get grabbing tentacle!");
+			end;
+
+			return;
+		end;
+
+		local Torso = u488.Rig:FindFirstChild("Torso");
+
+		if not Torso then
+			if u3 then
+				warn("[Azure]: Failed to find Torso for tentacle tracking!");
+			end;
+
+			return;
+		end;
+
+		local CFrame2 = Torso.CFrame;
+		local u493 = os.clock();
+		local v494 = {};
+
+		repeat
+			table.insert(v494, v491);
+			v491 = v491:FindFirstChildOfClass("Bone");
+		until not v491;
+
+		local u495 = Torso.Position - CFrame2.LookVector * 0.8 + CFrame2.UpVector * 0.4;
+		local u496 = Torso.Position + CFrame2.RightVector * 1 * 7 + CFrame2.UpVector * 7 - CFrame2.LookVector * 4;
+		local Position = u489.Position;
+		u488.BezierBoneTracker = Util:BezierBoneTracking(v490, v494, u495, u496, Position, 1, 1);
+		u488.UpdateTentacleConnection = PreAnimation:Connect(function(p497)
+
+			if not u488.BezierBoneTracker then
+				return;
+			end;
+
+			local CFrame3 = Torso.CFrame;
+			u495 = Torso.Position - CFrame3.LookVector * 0.8 + CFrame3.UpVector * 0.4;
+			u496 = Torso.Position + CFrame3.RightVector * 1 * 7 + CFrame3.UpVector * 7 - CFrame3.LookVector * 4;
+			Position = u489.CFrame.Position;
+			u488.BezierBoneTracker.StartPoint = u495;
+			u488.BezierBoneTracker.ControlPoint = u496;
+			u488.BezierBoneTracker.EndPoint = Position;
+			local BezierBoneTracker = u488.BezierBoneTracker;
+			local v498 = (os.clock() - u493) / 0.1;
+			BezierBoneTracker.Time = math.clamp(v498, 0.1, 1);
+		end);
+		u488.Maid:Add(u488.UpdateTentacleConnection);
+		u488.Maid:Add(u488.BezierBoneTracker);
+	end;
+
+	function u77.cl_OnThrown(p499, u500, u501)
+
+		local PrimaryPart = u501.PrimaryPart;
+
+		if not PrimaryPart then
+			return;
+		end;
+
+		local u502 = u500.Config.Instances.ThrowWindVFX:Clone();
+		u502.Parent = workspace.Terrain;
+		u500.Cache = u500.Cache or {};
+		u500.Cache.TrailVFXInstances = u500.Cache.TrailVFXInstances or {};
+		u500.Cache.TrailVFXInstances[u501] = u502;
+		u500.Maid:Add(u502);
+		task.spawn(function()
+
+			while u502.Parent and Util:IsAlive(u501) do
+				local AssemblyLinearVelocity = PrimaryPart.AssemblyLinearVelocity;
+				u502.WorldCFrame = CFrame.new(PrimaryPart.Position, PrimaryPart.Position - (AssemblyLinearVelocity.Magnitude <= 0.01 and Vector3.new(0, 1, 0) or AssemblyLinearVelocity));
+				task.wait();
+			end;
+
+			if u500.Cache.TrailVFXInstances[u501] then
+				local v503 = u500.Cache.TrailVFXInstances[u501];
+				u500.Cache.TrailVFXInstances[u501] = nil;
+				v503:Destroy();
+			end;
+		end);
+	end;
+
+	function u77.cl_OnThrowEnded(p504, p505, p506)
+		if p505.Cache and (p505.Cache.TrailVFXInstances and p505.Cache.TrailVFXInstances[p506]) then
+			local v507 = p505.Cache.TrailVFXInstances[p506];
+			p505.Cache.TrailVFXInstances[p506] = nil;
+			v507:Destroy();
+		end;
+	end;
+
+	function u77.cl_CreateConstruct(p508, p509, p510)
+
+		local _ = p509.Player == u4;
+		local Type = p510.Type;
+
+		if p510.UUID and clientDrawnConstructs[p510.UUID] then
+			return;
+		end;
+		p510.Owner = p509.Player;
+		local v511 = p509.Config.ClientConstructBehavior[Type];
+
+		if not v511 then
+			warn((`[{script:GetFullName()}]: No client construct data for type: {Type}`));
+
+			return;
+		end;
+
+		local v512 = p509.Config.ConstructConfigs and p509.Config.ConstructConfigs[Type];
+
+		if not v512 then
+			warn((`[{script:GetFullName()}]: No server construct data for type: {Type}`));
+		end;
+
+		p510.Model = p509.Config.Instances[`{Type}Model`];
+
+		for i, v in pairs(p509.Config.ClientConstructConfigs[Type]) do
+			p510[i] = v;
+		end;
+
+		p510.Meta = v512 or {};
+		v511.Create(p510);
+		if p510.UUID then
+			clientDrawnConstructs[p510.UUID] = true;
+
+			local root = p510.Root;
+			if typeof(root) == "Instance" then
+				local uuid, constructType = p510.UUID, p510.Type;
+				root.AncestryChanged:Connect(function(_, parent)
+					if not parent and clientDrawnConstructs[uuid] then
+						__pcallMethod("cl_DestroyConstruct", p509, { UUID = uuid, Type = constructType });
+					end;
+				end);
+			end;
+		end;
+
+		if p509.Player == u4 and (p510.Type == "GroundBulb" or p510.Type == "Vine") then
+			p509.State.ConstructCounts = p509.State.ConstructCounts or {};
+			p509.State.ConstructCounts[p510.Type] = (p509.State.ConstructCounts[p510.Type] or 0) + 1;
+			updateConstructCounters(p509);
+		end;
+
+		if p510.Type == "Seeker" and p509.Player == u4 then
+			v511.CreateLocalUI(p510.UUID);
+			__pcallMethod("lcl_RegisterSeeker", p509, p510);
+		end;
+	end;
+
+	function u77.cl_ConstructEvent(p513, p514, p515, p516, ...)
+
+		local Type = p515.Type;
+		local v517 = p514.Config.ClientConstructBehavior[Type];
+
+		if not v517 then
+			warn((`[{script:GetFullName()}]: No client construct data for type: {Type}`));
+
+			return;
+		end;
+
+		local v518 = v517[p516];
+
+		if v518 then
+			v518(p515.UUID, ...);
+		else
+			warn((`[{script:GetFullName()}]: No client construct event for {p516}`));
+		end;
+
+		local v519 = p514.Player == u4 and (p515.Type == "Seeker" and (p516 == "OnDetectedChanged" and p514.State.ActiveSeekers[p515.UUID]));
+
+		if v519 then
+			v519.Selectable = table.pack(...)[1] > 0;
+		end;
+	end;
+
+	function u77.cl_DestroyConstruct(p520, p521, p522)
+
+		local Type = p522.Type;
+		local v523 = p521.Config.ClientConstructBehavior[Type];
+
+		if not v523 then
+			warn((`[{script:GetFullName()}]: No client construct data for type: {Type}`));
+
+			return;
+		end;
+
+		v523.Destroy(p522.UUID);
+		if p522.UUID then
+			clientDrawnConstructs[p522.UUID] = nil;
+		end;
+
+		if p521.Player == u4 and (p522.Type == "GroundBulb" or p522.Type == "Vine") then
+			p521.State.ConstructCounts = p521.State.ConstructCounts or {};
+			p521.State.ConstructCounts[p522.Type] = math.max((p521.State.ConstructCounts[p522.Type] or 1) - 1, 0);
+			updateConstructCounters(p521);
+		end;
+
+		if p522.Type == "Seeker" and p521.Player == u4 then
+			__pcallMethod("lcl_UnregisterSeeker", p521, p522);
+		end;
+	end;
+
+	function u77.cl_OnGroundExplode(p524, p525, p526, p527, p528)
+
+		local v529 = p528 or 1;
+		local SavedQualityLevel = UserSettings():GetService("UserGameSettings").SavedQualityLevel;
+		local v530;
+
+		if SavedQualityLevel == Enum.SavedQualitySetting.Automatic then
+			v530 = 2;
+		else
+			local v531 = tonumber((3 + SavedQualityLevel.Value) / 13);
+			v530 = math.floor(v531);
+		end;
+
+		for _ = 1, math.random(1, (math.floor((v530 or 0) / 2) + 1) * v529) do
+			local Part = Instance.new("Part");
+			local v532 = 2 + Random.new():NextNumber() * 1;
+			local v533 = 1.5 + Random.new():NextNumber() * 1.5;
+			local v534 = 2 + Random.new():NextNumber() * 1;
+			Part.Size = Vector3.new(v532, v533, v534) * (v529 / 2 + 0.5);
+			Part.CanCollide = false;
+			Part.CanQuery = false;
+			Part.CanTouch = false;
+			Part.Color = p527.Color;
+			Part.Material = p527.Material;
+			Part.Transparency = p527.Transparency + 0.1;
+			Part.CFrame = CFrame.new(p526);
+			local v535 = math.random(-45, 45);
+			local v536 = math.random(25, 75);
+			Part.AssemblyLinearVelocity = Vector3.new(v535, v536, math.random(-45, 45)) * v529;
+			local v537 = math.random(-45, 45);
+			local v538 = math.random(-45, 45);
+			Part.AssemblyAngularVelocity = Vector3.new(v537, v538, math.random(-45, 45)) * v529;
+			Part.Parent = workspace;
+			delay(1, function()
+
+				TweenService:Create(Part, TweenInfo.new(0.5), {
+					Transparency = 1
+				}):Play();
+			end);
+			game:GetService("Debris"):AddItem(Part, 2);
+		end;
+	end;
+
+	function u77.cl_StartRoots(p539, p540)
+		p540.State.RootsFromGolem = {};
+	end;
+
+	function u77.cl_GREP(p541, p542, p543, p544, p545)
+
+		local Part = Instance.new("Part");
+		Part.CanCollide = false;
+		Part.CanQuery = false;
+		Part.CanTouch = false;
+		Part.AudioCanCollide = false;
+		Part.Anchored = true;
+		Part.Transparency = 1;
+		Part.Size = p544;
+		Part.CFrame = p543;
+		local v546 = p542.Config.Instances.RootImages:GetChildren();
+		local v547 = v546[math.random(1, #v546)]:Clone();
+		v547.Transparency = 1;
+		v547.Parent = Part;
+		Part.Parent = workspace;
+		TweenService:Create(v547, TweenInfo.new(0.3), {
+			Transparency = 0
+		}):Play();
+		table.insert(p542.State.RootsFromGolem, p545 == true and 1 or #p542.State.RootsFromGolem + 1, Part);
+	end;
+
+	function u77.cl_HideAllRoots(p548, u549)
+
+		task.spawn(function()
+
+			local v550 = table.clone(u549.State.RootsFromGolem);
+			u549.State.RootsFromGolem = nil;
+
+			for i = #v550, 1, -1 do
+				local v551 = v550[i];
+				local v552 = v551 and v551:FindFirstChildOfClass("Decal");
+
+				if v552 then
+					TweenService:Create(v552, TweenInfo.new(0.3), {
+						Transparency = 1
+					}):Play();
+				end;
+
+				task.wait(0.016666666666666666);
+				Debris:AddItem(v551, 1);
+			end;
+		end);
+	end;
+
+	function u77.cl_AnimateAzureStatue(p553, p554, u555, p556)
+
+		local v557 = p556 == false and 1 or 0;
+		local NumberValue = Instance.new("NumberValue");
+		NumberValue.Value = p556 == false and 0 or 1;
+		NumberValue:GetPropertyChangedSignal("Value"):Connect(function()
+
+			u555:ScaleTo((math.max(NumberValue.Value, 0.01)));
+		end);
+
+		if p556 == true then
+			TweenService:Create(NumberValue, TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+				Value = v557
+			}):Play();
+
+			return;
+		end;
+
+		TweenService:Create(NumberValue, TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+			Value = v557
+		}):Play();
+	end;
+
+	function u77.EnableStomping(p558, p559)
+
+		assert(p558, "must pass killerInfo as argument");
+		local LocalPlayer = Players.LocalPlayer;
+
+		if LocalPlayer ~= p559.Player then
+			return;
+		end;
+
+		for i, v in pairs(p559.Animations) do
+			if i:find("GolemWalk") then
+				v.KeyframeReached:Connect(function(p560)
+
+					if p560 == "Footstep" and not LocalPlayer.Character:GetAttribute("FootstepsMuted") then
+						Util:ApplyCameraShake(0.1, 0.2);
+					end;
+				end);
+			elseif i:find("GolemRun") then
+				v.KeyframeReached:Connect(function(p561)
+
+					if p561 == "Footstep" and not LocalPlayer.Character:GetAttribute("FootstepsMuted") then
+						Util:ApplyCameraShake(0.2, 0.15);
+					end;
+				end);
+			end;
+		end;
+	end;
+end;
+
+u77.Abilities = {
+	Slash = {
+		LayoutOrder = 1,
+		Name = "Perforating",
+		Icon = "rbxassetid://123556520269026",
+		KeybindType = "MainAbility",
+		Cooldown = 1.8,
+
+		Callback = function(u562, p563)
+
+			local Slash = u562.Config.Slash;
+			("%*AzureCancel"):format(u562.Player.Name);
+
+			if not RunService:IsServer() then
+				if RunService:IsClient() then
+					local v564 = p563 == nil and {
+						IsGolem = false,
+						IgnoreHit = false
+					} or p563;
+
+					if v564.IgnoreHit == true then
+						return;
+					end;
+
+					if v564.IsGolem then
+						AnimationSupport.Track(u562, "GolemSlash"):Play(nil, 0.8, nil);
+
+						return;
+					end;
+
+					AnimationSupport.Track(u562, "Slash"):Play(0.2);
+				end;
+
+				return;
+			end;
+
+			if u562.State.GrabReadyToFire then
+				u562.State.GrabFireRequested = true;
+
+				return {
+					IsGolem = false,
+					IgnoreHit = true
+				};
+			end;
+
+			if u562.State.GrabbingFlag == true then
+				if u562.State.ThrowRequest == false then
+					u562.State.ThrowRequest = true;
+				end;
+
+				return {
+					IsGolem = false,
+					IgnoreHit = true
+				};
+			end;
+
+			if u562.State.ControllingGolem then
+				if u562.State.GolemSpawnLocked then
+					return nil;
+				end;
+
+				u562.AbilitiesDisabled = true;
+				u562.State.ControllingGolem.Cooldowns.Slash = os.clock();
+				local Empowered = u562.State.ControllingGolem.Empowered;
+				local u565;
+
+				if u562.State.ControllingGolem.Empowered then
+					u565 = u562.Config.SmashPower;
+				else
+					u565 = u562.Config.Smash;
+				end;
+
+				local v566 = Util:CopyTable({
+					Volume = 0.35,
+					PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+				});
+				v566.Parent = u562.Rig.PrimaryPart;
+				Sounds:Play(u562.Config.Sounds[Empowered and "SmashPowerWindup" or "SmashPower"], v566);
+				u562:SetCooldownOf("Slash", u565.Cooldown or 2);
+				task.delay(u565.Windup + u565.Linger + 0.25, function()
+
+					u562.AbilitiesDisabled = false;
+				end);
+				spawn(function()
+
+					local GolemTimeFlag = u562.Cache.GolemTimeFlag;
+
+					if cWait(u565.Windup, function()
+
+						return u562.Cache.GolemTimeFlag ~= GolemTimeFlag;
+					end) then
+						u562.AbilitiesDisabled = false;
+
+						return;
+					end;
+
+					local v567 = u562;
+					local v568 = Util:CopyTable({
+						Volume = 0.35,
+						PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+					});
+					v568.Parent = v567.Rig.PrimaryPart;
+					Sounds:Play(v567.Config.Sounds[Empowered and "SmashPower" or "Smash"], v568);
+					Hitboxes:CreateMainAbilityHitbox(u562.Player, {
+						Size = Vector3.new(8, 4, 10),
+						Knockback = 2,
+						HitMultiple = true,
+						ExecuteOnKill = false,
+						CFrameOffset = CFrame.new(0, 0, -3.5),
+
+						Damage = function(p569)
+
+							local v570 = Statuses:PlayerHasStatus(p569, "Atropa");
+							local v571;
+
+							if v570 then
+								v571 = (v570.Level or 1) * u565.DamagePerAtropa;
+								v570.Data = v570.Data or {};
+								v570.Data.IsHit = true;
+								Statuses:RemoveStatus(p569, "Atropa");
+							else
+								v571 = 0;
+							end;
+
+							return u565.Damage + v571;
+						end,
+
+						Time = u565.Linger,
+						DeathProfile = {
+							KillEffects = {
+								Split = true
+							}
+						},
+						AbilityType = u77.Abilities.Slash.KeybindType,
+						Connections = {
+							Hit = function(p572, p573)
+
+								Util:CreateSpeedMultiplier(p572, 1.5, "HitSpeedBonus", 1.25);
+
+								if p573 then
+									u562:PlayVoiceline("SmashHit", {
+										Priority = 2
+									});
+									local v574 = u562;
+									local v575 = Util:CopyTable({
+										Volume = 0.35,
+										PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+									});
+									v575.Parent = v574.Rig.PrimaryPart;
+									Sounds:Play(v574.Config.Sounds.SmashHit, v575);
+								end;
+
+								__pcallMethod("sv_OnMeleeHit", u562, p572);
+							end
+						}
+					});
+				end);
+
+				return {
+					IsGolem = true,
+					IgnoreHit = false
+				};
+			end;
+
+			u562.AbilitiesDisabled = true;
+			local v576 = Util:CopyTable({
+				Volume = 0.35,
+				PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+			});
+			v576.Parent = u562.Rig.PrimaryPart;
+			Sounds:Play(u562.Config.Sounds.SlashWindup, v576);
+			spawn(function()
+
+				local u577 = u562;
+
+				if cWait(Slash.Windup, function()
+
+					return (not Util:IsAlive(u577.Rig) or u577.Rig:GetAttribute("Stunned")) and true or false;
+				end) then
+					u562.AbilitiesDisabled = false;
+
+					return;
+				end;
+
+				local v578 = u562;
+				local v579 = Util:CopyTable({
+					Volume = 0.35,
+					PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+				});
+				v579.Parent = v578.Rig.PrimaryPart;
+				Sounds:Play(v578.Config.Sounds.Slash, v579);
+				os.clock();
+				Hitboxes:CreateMainAbilityHitbox(u562.Player, {
+					Size = Vector3.new(4.5, 6, 8.5),
+					Knockback = 2,
+					HitMultiple = false,
+					ExecuteOnKill = true,
+
+					CFrameOffset = function()
+						return CFrame.new(0, 0, -2.25);
+					end,
+
+					Damage = function(p580)
+
+						local v581 = Statuses:PlayerHasStatus(p580, "Atropa");
+						local v582;
+
+						if v581 then
+							v582 = (v581.Level or 1) * Slash.DamagePerAtropa;
+							v581.Data = v581.Data or {};
+							v581.Data.IsHit = true;
+							__pcallMethod("sv_IncreaseOblation", u562, (math.ceil(v581.Level or 1)));
+							Statuses:RemoveStatus(p580, "Atropa");
+						else
+							v582 = 0;
+						end;
+
+						return Slash.Damage + v582;
+					end,
+
+					Time = Slash.Linger,
+					AbilityType = u77.Abilities.Slash.KeybindType,
+					Connections = {
+						Hit = function(p583, p584)
+
+							Util:CreateSpeedMultiplier(p583, 1.5, "HitSpeedBonus", 1.25);
+
+							if p584 then
+								u562:PlayVoiceline("StabHit", {
+									Priority = 2
+								});
+								local v585 = u562;
+								local v586 = Util:CopyTable({
+									Volume = 0.35,
+									PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+								});
+								v586.Parent = v585.Rig.PrimaryPart;
+								Sounds:Play(v585.Config.Sounds.SlashHit, v586);
+							end;
+
+							__pcallMethod("sv_OnMeleeHit", u562, p583);
+						end
+					}
+				});
+				task.delay(Slash.Endlag, function()
+
+					u562.AbilitiesDisabled = false;
+				end);
+			end);
+		end
+	},
+	Grab = {
+		LayoutOrder = 4,
+		Icon = "rbxassetid://115907381502841",
+		KeybindType = "AltAbility3",
+		Cooldown = 1,
+		Name = "Enstrangle",
+
+		Callback = function(u587, p588)
+
+			local Grab = resolveAzureGrabConfig(u587);
+
+			if not u2 then
+				return;
+			end;
+
+			if u587.State.GrabbingFlag == true then
+				if u587.State.ThrowRequest == false then
+					u587.State.ThrowRequest = "Cancel";
+				end;
+
+				return;
+			end;
+
+			if u587.State.GrabWindingUp then
+				u587.State.GrabCancelRequested = true;
+
+				return;
+			end;
+
+			if u587.State.ControllingGolem then
+				return nil;
+			end;
+
+			u587.AbilitiesDisabled = false;
+			u587.DisabledAbilities = {
+				Slash = true,
+				Sow = true,
+				Blossom = true,
+				Unravel = true
+			};
+			u587.State.GrabWindingUp = true;
+			u587.State.GrabCancelRequested = false;
+			u587.State.GrabFireRequested = false;
+			u587.State.GrabReadyToFire = false;
+			u587.State.MousePosition = nil;
+			u587.State.LastMouseUpdate = nil;
+			u587:PCallLocal("SetGrabSprintDisabled", true);
+			u587:PCallLocal("SetGrabStaminaRegenReduction", true);
+			u587:PCallLocal("SetGrabAbilityLocks", true, true);
+
+			local function setAzureWindupTransparency(p589)
+
+				for _, descendant in ipairs(u587.Rig:GetDescendants()) do
+					if descendant:IsA("BasePart") or descendant:IsA("Decal") then
+						if p589 ~= 0 and descendant:GetAttribute("OGWindupTransparency") == nil then
+							descendant:SetAttribute("OGWindupTransparency", descendant.Transparency);
+						end;
+
+						if p589 == 0 then
+							local v590 = descendant:GetAttribute("OGWindupTransparency");
+
+							if v590 ~= nil then
+								descendant.Transparency = v590;
+								descendant:SetAttribute("OGWindupTransparency", nil);
+							end;
+						else
+							local v591 = descendant:GetAttribute("OGWindupTransparency") or 0;
+							descendant.Transparency = math.max(v591, p589);
+						end;
+					end;
+				end;
+			end;
+
+			setAzureWindupTransparency(0.5);
+			u587:PCallLocal("StartGrabAiming");
+			u587:PCallLocal("StartGrabAimingBeamEffect");
+			local v592 = Util:CopyTable({
+				Volume = 0.35,
+				PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+			});
+			v592.Parent = u587.Rig.PrimaryPart;
+			Sounds:Play(u587.Config.Sounds.SlashWindup, v592);
+			local v593 = AnimationSupport.Load(Util, u587.Rig, u587.Config.Animations.GrabWindup, false, "GrabWindup");
+			local u594 = AnimationSupport.Load(Util, u587.Rig, u587.Config.Animations.GrabShootFailed, false, "GrabShootFailed");
+			local u595 = AnimationSupport.Load(Util, u587.Rig, u587.Config.Animations.GrabShoot, false, "GrabShoot");
+			v593:Play();
+
+			local function grabInterrupted()
+
+				return u587.State.GrabCancelRequested and true or ((not Util:IsAlive(u587.Rig) or u587.Rig:GetAttribute("Stunned")) and true or false);
+			end;
+
+			local v596 = os.clock();
+
+			while os.clock() - v596 < Grab.Windup and (not u587.State.GrabCancelRequested and (Util:IsAlive(u587.Rig) and not u587.Rig:GetAttribute("Stunned"))) do
+				task.wait();
+			end;
+
+			if u587.State.GrabCancelRequested and true or ((not Util:IsAlive(u587.Rig) or u587.Rig:GetAttribute("Stunned")) and true or false) then
+				local GrabCancelRequested = u587.State.GrabCancelRequested;
+				u587.AbilitiesDisabled = false;
+				u587.DisabledAbilities = {};
+				u587.State.GrabWindingUp = false;
+				setAzureWindupTransparency(0);
+				u587:PCallLocal("EndGrabAiming");
+				u587:PCallLocal("EndGrabAimingBeamEffect");
+				v593:Stop();
+				u595:Stop();
+				u594:Stop();
+
+				u587:PCallLocal("SetGrabSprintDisabled", false);
+				u587:PCallLocal("SetGrabStaminaRegenReduction", false);
+				u587:PCallLocal("SetGrabAbilityLocks", false);
+				if GrabCancelRequested then
+					u587:SetCooldownOf("Grab", Grab.CooldownCancel or Grab.CooldownMiss);
+
+					return;
+				end;
+
+				__pcallMethod("sv_MissGrab", u587);
+
+				return;
+			end;
+
+			u587.State.GrabReadyToFire = true;
+			u587:PCallLocal("SetGrabAbilityLocks", true, false);
+			u587.DisabledAbilities = {
+				Sow = true,
+				Blossom = true,
+				Unravel = true
+			};
+			local v597 = AnimationSupport.Load(Util, u587.Rig, u587.Config.Animations.GrabWindupIdle, false, "GrabWindupIdle");
+			v593:Stop();
+			v597.Looped = true;
+			v597:Play();
+
+			while not u587.State.GrabFireRequested and (not u587.State.GrabCancelRequested and (Util:IsAlive(u587.Rig) and not u587.Rig:GetAttribute("Stunned"))) do
+				local root = u587.Rig.PrimaryPart;
+				if not root then break end;
+				local velocity = root.AssemblyLinearVelocity;
+				local moving = Vector3.new(velocity.X, 0, velocity.Z).Magnitude > 0.5;
+				v597:AdjustWeight(moving and 0 or 1, 0.1);
+				task.wait();
+			end;
+
+			v597:Stop();
+			u587.State.GrabReadyToFire = false;
+
+			if u587.State.GrabCancelRequested and true or ((not Util:IsAlive(u587.Rig) or u587.Rig:GetAttribute("Stunned")) and true or false) then
+				local GrabCancelRequested = u587.State.GrabCancelRequested;
+				u587.AbilitiesDisabled = false;
+				u587.DisabledAbilities = {};
+				u587.State.GrabWindingUp = false;
+				setAzureWindupTransparency(0);
+				u587:PCallLocal("EndGrabAiming");
+				u587:PCallLocal("EndGrabAimingBeamEffect");
+				v593:Stop();
+				v597:Stop();
+				u595:Stop();
+				u594:Stop();
+
+				u587:PCallLocal("SetGrabSprintDisabled", false);
+				u587:PCallLocal("SetGrabStaminaRegenReduction", false);
+				u587:PCallLocal("SetGrabAbilityLocks", false);
+				if GrabCancelRequested then
+					u587:SetCooldownOf("Grab", Grab.CooldownCancel or Grab.CooldownMiss);
+
+					return;
+				end;
+
+				__pcallMethod("sv_MissGrab", u587);
+
+				return;
+			end;
+
+			u587.State.GrabWindingUp = false;
+			u587.AbilitiesDisabled = true;
+			setAzureWindupTransparency(0);
+			u587:PCallLocal("EndGrabAiming");
+			u587:PCallLocal("EndGrabAimingBeamEffect");
+			v593:Stop();
+			u595:Play();
+			local v598 = Util:CopyTable({
+				Volume = 0.35,
+				PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+			});
+			v598.Parent = u587.Rig.PrimaryPart;
+			Sounds:Play(u587.Config.Sounds.Slash, v598);
+			local v599 = Grab.ProjectileLifetime or Grab.Linger;
+			local v600 = Grab.ProjectileHitboxSize or Vector3.new(1.5, 1.5, 4);
+			local v601 = Grab.ProjectileStartOffset or 2;
+			local v602 = math.max((Grab.ProjectileRange or (Grab.HookRange or 15)) - v601 - v600.Z / 2, 0);
+			local v603 = Grab.ProjectileSpeed or v602 / math.max(v599, 0.05);
+			local v604 = ReplicatedStorage.Assets.Instances.Nothingburger:Clone();
+			local u605 = false;
+			local u606 = nil;
+
+			for _, v in ipairs({ v604, table.unpack(v604:GetDescendants()) }) do
+				if v:IsA("BasePart") then
+					v.Transparency = 1;
+					v.CanCollide = false;
+					v.CanQuery = false;
+					v.CanTouch = false;
+				end;
+			end;
+
+			local v607 = RaycastParams.new();
+			v607.RespectCanCollide = true;
+			v607.CollisionGroup = "Killers";
+			v607.FilterType = Enum.RaycastFilterType.Exclude;
+			v607.FilterDescendantsInstances = { workspace.Players, v604 };
+			local aimDirection = u587.State.MousePosition;
+			if typeof(aimDirection) ~= "Vector3" or aimDirection.Magnitude < 0.001
+				or aimDirection.Magnitude ~= aimDirection.Magnitude or aimDirection.Magnitude == math.huge then
+				aimDirection = u587:GetPivot().LookVector;
+			end;
+			aimDirection = aimDirection.Unit;
+			local launchPosition = u587:GetPivot().Position + aimDirection * v601;
+			u606 = Projectiles.new({
+				Owner = u587.Player,
+				Lifetime = v599,
+				InitialCFrame = CFrame.lookAt(launchPosition, launchPosition + aimDirection),
+				InitialVelocity = aimDirection * v603,
+				Model = v604,
+				CastParams = v607,
+				HitboxConfig = {
+					Damage = Grab.HitDamage,
+					Knockback = 0,
+					HitMultiple = false,
+					PredictVelocity = false,
+					ExecuteOnKill = false,
+					Size = v600,
+					Time = v599,
+					AbilityType = u77.Abilities.Grab.KeybindType,
+					Connections = {
+						Hit = function(p608, p609)
+
+							if u605 or p608 == u587.Rig then
+								return;
+							end;
+
+							u605 = true;
+
+							if p609 then
+								u587:PlayVoiceline("StabHit", {
+									Priority = 2
+								});
+								local v610 = u587;
+								local v611 = Util:CopyTable({
+									Volume = 0.35,
+									PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+								});
+								v611.Parent = v610.Rig.PrimaryPart;
+								Sounds:Play(v610.Config.Sounds.SlashHit, v611);
+							end;
+
+							u594:Destroy();
+							u595:Stop();
+							u606:Destroy();
+							__pcallMethod("sv_GrabSurvivor", u587, p608);
+						end
+					}
+				},
+				Callbacks = {
+					HitOther = function(p612)
+						p612:Destroy();
+					end,
+
+					Ended = function()
+
+						if u605 then
+							return;
+						end;
+
+						u605 = true;
+						u595:Stop();
+						u594:Play();
+						__pcallMethod("sv_MissGrab", u587);
+						u587.AbilitiesDisabled = false;
+					end
+				}
+			});
+			u606:Launch();
+		end
+	},
+	Sow = {
+		LayoutOrder = 2,
+		Name = "Seeker Bulb",
+		Icon = "rbxassetid://109787679155717",
+		KeybindType = "AltAbility1",
+		Cooldown = 12,
+
+		Callback = function(u613, p614)
+
+			if u2 then
+				local Sow = u613.Config.Sow;
+
+				if not u613.State.ControllingGolem then
+					u613:PlayVoiceline("Seeker", {
+						Priority = 2
+					});
+					u613.AbilitiesDisabled = true;
+					spawn(function()
+
+						Util:CreateSpeedMultiplier(u613.Rig, 0.6, "PlacingBuilding", Sow.Windup + Sow.Endlag - 0.1, true);
+						local u615 = u613;
+						local v616 = cWait(Sow.Windup, function()
+
+							return (not Util:IsAlive(u615.Rig) or u615.Rig:GetAttribute("Stunned")) and true or false;
+						end);
+						local v617 = u613;
+						local v618 = Util:CopyTable({
+							Volume = 0.35,
+							PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+						});
+						v618.Parent = v617.Rig.PrimaryPart;
+						Sounds:Play(v617.Config.Sounds.SowWindup, v618);
+
+						if v616 then
+							u613.AbilitiesDisabled = false;
+
+							return;
+						end;
+
+						__pcallMethod("sv_DecreaseOblation", u613, 0);
+						local v619 = u613;
+						local v620 = Util:CopyTable({
+							Volume = 0.35,
+							PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+						});
+						v620.Parent = v619.Rig.PrimaryPart;
+						Sounds:Play(v619.Config.Sounds.Sow, v620);
+						local v621 = RaycastParams.new();
+						v621.FilterType = Enum.RaycastFilterType.Exclude;
+						v621.FilterDescendantsInstances = { workspace.Players };
+						v621.CollisionGroup = "Killers";
+						v621.RespectCanCollide = true;
+						local v622 = u613:GetPivot();
+						local Position = v622.Position;
+						local LookVector = v622.LookVector;
+						local v623 = Vector3.new(LookVector.X, 0, LookVector.Z).Unit * Sow.Range;
+						local v624 = workspace:Raycast(Position, v623, v621) or workspace:Raycast(Position + v623, Vector3.new(-0, -20, -0), v621);
+
+						if v624 then
+							v622 = CFrame.new(v624.Position, v624.Position + v624.Normal);
+						end;
+
+						if __pcallMethod("sv_IsNearPlantSpawn", u613, v622.Position) then
+							u613:PCallLocal("DenyBuild", nil, "Move away from spawn to put your traps.");
+							u613:SetCooldownOf("Sow", 0);
+							u613.AbilitiesDisabled = false;
+							return;
+						end;
+
+						local v625 = __pcallMethod("sv_GetBlockingConstruct", u613, v622.Position);
+
+						if v625 then
+							v625:FireAllClients("DenyBuild");
+							u613:PCallLocal("DenyBuild", v625.UUID);
+							u613:SetCooldownOf("Sow", 0);
+							u613.AbilitiesDisabled = false;
+							__pcallMethod("sv_IncreaseOblation", u613, 0);
+
+							return;
+						end;
+
+						__cullConstruct(u613, "GroundBulb", (getConstructLimit(u613, "GroundBulb")));
+						local v626 = __pcallMethod("sv_CreateConstruct", u613, "GroundBulb", {
+							CFrame = v622
+						});
+
+						local function createHitVFX(p627)
+
+							local v628 = u613.Config.Instances.BulbHitVFX:Clone();
+							v628.Parent = workspace.Terrain;
+							v628.CFrame = p627;
+							game.Debris:AddItem(v628, 1);
+							Util:EmitParticles(v628);
+						end;
+
+						v626:AddCallback("OnSurfaceHit", function(p629)
+
+							local v630 = CFrame.new(p629.Position);
+							local v631 = u613.Config.Instances.BulbHitVFX:Clone();
+							v631.Parent = workspace.Terrain;
+							v631.CFrame = v630;
+							game.Debris:AddItem(v631, 1);
+							Util:EmitParticles(v631);
+						end, "VFX");
+						v626:AddCallback("OnCharacterHit", function(p632)
+
+							local _ = tostring(p632.Parent) == "Survivors";
+							local v633 = p632:GetPivot();
+							local v634 = u613.Config.Instances.BulbHitVFX:Clone();
+							v634.Parent = workspace.Terrain;
+							v634.CFrame = v633;
+							game.Debris:AddItem(v634, 1);
+							Util:EmitParticles(v634);
+						end, "VFX");
+						local u635 = u613;
+						cWait(Sow.Endlag, function()
+
+							return (not Util:IsAlive(u635.Rig) or u635.Rig:GetAttribute("Stunned")) and true or false;
+						end);
+						u613.AbilitiesDisabled = false;
+					end);
+
+					return "Plant";
+				end;
+
+				if u613.State.GolemSpawnLocked then
+					return "Cancel";
+				end;
+
+				u613.AbilitiesDisabled = true;
+				local GolemTimeFlag = u613.Cache.GolemTimeFlag;
+				local GolemShockwave = u613.Config.GolemShockwave;
+				u613.State.ControllingGolem.Cooldowns.Sow = os.clock();
+				u613:SetCooldownOf("Sow", GolemShockwave.Cooldown);
+				spawn(function()
+
+					u613:PlayVoiceline("ShockwaveGolem", {
+						Priority = 2
+					});
+					local v636 = u613;
+					local v637 = Util:CopyTable({
+						Volume = 0.35,
+						PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+					});
+					v637.Parent = v636.Rig.PrimaryPart;
+					Sounds:Play(v636.Config.Sounds.ShockwaveWindup, v637);
+					local v638 = Util:CreateSpeedMultiplier(u613.Player, GolemShockwave.Lunge, "GolemShockwaveLunge");
+					TweenService:Create(v638, TweenInfo.new(GolemShockwave.Windup, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+						Value = 0.1
+					}):Play();
+
+					if cWait(GolemShockwave.Windup, function()
+
+						return u613.Cache.GolemTimeFlag ~= GolemTimeFlag;
+					end) then
+						TweenService:Create(v638, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+							Value = 1
+						}):Play();
+						Debris:AddItem(v638, 0.2);
+						u613.AbilitiesDisabled = false;
+
+						return;
+					end;
+
+					TweenService:Create(v638, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+						Value = 1
+					}):Play();
+					Debris:AddItem(v638, 1);
+					Hitboxes:CreateHitbox(u613.Player, {
+						Time = 0.05,
+						Knockback = false,
+						HitMultiple = true,
+						ExecuteOnKill = false,
+						Size = Vector3.new(1, 1, 1) * GolemShockwave.Radius * 2,
+						Shape = Enum.PartType.Ball,
+
+						Damage = function(p639)
+
+							local v640 = Util:GetActor(p639);
+							local v641;
+
+							if v640 and v640.GetPivot then
+								v641 = v640:GetPivot();
+							else
+								v641 = p639:GetPivot();
+							end;
+
+							local v642 = 1 - (u613:GetPivot().Position - v641.Position).Magnitude / GolemShockwave.Radius;
+							local v643 = TweenService:GetValue(math.clamp(v642, 0, 1), Enum.EasingStyle.Cubic, Enum.EasingDirection.Out);
+
+							return GolemShockwave.Damage * v643;
+						end,
+
+						CFrameOffset = CFrame.new(0, -2, 0),
+						DeathProfile = {
+							KillEffects = {
+								Flatten = true
+							}
+						},
+						Connections = {
+							Hit = function(p644)
+
+								local v645 = Util:GetActor(p644);
+								local v646;
+
+								if v645 and v645.GetPivot then
+									v646 = v645:GetPivot();
+								else
+									v646 = p644:GetPivot();
+								end;
+
+								local Unit = (v646.Position - u613:GetPivot().Position).Unit;
+								local v647 = (Vector3.new(Unit.X, 0, Unit.Z) + Vector3.new(0, 0.6, 0)) * GolemShockwave.KnockbackPower;
+
+								if tostring(p644.Parent) == "Survivors" then
+									Actors:IncrementActorStats(u613.Player, {
+										Action = "Hit Survivor with Shockwave",
+										RewardType = "EasyKillerAction"
+									});
+								else
+									Actors:IncrementActorStats(u613.Player, {
+										Action = "Hit Killer with Shockwave",
+										RewardType = "EasyKillerAction"
+									});
+								end;
+
+								p644.PrimaryPart.AssemblyLinearVelocity = v647;
+								Ragdolls.AddProfile(p644, {
+									Velocity = v647
+								});
+								Ragdolls.EnableRagdoll(p644, 0.8);
+							end
+						}
+					});
+					local v648 = u613;
+					local v649 = Util:CopyTable({
+						Volume = 0.35,
+						PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+					});
+					v649.Parent = v648.Rig.PrimaryPart;
+					Sounds:Play(v648.Config.Sounds.Shockwave, v649);
+					delay(GolemShockwave.Endlag, function()
+
+						u613.AbilitiesDisabled = false;
+					end);
+				end);
+
+				return "Golem";
+			end;
+
+			if p614 ~= "Golem" then
+				if p614 == "Plant" then
+					AnimationSupport.Track(u613, "Sow"):Play();
+				end;
+
+				return;
+			end;
+
+			AnimationSupport.Track(u613, "GolemShockwave"):Play(nil, nil, 1.5);
+			local GolemShockwave = u613.Config.GolemShockwave;
+			freezeStamina("GolemShockwave", GolemShockwave.Windup + 0.9);
+			task.delay(GolemShockwave.Windup, function()
+
+				Util:ApplyCameraShake(0.2, GolemShockwave.Endlag);
+			end);
+		end
+	},
+	Blossom = {
+		LayoutOrder = 3,
+		Name = "Stigmatize",
+		Icon = "rbxassetid://117545955019424",
+		KeybindType = "AltAbility2",
+		Cooldown = 15,
+
+		Callback = function(u650, p651)
+
+			local Blossom = u650.Config.Blossom;
+
+			if u2 then
+				if not u650.State.ControllingGolem then
+					u650:PlayVoiceline("Stigmatize", {
+						Priority = 2
+					});
+					__pcallMethod("sv_DecreaseOblation", u650, 0);
+					u650.AbilitiesDisabled = true;
+					local v652 = Util:CopyTable({
+						Volume = 0.35,
+						PlaybackSpeed = 0.975 + Random.new():NextNumber() * 0.04999999999999993
+					});
+					v652.Parent = u650.Rig.PrimaryPart;
+					Sounds:Play(u650.Config.Sounds.Blossom, v652);
+					spawn(function()
+
+						Util:CreateSpeedMultiplier(u650.Rig, 0.2, "PlacingBuilding", Blossom.Windup + Blossom.Endlag - 0.1, true);
+						local u653 = u650;
+
+						if cWait(Blossom.Windup, function()
+
+							return (not Util:IsAlive(u653.Rig) or u653.Rig:GetAttribute("Stunned")) and true or false;
+						end) then
+							u650.AbilitiesDisabled = false;
+
+							return;
+						end;
+
+						local v654 = RaycastParams.new();
+						v654.FilterType = Enum.RaycastFilterType.Exclude;
+						v654.FilterDescendantsInstances = { workspace.Players };
+						v654.CollisionGroup = "Killers";
+						v654.RespectCanCollide = true;
+						local Position = u650:GetPivot().Position;
+						local v655 = workspace:Raycast(u650:GetPivot().Position, Vector3.new(0, -9, 0), v654);
+						local v656;
+
+						if v655 then
+							v656 = v655.Position;
+						else
+							v656 = Position + Vector3.new(-0, -20, -0);
+						end;
+
+						local v657 = CFrame.new(v656) * u650:GetPivot().Rotation;
+						if __pcallMethod("sv_IsNearPlantSpawn", u650, v657.Position) then
+							u650:PCallLocal("DenyBuild", nil, "Move away from spawn to put your traps.");
+							u650:SetCooldownOf("Blossom", 0);
+							u650.AbilitiesDisabled = false;
+							return;
+						end;
+
+						local v658 = __pcallMethod("sv_GetBlockingConstruct", u650, v657.Position);
+
+						if v658 then
+							u650:PCallLocal("DenyBuild", v658.UUID);
+							u650:SetCooldownOf("Blossom", 0);
+							u650.AbilitiesDisabled = false;
+
+							return;
+						end;
+
+						__cullConstruct(u650, "Vine", (getConstructLimit(u650, "Vine")));
+						__pcallMethod("sv_CreateConstruct", u650, "Vine", {
+							CFrame = v657
+						}):AddCallback("OnCharacterHit", function(p659)
+
+							if tostring(p659.Parent) == "Survivors" then
+								Actors:IncrementActorStats(u650.Player, {
+									Action = "Trapped Survivor with Vine",
+									RewardType = "RegularKillerAction"
+								});
+								u650:PlayVoiceline("StigmatizeGrab", {
+									Priority = 2
+								});
+							else
+								Actors:IncrementActorStats(u650.Player, {
+									Action = "Trapped Killer with Vine",
+									RewardType = "RegularKillerAction"
+								});
+								u650:PlayVoiceline("StigmatizeGrab", {
+									Priority = 2
+								});
+							end;
+						end, "Reward");
+						delay(Blossom.Endlag, function()
+
+							u650.AbilitiesDisabled = false;
+						end);
+					end);
+
+					return "Plant";
+				end;
+
+				if u650.State.GolemSpawnLocked then
+					return "Cancel";
+				end;
+
+				u650.AbilitiesDisabled = true;
+				local GolemTimeFlag = u650.Cache.GolemTimeFlag;
+				local GolemFissure = u650.Config.GolemFissure;
+				u650.State.ControllingGolem.Cooldowns.Blossom = os.clock();
+				u650:SetCooldownOf("Blossom", GolemFissure.Cooldown);
+				Util:CreateSpeedMultiplier(u650.Rig, 0.01, "Stimpy", GolemFissure.Windup + GolemFissure.Endlag - 0.1, true);
+				u650:PlayVoiceline("StompGolem", {
+					Priority = 2
+				});
+				spawn(function()
+
+					__playSound(u650, "FissureWindup", {
+						RollOffMaxDistance = 100
+					});
+
+					if cWait(GolemFissure.Windup, function()
+
+						return u650.Cache.GolemTimeFlag ~= GolemTimeFlag;
+					end) then
+						u650.AbilitiesDisabled = false;
+
+						return;
+					end;
+
+					local u660 = RaycastParams.new();
+					u660.FilterType = Enum.RaycastFilterType.Exclude;
+					u660.FilterDescendantsInstances = { workspace.Players };
+					u660.CollisionGroup = "Killers";
+					u660.RespectCanCollide = true;
+					local Model = Instance.new("Model", workspace.Map.Ingame);
+					Model.Name = "GolemCracks" .. game.HttpService:GenerateGUID(false);
+					u650.Maid:Add(Model);
+					game.Debris:AddItem(Model, GolemFissure.CrackLifetime);
+					u650:PCallAllClients("ListenForCrackRoots", Model);
+					local u661 = 0;
+					local LookVector = u650:GetPivot().LookVector;
+					local u662 = Vector3.new(LookVector.X, 0, LookVector.Z);
+					local Position = u650:GetPivot().Position;
+					local u663 = Position;
+					local u664 = GolemFissure.GroundProbeHeight or 6;
+					local u665 = GolemFissure.GroundProbeDepth or 18;
+					spawn(function()
+
+						__playSound(u650, "FissureStomp", {
+							RollOffMaxDistance = 250
+						});
+						local v666 = 0;
+						local u667 = {};
+
+						while u661 < GolemFissure.Distance do
+							v666 = v666 + 1;
+							local v668;
+
+							if u661 <= 0 then
+								v668 = Position;
+							else
+								v668 = u663 + u662 * GolemFissure.StudInterval;
+							end;
+
+							local v669 = v668 + Vector3.new(0, u664, 0);
+							local v670 = workspace:Raycast(v669, Vector3.new(0, -(u664 + u665), 0), u660);
+
+							if not v670 then
+								return;
+							end;
+
+							__playSound(u650, "FissureExplosion", {
+								Position = v670.Position,
+								PlaybackSpeed = 0.9 + Random.new():NextNumber() * 0.20000000000000007
+							});
+							u650:PCallAllClients("OnGroundExplode", v670.Position, v670.Instance);
+							Hitboxes:CreateHitbox(u650.Player, {
+								Time = 0.04,
+								Knockback = false,
+								HitMultiple = true,
+								ExecuteOnKill = false,
+								Size = Vector3.new(1, 1, 1) * GolemFissure.HitboxSize,
+								Shape = Enum.PartType.Ball,
+
+								Damage = function(p671)
+
+									if u667[p671] then
+										return 0;
+									end;
+
+									u667[p671] = true;
+
+									if tostring(p671.Parent) == "Survivors" then
+										Actors:IncrementActorStats(u650.Player, {
+											Action = "Hit Survivor with Fissure",
+											RewardType = "EasyKillerAction"
+										});
+									else
+										Actors:IncrementActorStats(u650.Player, {
+											Action = "Hit Killer with Fissure",
+											RewardType = "EasyKillerAction"
+										});
+									end;
+
+									return GolemFissure.Damage;
+								end,
+
+								CFrame = CFrame.new(v670.Position),
+								CastPoint = v670.Position + Vector3.new(0, 0.5, 0),
+								Connections = {
+									Hit = function(p672)
+
+										local v673 = Util:GetActor(p672);
+										local v674;
+
+										if v673 and v673.GetPivot then
+											v674 = v673:GetPivot();
+										else
+											v674 = p672:GetPivot();
+										end;
+
+										local Unit = (v674.Position - u650:GetPivot().Position).Unit;
+										local v675 = (Vector3.new(Unit.X, 0, Unit.Z) + Vector3.new(0, 0.6, 0)) * GolemFissure.KnockbackPower;
+										p672.PrimaryPart.AssemblyLinearVelocity = v675;
+										Ragdolls.AddProfile(p672, {
+											Velocity = v675
+										});
+										Ragdolls.EnableRagdoll(p672, 1);
+									end
+								}
+							});
+
+							if u663 then
+								local v676 = u663 - v670.Position;
+								local Instance2 = v670.Instance;
+								os.clock();
+								local Part = Instance.new("Part");
+								Part.CanCollide = false;
+								Part.Anchored = true;
+								Part.Transparency = u3 and 0.5 or 1;
+								Part.CFrame = CFrame.lookAt(v670.Position + v676 / 2, v670.Position + v676);
+								Part.Size = Vector3.new(GolemFissure.CrackWidth, GolemFissure.CrackHeight, v676.Magnitude);
+								Part.CollisionGroup = "Killers";
+								Part.Name = tostring(v666);
+								Part.Color = Instance2.Color;
+								Part.Material = Instance2.Material;
+								Part.Parent = Model;
+							end;
+
+							u661 = u661 + GolemFissure.StudInterval;
+							u663 = v670.Position;
+							task.wait(GolemFissure.TimeInterval);
+						end;
+					end);
+					delay(GolemFissure.Endlag, function()
+
+						u650.AbilitiesDisabled = false;
+					end);
+				end);
+
+				return "Golem";
+			end;
+
+			if p651 ~= "Plant" then
+				if p651 == "Golem" then
+					AnimationSupport.Track(u650, "GolemFissure"):Play(nil, nil, 0.8125);
+					local GolemFissure = u650.Config.GolemFissure;
+					task.delay(GolemFissure.Windup, function()
+
+						Util:ApplyCameraShake(0.1, GolemFissure.Endlag);
+					end);
+				end;
+
+				return;
+			end;
+
+			AnimationSupport.Track(u650, "Stigmatize"):Play(0.025, nil, 1.55);
+			Util:ToggleSprinting("Blossom", false, Blossom.Windup + Blossom.Endlag);
+		end
+	},
+	Unravel = {
+		LayoutOrder = 5,
+		Name = "Inflorescence",
+		Icon = "rbxassetid://109425766636886",
+		KeybindType = "AltAbility4",
+
+		Callback = function(u677, p678)
+
+			if not u2 then
+				return;
+			end;
+
+			if u677.State.GolemSpawnLocked then
+				return "Cancel";
+			end;
+
+			if u677.State.ControllingGolem then
+				if u677.State.ControllingGolem.Empowered then
+					return "Cancel";
+				end;
+
+				__pcallMethod("sv_ReleaseGolem", u677, u677.State.ControllingGolem);
+
+				return "Release";
+			end;
+
+			local _, v679 = next(u677.State.Golems);
+
+			if v679 then
+				u677:PlayVoiceline("SwapGolem", {
+					Priority = 2
+				});
+				__pcallMethod("sv_ControlGolem", u677, v679, "Control");
+
+				return;
+			end;
+
+			if u677.Config.Oblation.Max > u677.State.Oblation then
+				u677:SetCooldownOf("Unravel", 1);
+
+				return "Cancel";
+			end;
+
+			Actors:IncrementActorStats(u677.Player, {
+				Action = "Summoned a Golem",
+				RewardType = "RegularKillerAction"
+			});
+			local v680 = u677:GetPivot();
+			local v681 = u677.Config.Oblation.Max - u677.State.Oblation + 1;
+			__pcallMethod("sv_DecreaseOblation", u677, u677.Config.Oblation.Max);
+			__playSound(u677, "GolemSpawned", {
+				Position = v680.Position
+			});
+			local v682 = u677.Config.Golem.BaseLifetime + u677.Config.Golem.LifetimePerOblation * v681;
+			local u683 = sv_Golem.new(u677, v680, v682);
+			local UUID = u683.UUID;
+			u683.Lifetime = v682;
+			u683.RemainingLifetime = v682;
+			u683.LifetimeToken = 0;
+			u677:PCallLocal("CreateGolem", {
+				UUID = UUID,
+				CFrame = v680,
+				Lifetime = v682,
+				RemainingLifetime = v682
+			});
+			u677:PCallAllClients("StartRoots");
+			u677.Maid:Add(u683);
+			u683.Empowered = false;
+			u677.State.Golems[UUID] = u683;
+			u683:AddCallback("OnDestroyed", function()
+
+				__pcallMethod("sv_ReleaseGolem", u677, u683);
+
+				if u683.Statue then
+					__pcallMethod("sv_DestroyGolemStatue", u677, u683.Statue);
+				end;
+
+				u677.State.Golems[UUID] = nil;
+				u677:PCallLocal("DestroyGolem", UUID);
+				u677:PCallAllClients("HideAllRoots");
+			end, "ServerOnDestroyed");
+			__pcallMethod("sv_ControlGolem", u677, u683, "Newborn");
+		end
+	}
+};
+
+function u77.Created(p684, u685)
+ resolveAzureGrabConfig(u685);
+ AnimationSupport.Prepare(u685);
+
+	local Config = u685.Config;
+	u685.Maid = Maid.new();
+	u685.Meta = {};
+	u685.Instances = {};
+	u685.State = {};
+	u685.State.Oblation = Config.Oblation.Start;
+	u685.State.OblationTickFlag = 0;
+	u685.State.OblationProgress = 0;
+	u685.State.KilledSurvivors = 0;
+	u685.State.Constructs = {};
+	u685.State.ConstructCreationIndex = 0;
+	u685.State.Golems = {};
+	u685.State.FlowersGenerated = {};
+	u685.NetworkConnections = {};
+	u685.ConnectionDictionary = {};
+	u685.Rig:SetAttribute("Oblation", u685.State.Oblation);
+
+	if not u2 then
+		local v686 = u685.Player == u4;
+		local u687 = nil;
+		u685.NetworkConnections.PCallAllClients = { `{u685.Player.Name}PCallAllClients`, "REMOTE_EVENT" };
+		Network:SetConnection(`{u685.Player.Name}PCallAllClients`, "REMOTE_EVENT", function(p688, ...)
+
+			__pcallMethod("cl_" .. p688, u685, ...);
+		end);
+
+
+		local function catchUpConstruct(model)
+			if not (model and model:IsA("Model")) or model:GetAttribute("ConstructOwner") ~= u685.Player.UserId then
+				return;
+			end;
+			local uuid, constructType = model:GetAttribute("ConstructUUID"), model:GetAttribute("ConstructType");
+			local cframe = model:GetAttribute("ConstructCFrame");
+			if not (uuid and constructType and typeof(cframe) == "CFrame") or clientDrawnConstructs[uuid] or model:GetAttribute("ConstructDead") then
+				return;
+			end;
+			local data = { UUID = uuid, Type = constructType, Root = model.PrimaryPart, CFrame = cframe };
+			__pcallMethod("cl_CreateConstruct", u685, data);
+			local level = model:GetAttribute("ConstructPowerLevel");
+			if clientDrawnConstructs[uuid] and level then
+				__pcallMethod("cl_ConstructEvent", u685, { UUID = uuid, Type = constructType }, "SetPowerLevel", level, model:GetAttribute("ConstructSleepTimer") or 0);
+			end;
+		end;
+		local ingame = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Ingame");
+		if ingame then
+			task.defer(function()
+				for _, child in ingame:GetChildren() do
+					catchUpConstruct(child);
+				end;
+			end);
+
+			local addedConnection = ingame.ChildAdded:Connect(function(child)
+				if child:IsA("Model") then
+					task.delay(1.5, function()
+						if child.Parent then
+							catchUpConstruct(child);
+						end;
+					end);
+				end;
+			end);
+			u685.Rig.Destroying:Once(function()
+				addedConnection:Disconnect();
+			end);
+		end;
+		u685.NetworkConnections.BeginQTE = { `{u685.Player.Name}AzureBeginQTE`, "REMOTE_EVENT" };
+		Network:SetConnection(`{u685.Player.Name}AzureBeginQTE`, "REMOTE_EVENT", function(u689)
+
+			local Behavior = require(u685.Config.Instances.ClientQTEModules.Behavior);
+			local UI = require(u685.Config.Instances.ClientQTEModules.UI);
+			u687 = Behavior.new(UI, u689);
+			u687:AddCallback("OnDestroyed", function(p690)
+
+				u687 = nil;
+				Network:FireServerConnection(`{u685.Player.Name}EndAzureQTE`, "REMOTE_EVENT", u689, p690);
+			end, "FireServer");
+		end);
+		u685.NetworkConnections.ServerForceEndQTE = { `{u685.Player.Name}AzureForceQTEStop`, "REMOTE_EVENT" };
+		Network:SetConnection(`{u685.Player.Name}AzureForceQTEStop`, "REMOTE_EVENT", function(p691)
+
+			if u687 and p691 == u687.WorkingOn then
+				u687:Destroy();
+			end;
+		end);
+		u685.NetworkConnections.awdangit = { `{u685.Player.Name}AzureQTEWarning`, "REMOTE_EVENT" };
+		Network:SetConnection(`{u685.Player.Name}AzureQTEWarning`, "REMOTE_EVENT", function(p692)
+
+			Util:CreateWarning("son", p692);
+		end);
+
+		if v686 then
+			u685.State.ActiveSeekers = {};
+			u685.State.ConstructCounts = {
+				GroundBulb = 0,
+				Vine = 0
+			};
+			u685.NetworkConnections.PCallLocal = { `{u685.Player.Name}PCallLocal`, "REMOTE_EVENT" };
+			Network:SetConnection(`{u685.Player.Name}PCallLocal`, "REMOTE_EVENT", function(p693, ...)
+
+				__pcallMethod("lcl_" .. p693, u685, ...);
+			end);
+			u685.NetworkConnections.GetHover = { `{u685.Player.Name}AzureGetHover`, "REMOTE_FUNCTION" };
+			Network:SetConnection(`{u685.Player.Name}AzureGetHover`, "REMOTE_FUNCTION", function()
+
+				return u685.State.SelectedGolem and { u685.State.SelectedGolem, "Golem" } or (u685.State.SelectedSeeker and { u685.State.SelectedSeeker, "Seeker" } or nil);
+			end);
+			local u694 = u4:GetAttribute("Device") or "PC";
+			local CurrentCamera = workspace.CurrentCamera;
+			local u695 = u4:GetMouse();
+			local u696 = u685.Config.Instances.OhMyGodBruh:Clone();
+			u696.Parent = u4.PlayerGui.TemporaryUI;
+			u685.Maid:Add(u696);
+
+			if Device:GetPlayerDevice() == "Mobile" then
+				u696.Position = UDim2.fromScale(0.9, 0.075);
+			end;
+
+			u685.Cache.OblationAbilityLocks = u685.Cache.OblationAbilityLocks or {};
+
+			local function setOblationLock(p697, p698)
+
+				if p698 == u685.Cache.OblationAbilityLocks[p697] then
+					return;
+				end;
+
+				u685.Cache.OblationAbilityLocks[p697] = p698;
+				Util:ToggleLockForAbilityIcon(p697, "Oblation", p698);
+			end;
+
+			local u699 = -1;
+			local NumberValue = Instance.new("NumberValue");
+			NumberValue.Value = 0;
+			u685.ConnectionDictionary.LocalTick = RunService.Heartbeat:Connect(function(p700)
+
+				local v701 = 1 - 0.95 ^ (p700 * 60);
+				local v702 = u685.Rig:GetAttribute("Oblation") or 0;
+				local Start = u685.Config.Oblation.Start;
+				local v703 = math.clamp((v702 - Start) / (u685.Config.Oblation.Max - Start), 0, 1);
+
+				if v702 ~= u699 then
+					TweenService:Create(u696.Fill, TweenInfo.new(0.3), {
+						Size = UDim2.fromScale(1.5, v703 * 0.9 + 0.35)
+					}):Play();
+					u699 = v702;
+				end;
+
+				if math.abs(v703 - 1) <= 0.001 then
+					NumberValue.Value = math.lerp(NumberValue.Value, 90, v701);
+				elseif math.abs(v703) <= 0.001 then
+					NumberValue.Value = math.lerp(NumberValue.Value, 0, v701);
+				end;
+
+				local Spawn = u696.Spawn;
+				Spawn.Rotation = Spawn.Rotation + NumberValue.Value * p700;
+				local Spawn2 = u696.Spawn;
+				Spawn2.Rotation = Spawn2.Rotation % 360;
+
+				if u685.State.ControllingGolem then
+					u685.State.LastCameraCFrame = CurrentCamera.CFrame;
+					u685.State.LastCameraFocus = CurrentCamera.Focus;
+				end;
+
+				local v704;
+
+				if u694 == "PC" then
+					v704 = CurrentCamera:ScreenPointToRay(u695.X, u695.Y);
+				else
+					v704 = Ray.new(CurrentCamera.CFrame.Position, CurrentCamera.CFrame.LookVector);
+				end;
+
+				local v705 = Ray.new(v704.Origin, v704.Direction.Unit * 450);
+				local v706 = RaycastParams.new();
+				v706.CollisionGroup = "Killers";
+				v706.FilterDescendantsInstances = {};
+				v706.FilterType = Enum.RaycastFilterType.Include;
+
+				if u685.State.ControllingGolem then
+					u685.State.SelectedSeeker = nil;
+					u685.State.SelectedGolem = nil;
+				else
+					for _, v in pairs(u685.State.ActiveSeekers) do
+						if v.HoverHitbox and (v.HoverHitbox:GetAttribute("UUID") and v.Selectable) then
+							v706:AddToFilter(v.HoverHitbox);
+						end;
+					end;
+
+					local v707 = workspace:Spherecast(v705.Origin, 7, v705.Direction, v706);
+
+					if v707 and v707.Instance then
+						local v708 = v707.Instance:GetAttribute("UUID");
+						u685.State.SelectedSeeker = v708;
+						u685.State.SelectedGolem = nil;
+					else
+						u685.State.SelectedSeeker = nil;
+						u685.State.SelectedGolem = nil;
+					end;
+				end;
+
+				for i, _ in pairs(u685.State.ActiveSeekers) do
+					__pcallMethod("cl_ConstructEvent", u685, {
+						Type = "Seeker",
+						UUID = i
+					}, "UpdateSelectionStatus", i == u685.State.SelectedSeeker);
+				end;
+
+				for _, v in pairs(u685.State.Golems) do
+					local Highlight = v.Highlight;
+
+					if Highlight and v.Statue then
+						__pcallMethod("lcl_ToggleStatueHighlight", u685, Highlight, false);
+					end;
+				end;
+
+				local v709 = u685.State.ControllingGolem ~= nil;
+				local v710 = next(u685.State.Golems) ~= nil;
+				u685.Behavior.Abilities.Unravel.Name = v709 and "Burrowing" or (v710 and "Control" or (u685.State.SelectedSeeker and "Create" or "Inflorescence"));
+				local v711 = not (v709 or v710) and v702 < 15;
+
+				if v711 == u685.Cache.OblationAbilityLocks.Unravel then
+					return;
+				end;
+
+				u685.Cache.OblationAbilityLocks.Unravel = v711;
+				Util:ToggleLockForAbilityIcon("Unravel", "Oblation", v711);
+			end);
+			Network:SetConnection("SetTrackingMousePosition", "REMOTE_EVENT", function(p712)
+
+				u685.State.TrackingMousePosition = not p712 or false;
+
+				if p712 then
+					TweenService:Create(Util:CreateFOVMultiplier(u4, 1.2, "AzureAiming", 0.7), TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+						Value = 1
+					}):Play();
+					u685.State.MousePosition = p712;
+					RunService:UnbindFromRenderStep("MouseTracking");
+
+					return;
+				end;
+
+				spawn(function()
+
+					__pcallMethod("lcl_StartMouseTracking", u685);
+				end);
+				RunService:BindToRenderStep("MouseTracking", 1, function()
+
+					local CFrame2 = workspace.CurrentCamera.CFrame;
+					local Unit = CFrame2.LookVector;
+					u685.State.MousePosition = Unit;
+					Network:FireServerConnection(`{u685.Player.Name}AzureUpdateMouse`, "REMOTE_EVENT", Unit);
+				end);
+				TweenService:Create(Util:CreateFOVMultiplier(u4, 1, "AzureAiming"), TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Value = 1.2
+				}):Play();
+			end);
+		end;
+
+		return;
+	end;
+
+	task.spawn(function()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	end);
+
+	function u685.PCallAllClients(p713, p714, ...)
+
+		Network:FireAllClientConnection(`{u685.Player.Name}PCallAllClients`, "REMOTE_EVENT", p714, ...);
+	end;
+
+	function u685.PCallLocal(p715, p716, ...)
+
+		Network:FireClientConnection(u685.Player, `{u685.Player.Name}PCallLocal`, "REMOTE_EVENT", p716, ...);
+	end;
+
+	u685.NetworkConnections.EndAzureQTE = { `{u685.Player.Name}EndAzureQTE`, "REMOTE_EVENT" };
+	Network:SetConnection(`{u685.Player.Name}EndAzureQTE`, "REMOTE_EVENT", function(p719, p720, p721)
+
+		local v722;
+
+		if p719 then
+			v722 = p719.Character;
+		else
+			v722 = p719;
+		end;
+
+		if not v722 or (not Util:IsAlive(v722) or (tostring(v722.Parent) ~= "Survivors")) then
+			return;
+		end;
+
+		local v723 = nil;
+
+		for _, v in pairs(u685.State.Constructs) do
+			if p720 == v.Root then
+				v723 = v;
+				break;
+			end;
+		end;
+
+		if not v723 or p719 ~= v723.WorkedOnBy then
+			return;
+		end;
+
+		if Util:GetActor(p719) and p721 then
+			Actors:IncrementActorStats(p719, {
+				Action = "Disarmed an Azure trap",
+				Money = 5,
+				EXP = 5,
+				RewardType = nil
+			});
+		end;
+
+		v723:GiveCharacterAtropa(p719.Character, u685.Config.AtropaOnDefuse);
+		v723:EndQTE(p721);
+	end);
+	u685.NetworkConnections.UpdateMouse = { `{u685.Player.Name}AzureUpdateMouse`, "REMOTE_EVENT" };
+	Network:SetConnection(`{u685.Player.Name}AzureUpdateMouse`, "REMOTE_EVENT", function(p724, p725)
+
+		if p724 ~= u685.Player then
+			p724:Kick();
+
+			return;
+		end;
+
+		if typeof(p725) ~= "Vector3" or p725.X ~= p725.X or p725.Y ~= p725.Y
+			or p725.Z ~= p725.Z or p725.Magnitude == math.huge then
+			return;
+		end;
+
+		local v726 = (p725.Magnitude <= 0.001 or math.isinf(p725.Magnitude)) and Vector3.new(0, 0, 1) or p725;
+		u685.State.MousePosition = v726;
+		u685.State.LastMouseUpdate = os.clock();
+	end);
+	u685.NetworkConnections.Grab = { `{u685.Player.Name}AzureRequestGrab`, "REMOTE_FUNCTION" };
+	Network:SetConnection(`{u685.Player.Name}AzureRequestGrab`, "REMOTE_FUNCTION", function(p727, u728)
+
+		if p727 ~= u685.Player then
+			return false;
+		end;
+
+		if not u685.State.HomingActive then
+			return false;
+		end;
+
+		if not Hitboxes:LineOfSight(u685.Rig, u728) then
+			return false;
+		end;
+
+		u685.AbilitiesDisabled = true;
+		u685.DisabledAbilities = {};
+		spawn(function()
+
+			u685.State.HomingActive = false;
+			__pcallMethod("sv_GrabSurvivor", u685, u728);
+		end);
+
+		return true;
+	end);
+	u685.State.RootDistances = { {
+			Distance = 0,
+			Origin = nil
+		}, {
+			Distance = 3.3333333333333335,
+			Origin = nil
+		}, {
+			Distance = 6.666666666666667,
+			Origin = nil
+		} };
+	local u729 = Vector3.new(0, 0, 0);
+	u685.Maid:Add(RunService.Heartbeat:Connect(function()
+
+		local v730 = {};
+		local v731 = u685.Rig.PrimaryPart.Position + Vector3.new(0, -u685.Rig.PrimaryPart.Size.Y / 2 * 3, 0);
+		local Magnitude = (v731 - u729).Magnitude;
+
+		if Magnitude <= 0.001 then
+			return;
+		end;
+
+		for _, v in pairs(u685.State.RootDistances) do
+			if v.Origin == nil then
+				v.Origin = v731;
+			end;
+
+			local v732 = v.Distance + Magnitude;
+
+			if v732 >= 10 then
+				v730[#v730 + 1] = { v.Origin, v731 };
+				v732 = v732 % 10;
+				v.Origin = v731;
+			end;
+
+			v.Distance = v732;
+		end;
+
+		u729 = v731;
+
+		if not u685.State.ControllingGolem then
+			return;
+		end;
+
+		for _, v in pairs(v730) do
+			local v733 = v[1] - v[2];
+			u685:PCallAllClients("GREP", CFrame.new(v[2], v[2] + (v733.Magnitude <= 0.001 and Vector3.new(0, 0, 1) or v733.Unit)) * CFrame.new((math.random() - 0.5) / 0.5 * 5 / 4, 0, -5), Vector3.new(5, 0, 10), false);
+		end;
+	end));
+end;
+
+function u77.Destroyed(p734, p735)
+
+	if p735.Destroyed then
+		return;
+	end;
+
+	p735.Destroyed = true;
+	if u2 and p735.State and p735.State.AzureGrabCleanup then
+		p735.State.AzureGrabCleanup();
+	end;
+
+	if u1 then
+		__pcallMethod("lcl_SetGolemSpawnAbilityLocks", p735, false);
+		__pcallMethod("lcl_ResetGrabVisuals", p735);
+		__pcallMethod("lcl_SetGrabSprintDisabled", p735, false);
+		p735.LookFlag = nil;
+		if p735.State then p735.State.GrabAimingSequence = nil end;
+		if p735.Rig then p735.Rig:SetAttribute("AzureGrabFacing", nil) end;
+		__pcallMethod("lcl_SetGrabAbilityLocks", p735, false);
+		__pcallMethod("lcl_SetGrabStaminaRegenReduction", p735, false);
+		__pcallMethod("lcl_ClearRemoveAllFlowers", p735);
+	end;
+
+	p735.Maid:Destroy();
+
+	for i, v in p735.ConnectionDictionary do
+		v:Disconnect();
+		p735.NetworkConnections[i] = nil;
+	end;
+
+	for i, v in p735.NetworkConnections do
+		Network:RemoveConnection(v[1], v[2]);
+		p735.NetworkConnections[i] = nil;
+	end;
+
+	for _, v in p735.Instances do
+		if typeof(v) == "table" then
+			for _, v2 in v do
+				if v2 and v2.Parent then
+					v2:Destroy();
+				end;
+			end;
+		else
+			v:Destroy();
+		end;
+	end;
+end;
+
+function u77.OnIntroduction(p736, u737, p738, u739)
+
+	local KillerCutsceneBackground = workspace.Misc:WaitForChild("KillerCutsceneBackground", 3);
+	local CurrentCamera = workspace.CurrentCamera;
+
+	local function __initialize()
+
+		Lighting:SetCustomLighting(u737.Config.Instances.VictoryLighting);
+		Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", true);
+		Util:PlayDummyCutsceneAnimations(u737, u739, "Introduction");
+
+		if not CurrentCamera then
+			return;
+		end;
+
+		CurrentCamera.FieldOfView = 18;
+	end;
+
+	workspace.Misc:WaitForChild(u737.Player.Name .. "CameraRig", 3);
+	local v740 = u737.Config.Instances.Spawn:Clone();
+	v740.PrimaryPart.Anchored = true;
+	v740:PivotTo(KillerCutsceneBackground.PrimaryPart.CFrame);
+	v740.Parent = KillerCutsceneBackground;
+	game.Debris:AddItem(v740, 15);
+	local v741 = AnimationSupport.Load(Util, v740, (u737.Config.Animations.Introduction or {}).SpawnRig, true);
+	v741:Play(0);
+	local v742 = os.clock();
+	v741.TimePosition = os.clock() - v742;
+	spawn(__initialize);
+	task.delay(u739, function()
+
+		Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", nil);
+		Lighting:SetAsCurrentLighting();
+	end);
+	task.wait(1.2666666666666666);
+	local MassInfectionShockwaveVignette = u737.Config.Instances.MassInfectionShockwaveVignette;
+	local u743;
+
+	if MassInfectionShockwaveVignette then
+		u743 = MassInfectionShockwaveVignette:Clone();
+	else
+		u743 = MassInfectionShockwaveVignette;
+	end;
+
+	u743.Name = "AZUREQUICKSHINE";
+	u743.Parent = u737.Player.PlayerGui;
+	local u744 = u743:FindFirstChildOfClass("ImageLabel");
+
+	if MassInfectionShockwaveVignette then
+		u744.ImageTransparency = 1;
+		TweenService:Create(u744, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+			ImageTransparency = 0.8
+		}):Play();
+		task.delay(0.2, function()
+
+			TweenService:Create(u744, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+				ImageTransparency = 1
+			}):Play();
+		end);
+		task.delay(1, function()
+
+			u743:Destroy();
+		end);
+	end;
+
+	task.wait(1.5333333333333334);
+	local MassInfectionShockwaveVignette2 = u737.Config.Instances.MassInfectionShockwaveVignette;
+	local u745;
+
+	if MassInfectionShockwaveVignette2 then
+		u745 = MassInfectionShockwaveVignette2:Clone();
+	else
+		u745 = MassInfectionShockwaveVignette2;
+	end;
+
+	u745.Name = "AZUREQUICKSHINE";
+	u745.Parent = u737.Player.PlayerGui;
+	local u746 = u745:FindFirstChildOfClass("ImageLabel");
+
+	if MassInfectionShockwaveVignette2 then
+		u746.ImageTransparency = 1;
+		TweenService:Create(u746, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+			ImageTransparency = 0.8
+		}):Play();
+		task.delay(0.2, function()
+
+			TweenService:Create(u746, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+				ImageTransparency = 1
+			}):Play();
+		end);
+		task.delay(1, function()
+
+			u745:Destroy();
+		end);
+	end;
+end;
+
+function u77.OnVictory(p747, p748, u749, u750, u751)
+
+	if p748 ~= "Start" then
+		if p748 == "End" then
+			Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", nil);
+			Lighting:SetAsCurrentLighting();
+			local AzureStabCC = u4.PlayerGui:FindFirstChild("AzureStabCC");
+
+			if AzureStabCC then
+				AzureStabCC:Destroy();
+			end;
+
+			local AzureStabCC2 = u4.PlayerGui:FindFirstChild("AzureStabCC2");
+
+			if AzureStabCC2 then
+				AzureStabCC2:Destroy();
+			end;
+		end;
+
+		return;
+	end;
+
+	Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", true);
+	local CurrentCamera = workspace.CurrentCamera;
+	CurrentCamera.FieldOfView = 40;
+	Lighting:SetCustomLighting(u749.Config.Instances.VictoryLighting);
+	task.spawn(function()
+
+		local v752 = os.clock();
+		local KillerCutsceneBackground = workspace.Misc:WaitForChild("KillerCutsceneBackground", 5);
+		local v753 = u749.Config.Instances.GhostKnife:Clone();
+		v753.Parent = u750.PrimaryPart;
+		v753.GhostWeld.Part0 = u750["Right Arm"];
+		game.Debris:AddItem(v753, 15);
+		local v754 = u749.Config.Instances.Golem:Clone();
+		u749.Config.Instances.AnimController:Clone().Parent = v754;
+		v754.PrimaryPart.Anchored = true;
+		v754:PivotTo(KillerCutsceneBackground.PrimaryPart.CFrame);
+		v754.Parent = KillerCutsceneBackground;
+		v754:PivotTo(v754:GetPivot() * CFrame.new(0, -3, 0) * CFrame.Angles(0, 0, 0));
+		game.Debris:AddItem(v754, 15);
+		local v755 = AnimationSupport.Load(Util, v754, "rbxassetid://117770287268670", true);
+		v755:Play(0);
+		v755.TimePosition = os.clock() - v752;
+		TweenService:Create(CurrentCamera, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+			FieldOfView = 55
+		}):Play();
+		task.wait(4.25);
+		local ColorCorrectionEffect = Instance.new("ColorCorrectionEffect", game.Lighting);
+		ColorCorrectionEffect.Name = "AzureStabCC";
+		ColorCorrectionEffect.Contrast = 0;
+		ColorCorrectionEffect.Brightness = 0;
+		ColorCorrectionEffect.Saturation = 0;
+		ColorCorrectionEffect.TintColor = Color3.new(1, 1, 1);
+		TweenService:Create(ColorCorrectionEffect, TweenInfo.new(2.5833333333333335, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+			Brightness = 0,
+			Contrast = 1,
+			Saturation = 4,
+			TintColor = Color3.new(0.72549, 0, 0.92549)
+		}):Play();
+		game.Debris:AddItem(ColorCorrectionEffect, u751);
+		TweenService:Create(CurrentCamera, TweenInfo.new(2.5833333333333335, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+			FieldOfView = 65
+		}):Play();
+		task.wait(2.5833333333333335);
+		local ColorCorrectionEffect2 = Instance.new("ColorCorrectionEffect", game.Lighting);
+		ColorCorrectionEffect2.Name = "AzureStabCC2";
+		ColorCorrectionEffect2.Contrast = 0;
+		ColorCorrectionEffect2.Brightness = 0;
+		ColorCorrectionEffect2.TintColor = Color3.new(1, 1, 1);
+		game.Debris:AddItem(ColorCorrectionEffect2, u751);
+		TweenService:Create(ColorCorrectionEffect2, TweenInfo.new(0.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+			Brightness = -2,
+			Contrast = 1,
+			Saturation = 3,
+			TintColor = Color3.new(0, 0, 0)
+		}):Play();
+	end);
+end;
+
+function u77.OnInflictedDamage(p756, p757, p758)
+
+	__pcallMethod("sv_AddOblationProgress", p756, p758 * p756.Config.Oblation.BuildPerDamage);
+end;
+
+function u77.OnKill(p759, p760, p761)
+	if p760.Parent == workspace.Players.Survivors or workspace:GetAttribute("FriendlyFire") then
+		local State = p759.State;
+		State.KilledSurvivors = State.KilledSurvivors + 1;
+	end;
+end;
+
+function u77.OnExecution(p762, p763, u764)
+
+	if not p763.Rig then
+		return;
+	end;
+
+	if u764.Name ~= "TwoTime" then
+		local u765 = p763.Rig.PrimaryPart.CFrame.LookVector * 33;
+		delay(2.783333333333333, function()
+
+			Ragdolls.AddProfile(u764, {
+				Velocity = u765,
+				KillEffects = {
+					Explode = true
+				}
+			});
+			local v766 = u764:FindFirstChildOfClass("Humanoid");
+
+			if v766 then
+				v766.BreakJointsOnDeath = false;
+				v766.Health = 0;
+			end;
+		end);
+
+		return;
+	end;
+
+	local MassInfectionShockwaveVignette = p763.Config.Instances.MassInfectionShockwaveVignette;
+	local u767;
+
+	if MassInfectionShockwaveVignette then
+		u767 = MassInfectionShockwaveVignette:Clone();
+	else
+		u767 = MassInfectionShockwaveVignette;
+	end;
+
+	u767.Name = "AZUREQUICKSHINE1";
+	u767.Parent = p763.Player.PlayerGui;
+	local u768 = u767:FindFirstChildOfClass("ImageLabel");
+	u768.ImageTransparency = 1;
+	u764:FindFirstChild("GhostFire"):FindFirstChild("GhostfireBlade").Transparency = 0;
+	delay(1.3333333333333333, function()
+
+		if MassInfectionShockwaveVignette then
+			TweenService:Create(u768, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+				ImageTransparency = 0.9
+			}):Play();
+			task.delay(0.2, function()
+
+				TweenService:Create(u768, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+					ImageTransparency = 1
+				}):Play();
+			end);
+		end;
+	end);
+	delay(2.65, function()
+
+		if MassInfectionShockwaveVignette then
+			u768.ImageTransparency = 1;
+			TweenService:Create(u768, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+				ImageTransparency = 0.9
+			}):Play();
+			task.delay(0.2, function()
+
+				TweenService:Create(u768, TweenInfo.new(0.75, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+					ImageTransparency = 1
+				}):Play();
+			end);
+			task.delay(1, function()
+
+				u767:Destroy();
+			end);
+		end;
+
+		local v769 = u764:FindFirstChildOfClass("Humanoid");
+
+		if v769 then
+			v769.Health = 0.01;
+		end;
+	end);
+	delay(3.216666666666667, function()
+
+		Ragdolls.AddProfile(u764, {
+			Velocity = Vector3.new(0, 0, 0)
+		});
+		local v770 = u764:FindFirstChildOfClass("Humanoid");
+
+		if v770 then
+			v770.BreakJointsOnDeath = false;
+			v770.Health = 0;
+		end;
+	end);
+end;
+
+return u77;
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Killers/Noli/Behavior]====],before="107964:8d62c0a1:06f1fdcc",after="107858:c6c49f34:30d28639",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local _ = game:GetService("ServerStorage");
+local l_ServerScriptService_0 = game:GetService("ServerScriptService");
+local l_ReplicatedStorage_0 = game:GetService("ReplicatedStorage");
+local _ = game:GetService("UserInputService");
+local l_TweenService_0 = game:GetService("TweenService");
+local l_RunService_0 = game:GetService("RunService");
+local l_Players_0 = game:GetService("Players");
+local l_Debris_0 = game:GetService("Debris");
+local l_CollectionService_0 = game:GetService("CollectionService");
+local v9 = require(game.ReplicatedStorage.Modules.AchievementUtil);
+local v10 = require(script.Classes.VoidRushUI);
+local v11 = {};
+local v12 = require(l_ReplicatedStorage_0.Modules.Schematics.Lighting);
+local v13 = require(game.ReplicatedStorage.Modules.Hitboxes);
+local v14 = require(game.ReplicatedStorage.Modules.Statuses);
+local v15 = require(game.ReplicatedStorage.Modules.Sounds);
+local v16 = require(l_ReplicatedStorage_0.Modules.Ragdolls);
+local v17 = require(l_ReplicatedStorage_0.Modules.Projectiles);
+local v18 = require(l_ReplicatedStorage_0.Modules.Network);
+local v19 = require(game.ReplicatedStorage.Modules.Util);
+local _ = require(l_ReplicatedStorage_0.Modules.Device);
+local _ = require(l_ReplicatedStorage_0.Modules.Items);
+local _ = require(l_ReplicatedStorage_0.Modules.Misc.RadialImage);
+local v23 = require(game.ReplicatedStorage.Modules.Actors);
+local _ = l_RunService_0:IsClient();
+local _ = l_RunService_0:IsServer();
+local v26 = l_RunService_0:IsStudio();
+if l_RunService_0:IsServer() then
+    local _ = require(l_ServerScriptService_0.Server.Systems.Core.ActorHandler);
+end;
+local l_StunProtectionVFX_0 = l_ReplicatedStorage_0.Assets.UI.StunProtectionVFX;
+local function _(v29, v30, v31) --[[ Line: 36 ]] --[[ Name: reward ]]
+    -- upvalues: v23 (copy)
+    v23:IncrementActorStats(v29.Player, {
+        Action = v31,
+        RewardType = v30 .. "KillerAction"
+    });
+end;
+local function _(v33) --[[ Line: 43 ]] --[[ Name: __displayWarn ]]
+    -- upvalues: v26 (copy)
+    if v26 then
+        warn((("[Noli]: %*"):format(v33)));
+    end;
+end;
+local function v40(v35, v36, ...) --[[ Line: 57 ]] --[[ Name: __pcallMethod ]]
+    -- upvalues: v26 (copy)
+    assert(v35, "bad moduleInfo, must be a table");
+    local l_status_0, l_result_0 = pcall(function(...) --[[ Line: 60 ]]
+        -- upvalues: v35 (copy), v36 (copy)
+        if v35[v36] then
+            return v35[v36](...);
+        else
+            return;
+        end;
+    end, ...);
+    if not l_status_0 then
+        local v39 = ("Failed to call :%*() due to: %*"):format(v36, l_result_0);
+        if v26 then
+            warn((("[Noli]: %*"):format(v39)));
+        end;
+    end;
+    return l_status_0, l_result_0;
+end;
+v11.OnKill = function(v41, v42) --[[ Line: 70 ]] --[[ Name: OnKill ]]
+    -- upvalues: v9 (copy)
+    if v42.Name == "Shedletsky" or v42.Name == "Builderman" or v42.Name == "Dusekkar" then
+        v9:IncrementAchievementProgress(v41.Player, "NoliAdmin");
+    end;
+end;
+v11.Created = function(_, v44) --[[ Line: 76 ]] --[[ Name: Created ]]
+    -- upvalues: l_RunService_0 (copy), v19 (copy), v18 (copy), l_ReplicatedStorage_0 (copy), v14 (copy), v9 (copy), l_Players_0 (copy), l_CollectionService_0 (copy), v10 (copy)
+    if l_RunService_0:IsServer() then
+        v44.Behavior.VoidstarEnabled = true;
+        v44.Behavior.VoidRushCombo = 0;
+        if not v44.Cache then
+            v44.Cache = {};
+        end;
+        v44.Cache.Animations = {
+            VoidRush = {}
+        };
+        for v45, v46 in pairs(v44.Config.Animations.VoidRush) do
+            v44.Cache.Animations.VoidRush[v45] = v19:LoadAnimationFromID(v44.Rig, v46);
+        end;
+        v44.Cache.Animations.Observant = v19:LoadAnimationFromID(v44.Rig, v44.Config.Animations.ObservantTeleport);
+        v44.Cache.Trails = {};
+        for _, v48 in ipairs(v44.Rig:GetDescendants()) do
+            if v48:IsA("Trail") then
+                table.insert(v44.Cache.Trails, v48);
+            end;
+        end;
+        v18:SetConnection(("%*ObservantTeleport"):format(v44.Player.Name), "REMOTE_EVENT", function(v49, v50) --[[ Line: 98 ]]
+            -- upvalues: v44 (copy)
+            local l_Map_0 = workspace.Map.Ingame:FindFirstChild("Map");
+            if not l_Map_0 then
+                return;
+            elseif v49 ~= v44.Player or not v50:IsDescendantOf(l_Map_0) or not v50:IsA("Model") or not v50.Name:find("Generator") then
+                v49:Kick("\n\nForsakenCheatKiller 100:\nInvalid Connection Arguments [ObservantTeleport]\n");
+                return;
+            elseif (v50:GetPivot().Position - v44.Rig.PrimaryPart.Position).Magnitude < v44.Config.ObservantMinDistance then
+                return;
+            else
+                if v44.Behavior.Observing and v44:CanUseAbility("Observant") then
+                    v44.Behavior.ObservantUse(v44, v50);
+                end;
+                return;
+            end;
+        end);
+        local v52 = {
+            TOOKDAMAGE = {},
+            KILLED = {}
+        };
+        v18:SetConnection(("%*CloneEvent"):format(v44.Player.Name), "REMOTE_EVENT", function(v53, v54) --[[ Line: 120 ]]
+            -- upvalues: l_ReplicatedStorage_0 (ref), v52 (copy), v14 (ref), v44 (copy), v19 (ref), v9 (ref)
+            local v55 = require(l_ReplicatedStorage_0.Modules.StatusEffects.KillerExclusive.Hallucination.HallucinationClass.FakeNoli);
+            if not v52[v54] then
+                v53:Kick("\n\nForsakenCheatKiller 150:\nInvalid Connection Arguments [CloneEvent]\n");
+            end;
+            local v56 = v52[v54] or {};
+            local l_Character_0 = v53.Character;
+            local v58 = l_Character_0 and l_Character_0.PrimaryPart;
+            local v59 = v14:PlayerHasStatus(v53, "Hallucination");
+            local v60 = v59 and v59.Level >= v55.ApplyAt;
+            local v61 = v56[v53] and os.clock() - v56[v53] < v44.Config.StabCooldown - 0.2;
+            if l_Character_0 and v58 and v60 and not v61 then
+                v56[v53] = os.clock();
+                if v54 == "TOOKDAMAGE" then
+                    if v44.Config.HallucinationCloneDamage > 0 then
+                        v19:ApplyDamage(v53.Character, v44.Config.HallucinationCloneDamage, nil, v44.Rig);
+                        local v62 = math.clamp(v59.Data.Duration - v59.TimePast + v44.Config.HallucinationCloneExtension, 0, 20);
+                        v14:ApplyStatus(v53, "Hallucination", {
+                            Level = v59.Level,
+                            Duration = v62,
+                            Killer = v44
+                        });
+                        return;
+                    end;
+                elseif v54 == "KILLED" then
+                    local _ = workspace.Hitboxes:FindFirstChild(v53.Name .. "Hitbox");
+                    v14:RemoveStatus(v53, "Hallucination");
+                    v9:IncrementAchievementProgress(v44.Player, "NoliPranked");
+                end;
+            end;
+        end);
+        if not l_RunService_0:IsStudio() then
+            v44:SetCooldownOf("Observant", v44.Config.ObservantC00ldown);
+            v44:SetCooldownOf("VoidRush", 10);
+        end;
+        task.spawn(function() --[[ Line: 164 ]]
+            -- upvalues: v44 (copy)
+            local v64 = nil;
+            local v65 = nil;
+            v44.Behavior.FakeGenerators = {};
+            repeat
+                task.wait(1);
+                v65 = workspace.Map.Ingame:FindFirstChild("Map");
+                v64 = v65 and v65:FindFirstChild("GeneratorPositions");
+            until v64 and v64:FindFirstChildOfClass("CFrameValue") or not v44 or not v44.Behavior.FakeGenerators;
+            local v66 = v44 and v44.Behavior.FakeGenerators;
+            if not v65 or not v66 then
+                return;
+            else
+                local v67 = {};
+                for _, v69 in ipairs(v64:GetChildren()) do
+                    if v69:IsA("CFrameValue") then
+                        table.insert(v67, v69);
+                    end;
+                end;
+                if #v67 < 1 then
+                    return;
+                else
+                    for _ = 1, math.min(#v67, 2) do
+                        local v71 = math.random(1, #v67);
+                        local v72 = v67[v71];
+                        local v73 = script.FakeGenerator:Clone();
+                        v73:SetPrimaryPartCFrame(v72.Value);
+                        v73.Parent = v65;
+                        v73.Remotes.BE.Event:Connect(function(v74, v75) --[[ Line: 199 ]]
+                            -- upvalues: v44 (ref)
+                            local v76 = require(game.ReplicatedStorage.Modules.Statuses);
+                            local v77 = v76:PlayerHasStatus(v74, "Hallucination");
+                            v76:ApplyStatus(v74, "Hallucination", {
+                                Level = math.clamp((v77 and v77.Level or 0) + (v75 >= 100 and 3 or 1), 1, 3),
+                                Duration = 15,
+                                Killer = v44
+                            });
+                        end);
+                        for _, v79 in ipairs(v73.Scripts:GetChildren()) do
+                            if v79:IsA("BaseScript") then
+                                v79.Enabled = true;
+                            end;
+                        end;
+                        table.insert(v66, v73);
+                        table.remove(v67, v71);
+                        v72:Destroy();
+                    end;
+                    return;
+                end;
+            end;
+        end);
+        return;
+    else
+        if l_RunService_0:IsClient() and l_Players_0.LocalPlayer == v44.Player then
+            local function _(v80) --[[ Line: 224 ]] --[[ Name: getFailMsg ]]
+                -- upvalues: v44 (copy)
+                return v44.Config.VoidRushStopMessages[v80];
+            end;
+            local v82 = v44.Player.Name .. "GenHighlight";
+            v44.GeneratorHighlights = {};
+            v44.GenConnection = l_CollectionService_0:GetInstanceAddedSignal(v82):Connect(function(v83) --[[ Line: 231 ]]
+                -- upvalues: v44 (copy)
+                if v83.ClassName ~= "Highlight" then
+                    return;
+                else
+                    for v84, v85 in pairs(v44.Config.ObservantKillerProperties) do
+                        v83[v84] = v85;
+                    end;
+                    return;
+                end;
+            end);
+            v18:SetConnection(("%*VoidRushUpdateUI"):format(v44.Player.Name), "REMOTE_EVENT", function(v86) --[[ Line: 240 ]]
+                -- upvalues: v10 (ref), v44 (copy)
+                local v87 = v86 == "Create" and v10.new(v44) or v44.Behavior.VoidRushUI;
+                if not v87 then
+                    warn("Noli client had no UI");
+                    return;
+                else
+                    v87.Counter = (v87.Counter or 0) + 1;
+                    local v88 = nil;
+                    if v86 == "Create" then
+                        v44.Behavior.VoidRushUI = v87;
+                        v87.Blinking = false;
+                        v87:TweenRadial(v44.Config.VoidRushChargeLength, 0, 1);
+                        v87:SetText("Charge Void Rush by holding down");
+                        return;
+                    elseif v86 == "ChargeFail" then
+                        v87.Blinking = false;
+                        v87:SetText(v44.Config.VoidRushStopMessages.FailedToCharge);
+                        v87:FadeOut(2, false);
+                        return;
+                    elseif v86 == "Dash" then
+                        v87.BlinkSpeed = 0.25;
+                        v87.Blinking = true;
+                        v87:TweenRadial(v44.Config.VoidRushDashLength, 1, 0);
+                        v87:SetText("Release the Void Rush button to cancel");
+                        return;
+                    elseif v86 == "Hit" then
+                        v87.Blinking = false;
+                        local l_Counter_0 = v87.Counter;
+                        v87:SetText(v44.Config.VoidRushStopMessages.Hit);
+                        v87:TweenRadial(v44.Config.VoidRushHitEndlag, 0, 1);
+                        task.delay(v44.Config.VoidRushHitEndlag, function() --[[ Line: 271 ]]
+                            -- upvalues: v87 (copy), l_Counter_0 (copy), v44 (ref)
+                            if v87 and l_Counter_0 == v87.Counter then
+                                v87:TweenRadial(v44.Config.VoidRushComboWindow, 1, 0);
+                            end;
+                        end);
+                        return;
+                    elseif v86 == "WindowMiss" then
+                        v87.Blinking = false;
+                        v87:SetText(v44.Config.VoidRushStopMessages.WindowMissed);
+                        v87:FadeOut(2, false);
+                        return;
+                    elseif v86:match("Miss_") then
+                        v87.Blinking = false;
+                        v88 = v86:sub(6, v86:len());
+                        v86 = "Miss";
+                        v87:SetText(v44.Config.VoidRushStopMessages[v88]);
+                        v87:FadeOut(2, v88 == "HitLarge");
+                        return;
+                    else
+                        warn("Invalid server subroutine string", v86);
+                        return;
+                    end;
+                end;
+            end);
+            v18:SetConnection(("%*ObservantTeleport"):format(v44.Player.Name), "REMOTE_EVENT", function() --[[ Line: 294 ]]
+                -- upvalues: v44 (copy)
+                v44.Behavior.RevertObservance(v44);
+            end);
+        end;
+        return;
+    end;
+end;
+v11.Destroyed = function(_, v91) --[[ Line: 301 ]] --[[ Name: Destroyed ]]
+    -- upvalues: l_RunService_0 (copy), v18 (copy), l_Players_0 (copy)
+    if l_RunService_0:IsServer() then
+        v91.Behavior.RevertObservance(v91, false);
+        v91.Behavior.ToggleGeneratorAura(v91, false);
+        v18:RemoveConnection(("%*ObservantTeleport"):format(v91.Player.Name), "REMOTE_EVENT");
+        v18:RemoveConnection(("%*CloneEvent"):format(v91.Player.Name), "REMOTE_EVENT");
+        local l_ipairs_0 = ipairs;
+        local v93 = v91.Behavior.FakeGenerators or {};
+        for _, v95 in l_ipairs_0(v93) do
+            v95:Destroy();
+        end;
+        v91.Behavior.FakeGenerators = nil;
+        return;
+    else
+        if l_RunService_0:IsClient() and l_Players_0.LocalPlayer == v91.Player then
+            v18:RemoveConnection(("%*VoidRushUpdateUI"):format(v91.Player.Name), "REMOTE_EVENT");
+            v18:RemoveConnection(("%*ObservantTeleport"):format(v91.Player.Name), "REMOTE_EVENT");
+            if v91.Behavior.VoidRushUI then
+                v91.Behavior.VoidRushUI:Destroy();
+            end;
+            if v91.GenConnection then
+                v91.GenConnection:Disconnect();
+            end;
+            v91.Behavior.RevertObservance(v91);
+        end;
+        return;
+    end;
+end;
+v11.OnIntroduction = function(_, v97, v98, v99) --[[ Line: 330 ]] --[[ Name: OnIntroduction ]]
+    -- upvalues: v12 (copy), v19 (copy), l_Players_0 (copy)
+    v12:SetCustomLighting(v97.Config.IntroLighting);
+    local v100 = {};
+    if v98:FindFirstChild("Right Arm") and v98["Right Arm"]:FindFirstChild("TentacleBase") then
+        for _, v102 in ipairs(v98["Right Arm"].TentacleBase:GetDescendants()) do
+            if (v102:IsA("ParticleEmitter") or v102:IsA("Beam")) and v102.Enabled then
+                table.insert(v100, v102);
+                v102.Enabled = false;
+            end;
+        end;
+    end;
+    if v98:FindFirstChild("Voidstar") then
+        v98.Voidstar:Destroy();
+    end;
+    if v98:FindFirstChild("FakeCrown") then
+        v98.FakeCrown.Transparency = 0;
+        if v98:FindFirstChild("VoidstarCrown") then
+            v98.VoidstarCrown:Destroy();
+        end;
+    else
+        local l_VoidstarCrown_0 = v98:FindFirstChild("VoidstarCrown");
+        if l_VoidstarCrown_0 then
+            local v104 = v98.VoidstarCrown:Clone();
+            v104.Name = "FakeCrown";
+            v104.Parent = v98;
+            local v105 = Instance.new("Motor6D", v104);
+            v105.C0 = v97.Config.IntroCrownOffset or CFrame.new(0, 0.75, 0);
+            v105.Part0 = v98.Head;
+            v105.Part1 = v104;
+            l_VoidstarCrown_0:Destroy();
+        end;
+    end;
+    local l_KillerCutsceneBackground_0 = workspace.Misc:FindFirstChild("KillerCutsceneBackground");
+    local v107 = true;
+    task.spawn(function() --[[ Line: 379 ]]
+        -- upvalues: v107 (ref), l_KillerCutsceneBackground_0 (copy)
+        while v107 do
+            for v108, v109 in pairs(l_KillerCutsceneBackground_0.Voidstars:GetChildren()) do
+                v109.CFrame = v109.CFrame * CFrame.Angles(0, v108 % 2 == 0 and 0.0225 or -0.0225, 0);
+            end;
+            task.wait();
+        end;
+    end);
+    task.spawn(function() --[[ Line: 389 ]]
+        -- upvalues: v107 (ref), l_KillerCutsceneBackground_0 (copy)
+        while v107 do
+            local l_Skybox_0 = l_KillerCutsceneBackground_0.Skybox;
+            l_Skybox_0.CFrame = l_Skybox_0.CFrame * CFrame.Angles(0, 0.004363323129985824, 0);
+            task.wait();
+        end;
+    end);
+    local l_v19_FOVMultiplier_0 = v19:CreateFOVMultiplier(l_Players_0.LocalPlayer, 0.375, "NoliIntroScene", v99);
+    task.delay(1.98, function() --[[ Line: 398 ]]
+        -- upvalues: l_v19_FOVMultiplier_0 (copy)
+        l_v19_FOVMultiplier_0.Value = 0.275;
+    end);
+    task.delay(v99, function() --[[ Line: 402 ]]
+        -- upvalues: v107 (ref), v100 (copy), v98 (copy), v12 (ref)
+        v107 = false;
+        for _, v113 in ipairs(v100) do
+            v113.Enabled = true;
+        end;
+        v98:Destroy();
+        v12:SetAsCurrentLighting();
+    end);
+end;
+v11.OnVictory = function(_, v115, v116, v117, v118) --[[ Line: 416 ]] --[[ Name: OnVictory ]]
+    -- upvalues: v12 (copy), l_RunService_0 (copy), v19 (copy), l_TweenService_0 (copy), l_Players_0 (copy)
+    if v115 == "Start" then
+        v12:SetCustomLighting(v116.Config.OutroLighting);
+        local l_OutroFrameData_0 = v116.Config.OutroFrameData;
+        local l_VictoryKillerTrack_0 = v116.Cache.VictoryKillerTrack;
+        local l_VictoryCameraTrack_0 = v116.Cache.VictoryCameraTrack;
+        local v122 = {};
+        local function v126(v123) --[[ Line: 427 ]] --[[ Name: cacheParticles ]]
+            -- upvalues: v122 (copy)
+            for _, v125 in ipairs(v123:GetDescendants()) do
+                if v125:IsA("ParticleEmitter") then
+                    v122[v125.Name] = v125;
+                end;
+            end;
+        end;
+        local l_ScreenGui_0 = Instance.new("ScreenGui");
+        l_ScreenGui_0.Name = "NoliOutroOverlay";
+        l_ScreenGui_0.ResetOnSpawn = false;
+        l_ScreenGui_0.IgnoreGuiInset = true;
+        l_ScreenGui_0.Parent = game.Players.LocalPlayer.PlayerGui;
+        l_VictoryKillerTrack_0.Stopped:Once(function() --[[ Line: 444 ]]
+            -- upvalues: v117 (copy)
+            if v117 then
+                v117:PivotTo(v117:GetPivot() + Vector3.new(0, -20, 0, 0));
+            end;
+        end);
+        for _, v129 in ipairs(v117:GetDescendants()) do
+            if v129:IsA("Sound") then
+                v129:Destroy();
+            end;
+        end;
+        game.Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", true);
+        local v131 = l_RunService_0.RenderStepped:Connect(function() --[[ Line: 460 ]]
+            -- upvalues: l_VictoryCameraTrack_0 (copy), l_OutroFrameData_0 (copy)
+            local v130 = math.ceil((l_VictoryCameraTrack_0.TimePosition + 0.001) * 60);
+            if l_OutroFrameData_0.CameraFOV and l_OutroFrameData_0.CameraFOV[v130] then
+                workspace.CurrentCamera.FieldOfView = l_OutroFrameData_0.CameraFOV[v130] or l_OutroFrameData_0.CameraFOV[#l_OutroFrameData_0.CameraFOV];
+            end;
+        end);
+        if not v19:GetSettingValue("EpilepsyMode") then
+            local v135 = l_VictoryKillerTrack_0:GetMarkerReachedSignal("EmitParticle"):Connect(function(v132) --[[ Line: 470 ]]
+                -- upvalues: v122 (copy)
+                local v133 = v122[v132];
+                local l_v133_Attribute_0 = v133:GetAttribute("EmitCount");
+                if not l_v133_Attribute_0 then
+                    v133.Enabled = not v133.Enabled;
+                    return;
+                else
+                    v133:Emit(l_v133_Attribute_0);
+                    return;
+                end;
+            end);
+            task.delay(v118, function() --[[ Line: 481 ]]
+                -- upvalues: v135 (copy)
+                v135:Disconnect();
+            end);
+        end;
+        task.spawn(function() --[[ Line: 488 ]]
+            -- upvalues: v126 (copy)
+            local v136 = workspace.Misc:WaitForChild("KillerCutsceneBackground", 3);
+            if v136 then
+                v126(v136.Map.ExplosionGround);
+            end;
+        end);
+        task.spawn(function() --[[ Line: 495 ]]
+            -- upvalues: v116 (copy), v126 (copy)
+            local v137 = workspace.Misc:WaitForChild(v116.Player.Name .. "CameraRig", 3);
+            if v137 then
+                v126(v137);
+            end;
+        end);
+        task.delay(3.22, function() --[[ Line: 503 ]]
+            -- upvalues: v19 (ref), l_ScreenGui_0 (copy), v117 (copy), l_TweenService_0 (ref)
+            if not v19:GetSettingValue("EpilepsyMode") then
+                local v138 = Instance.new("Frame", l_ScreenGui_0);
+                v138.Size = UDim2.new(10, 0, 10, 0);
+                v138.AnchorPoint = Vector2.new(0.5, 0.5);
+                v138.Position = UDim2.new(0.5, 0, 0.5, 0);
+                v138.BackgroundTransparency = 1;
+                v138.BackgroundColor3 = Color3.new(0, 0, 0);
+                local l_Highlight_0 = Instance.new("Highlight");
+                l_Highlight_0.FillTransparency = 1;
+                l_Highlight_0.OutlineTransparency = 1;
+                l_Highlight_0.OutlineColor = Color3.new(0.4, 0, 1);
+                l_Highlight_0.Parent = v117;
+                game.Debris:AddItem(l_Highlight_0, 3);
+                local l_ColorCorrectionEffect_0 = Instance.new("ColorCorrectionEffect");
+                l_ColorCorrectionEffect_0.Parent = game.Lighting;
+                l_ColorCorrectionEffect_0.Name = "NoliBoomCC";
+                game.Debris:AddItem(l_ColorCorrectionEffect_0, 3);
+                local v141 = l_TweenService_0:Create(l_ColorCorrectionEffect_0, TweenInfo.new(0.65, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+                    TintColor = Color3.fromRGB(125, 66, 155),
+                    Brightness = -0.1,
+                    Contrast = 0.5
+                });
+                v141:Play();
+                l_TweenService_0:Create(l_Highlight_0, TweenInfo.new(0.65, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, true, 0), {
+                    OutlineTransparency = 0.1
+                }):Play();
+                task.wait(0.65);
+                v19:ApplyCameraShake(0.2, 1.2);
+                v141:Pause();
+                l_ColorCorrectionEffect_0.Contrast = 1;
+                l_ColorCorrectionEffect_0.Brightness = 2.8;
+                l_ColorCorrectionEffect_0.TintColor = Color3.fromRGB(70, 0, 155);
+                l_TweenService_0:Create(l_ColorCorrectionEffect_0, TweenInfo.new(1.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Brightness = -0.6,
+                    TintColor = Color3.new(0.623529, 0.623529, 0.623529),
+                    Contrast = -0.5
+                }):Play();
+                task.wait(1.1);
+                if not v138 then
+                    return;
+                else
+                    l_TweenService_0:Create(v138, TweenInfo.new(0.2), {
+                        BackgroundTransparency = 0,
+                        BackgroundColor3 = Color3.new(0, 0, 0)
+                    }):Play();
+                end;
+            end;
+        end);
+        task.delay(v118, function() --[[ Line: 553 ]]
+            -- upvalues: v131 (copy)
+            v131:Disconnect();
+        end);
+        return;
+    else
+        if v115 == "End" then
+            l_Players_0.LocalPlayer:SetAttribute("FOVMultipliersDisabled", nil);
+            v12:SetAsCurrentLighting();
+            if l_Players_0.LocalPlayer.PlayerGui:FindFirstChild("NoliOutroOverlay") then
+                l_Players_0.LocalPlayer.PlayerGui.NoliOutroOverlay:Destroy();
+            end;
+            local v142 = game.Lighting:WaitForChild("NoliBoomCC", 9);
+            if v142 then
+                v142:Destroy();
+            end;
+        end;
+        return;
+    end;
+end;
+v11.OnExecution = function(_, v144, v145) --[[ Line: 572 ]] --[[ Name: OnExecution ]]
+    -- upvalues: v16 (copy)
+    local l_Rig_0 = v144.Rig;
+    v144.Behavior.DisableVoidstar(v144);
+    v144.Behavior.ToggleTendril(v144, true);
+    task.delay(4.2, function() --[[ Line: 578 ]]
+        -- upvalues: v144 (copy)
+        v144.Behavior.EnableVoidstar(v144);
+        v144.Behavior.ToggleTendril(v144, false);
+    end);
+    if v144.VoidstarVisibleThread then
+        task.cancel(v144.VoidstarVisibleThread);
+        v144.VoidstarVisibleThread = nil;
+    end;
+    task.delay(2.4, function() --[[ Line: 590 ]]
+        -- upvalues: v16 (ref), v145 (copy), l_Rig_0 (copy)
+        v16.AddProfile(v145, {
+            Velocity = Vector3.new(0, 50, 0, 0),
+            KillEffects = {
+                HeadSquash = true
+            }
+        });
+        local l_Head_0 = v145:FindFirstChild("Head");
+        local l_Humanoid_0 = v145:FindFirstChild("Humanoid");
+        if l_Humanoid_0 then
+            l_Humanoid_0.BreakJointsOnDeath = false;
+            l_Humanoid_0.Health = 0;
+            if l_Head_0 then
+                l_Head_0:Destroy();
+            end;
+            for _, v150 in ipairs(l_Rig_0.Voidstar.Crush:GetChildren()) do
+                if v150:IsA("ParticleEmitter") then
+                    v150.Enabled = true;
+                end;
+            end;
+            task.delay(0.125, function() --[[ Line: 611 ]]
+                -- upvalues: l_Rig_0 (ref)
+                for _, v152 in ipairs(l_Rig_0.Voidstar.Crush:GetChildren()) do
+                    if v152:IsA("ParticleEmitter") then
+                        v152.Enabled = false;
+                    end;
+                end;
+            end);
+        end;
+    end);
+end;
+v11.Abilities = {
+    Stab = {
+        LayoutOrder = 1,
+        Icon = "rbxassetid://130161235577806",
+        KeybindType = "MainAbility",
+        Callback = function(v153, _) --[[ Line: 628 ]] --[[ Name: Callback ]]
+            -- upvalues: l_RunService_0 (copy), v40 (copy), v15 (copy), v13 (copy), v19 (copy), v14 (copy)
+            if l_RunService_0:IsServer() then
+                v153:PlayVoiceline("Stab", {
+                    Priority = 1
+                });
+                v153.AbilitiesDisabled = true;
+                task.delay(v153.Config.StabEndlag, function() --[[ Line: 637 ]]
+                    -- upvalues: v153 (copy)
+                    v153.AbilitiesDisabled = false;
+                end);
+                v40(v153.Behavior, "Stab", v153.Behavior, v153);
+                v15:Play(v153.Config.Sounds.Swing, {
+                    Parent = v153.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.25,
+                    RollOffMaxDistance = 25
+                });
+                if v153.Config.VoidstarDisappearCases.Stab then
+                    v153.Behavior.DisableVoidstar(v153);
+                    v153.Behavior.ToggleTendril(v153, true);
+                    v153.VoidstarVisibleThread = task.delay(v153.Config.StabEndlag, function() --[[ Line: 647 ]]
+                        -- upvalues: v153 (copy)
+                        v153.Behavior.EnableVoidstar(v153);
+                        v153.Behavior.ToggleTendril(v153, false);
+                    end);
+                end;
+                task.delay(v153.Config.StabWindup, function() --[[ Line: 654 ]]
+                    -- upvalues: v13 (ref), v153 (copy), v19 (ref), v15 (ref), v14 (ref)
+                    local _ = v13:CreateHitbox(v153.Player, { AbilityType = "MainAbility", IsProjectile = false,
+                        Size = Vector3.new(4.5, 6, 7.5, 0),
+                        CFrameOffset = CFrame.new(0, 0, -2.25),
+                        Damage = v153.Config.StabDamage,
+                        Time = v153.Config.StabLinger,
+                        Knockback = 2,
+                        HitMultiple = false,
+                        ExecuteOnKill = true,
+                        Connections = {
+                            Hit = function(v155, v156) --[[ Line: 666 ]] --[[ Name: Hit ]]
+                                -- upvalues: v19 (ref), v153 (ref), v15 (ref), v14 (ref)
+                                v19:CreateSpeedMultiplier(v155, 1.5, "HitSpeedBonus", 1.25);
+                                if v156 then
+                                    v153:PlayVoiceline("StabHit", {
+                                        Priority = 2
+                                    });
+                                    v15:Play(v153.Config.Sounds.Hit, {
+                                        Parent = v153.Rig.PrimaryPart,
+                                        PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                        Volume = 0.3,
+                                        RollOffMaxDistance = 25
+                                    });
+                                end;
+                                v14:RemoveStatus(v155, "Hallucination");
+                            end
+                        }
+                    });
+                end);
+                return;
+            else
+                if l_RunService_0:IsClient() then
+                    v153.Animations.Stab:Play(0.175);
+                end;
+                return;
+            end;
+        end
+    },
+    VoidRush = {
+        LayoutOrder = 2,
+        Icon = "rbxassetid://110747688363796",
+        KeybindType = "AltAbility1",
+        FlavorText = "[Hold]",
+        Toggle = true,
+        Callback = function(v158, v159) --[[ Line: 695 ]] --[[ Name: Callback ]]
+            -- upvalues: v15 (copy), l_RunService_0 (copy), v19 (copy), v18 (copy), v40 (copy), v9 (copy), v13 (copy), l_TweenService_0 (copy), v14 (copy), v23 (copy), v16 (copy), l_ReplicatedStorage_0 (copy)
+            local l_Behavior_0 = v158.Behavior;
+            local v161 = ("%*VoidRushCollision"):format(v158.Player.Name);
+            local v162 = ("%*VoidRushCancel"):format(v158.Player.Name);
+            local v163 = ("%*VoidRushUpdateUI"):format(v158.Player.Name);
+            local function v168(v164) --[[ Line: 703 ]] --[[ Name: playSound ]]
+                -- upvalues: v158 (copy), v15 (ref)
+                local l_Sounds_0 = v158.Config.Sounds;
+                local v166 = l_Sounds_0[("VoidRush%*"):format(v164)] or l_Sounds_0[v164];
+                if v166 then
+                    local v167 = {
+                        Parent = v158.Rig.PrimaryPart,
+                        PlaybackSpeed = Random.new():NextNumber() / 20 + 0.975,
+                        Volume = 0.7,
+                        RollOffMaxDistance = 50
+                    };
+                    if typeof(v166) == "table" then
+                        v167 = {
+                            Parent = v158.Rig.PrimaryPart,
+                            PlaybackSpeed = 1,
+                            RollOffMaxDistance = 80,
+                            Volume = 0.77
+                        };
+                    end;
+                    return v15:Play(v166, v167);
+                else
+                    return;
+                end;
+            end;
+            if l_RunService_0:IsServer() then
+                local function _(v169, v170) --[[ Line: 720 ]] --[[ Name: giveEndlag ]]
+                    -- upvalues: v158 (copy), v19 (ref)
+                    v158.AbilitiesDisabled = true;
+                    v19:CreateSpeedMultiplier(v158.Rig, 0.6, "VoidRushEndlag", v169 + (v170 and v158.Config.VoidRushComboWindow or 0), true);
+                    if not v170 then
+                        task.delay(v169, function() --[[ Line: 725 ]]
+                            -- upvalues: v158 (ref)
+                            v158.AbilitiesDisabled = false;
+                        end);
+                    end;
+                end;
+                local function _(v172) --[[ Line: 731 ]] --[[ Name: updateLocalUI ]]
+                    -- upvalues: v18 (ref), v158 (copy), v163 (copy)
+                    v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", v172);
+                end;
+                local l_VoidRush_0 = v158.Cache.Animations.VoidRush;
+                v158.AbilitiesDisabled = true;
+                v158.Behavior.DisableVoidstar(v158);
+                v158.Behavior.ToggleTendril(v158, true);
+                task.spawn(function() --[[ Line: 742 ]]
+                    -- upvalues: l_Behavior_0 (copy), v18 (ref), v158 (copy), v163 (copy), l_VoidRush_0 (copy), v168 (copy), v19 (ref), v162 (copy), l_RunService_0 (ref), v40 (ref), v15 (ref), v9 (ref), v13 (ref), v161 (copy), l_TweenService_0 (ref), v14 (ref), v23 (ref), v16 (ref)
+                    if not l_Behavior_0.Endlag then
+                        l_Behavior_0.Endlag = nil;
+                        v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "Create");
+                        local v175 = 0;
+                        local v176 = false;
+                        l_VoidRush_0.StartCharge:Play(0.15);
+                        l_VoidRush_0.LoopCharge:Play(0.2);
+                        v158.StartSound = v168("Start");
+                        v168("Loop");
+                        v158:PlayVoiceline("VoidRushStart", {
+                            Priority = 2
+                        });
+                        local l_v19_SpeedMultiplier_0 = v19:CreateSpeedMultiplier(v158.Rig, v158.Config.VoidRushChargingSpeed, "VoidRushCharging", v158.Config.VoidRushChargeLength);
+                        v158.Rig:SetAttribute("VoidRushState", "Charging");
+                        v18:SetConnection(v162, "REMOTE_EVENT", function() --[[ Line: 764 ]]
+                            -- upvalues: v176 (ref)
+                            v176 = true;
+                        end);
+                        v158.Behavior.VoidRushCombo = 0;
+                        repeat
+                            v175 = v175 + l_RunService_0.Heartbeat:Wait();
+                            if v158.Rig:GetAttribute("Stunned") then
+                                v176 = true;
+                            end;
+                        until v158.Config.VoidRushChargeLength <= v175 or v176;
+                        v18:RemoveConnection(v162);
+                        l_VoidRush_0.StartCharge:Stop();
+                        l_VoidRush_0.LoopCharge:Stop();
+                        l_v19_SpeedMultiplier_0:Destroy();
+                        if v176 then
+                            v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown / 16);
+                            v158.Rig:SetAttribute("VoidRushState", "ChargingCancelled");
+                            l_VoidRush_0.CancelCharge:Play(0.15);
+                            v158:PlayVoiceline("VoidRushCancel", {
+                                Priority = 3
+                            });
+                            v168("Cancel");
+                            v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "ChargeFail");
+                            task.delay(0.2, function() --[[ Line: 794 ]]
+                                -- upvalues: v158 (ref)
+                                v158.Behavior.EnableVoidstar(v158);
+                                v158.Behavior.ToggleTendril(v158, false);
+                                v158.AbilitiesDisabled = false;
+                                v158.DisabledAbilities = nil;
+                                v158.Rig:SetAttribute("VoidRushState", nil);
+                            end);
+                            if v158.StartSound then
+                                v158.StartSound:Destroy();
+                            end;
+                            return;
+                        else
+                            --[[ close >= 1 ]]
+                        end;
+                    end;
+                    if not v19:IsAlive(v158 and v158.Rig) then
+                        return;
+                    else
+                        if v158.StartSound then
+                            v158.StartSound:Destroy();
+                        end;
+                        if v158.WindowSound then
+                            v158.WindowSound:Destroy();
+                        end;
+                        v40(v158.Behavior, "OnVoidRushDash", v158);
+                        v158.VoidRushChargingSound = v15:Play(v158.Config.Sounds.VoidRushDashLoop, {
+                            Parent = v158.Rig.PrimaryPart,
+                            RollOffMaxDistance = 50,
+                            Volume = 0.75
+                        });
+                        v158:PlayVoiceline("VoidRushDash", {
+                            Priority = 3
+                        });
+                        local l_VoidRushDashSpeed_0 = v158.Config.VoidRushDashSpeed;
+                        local v179 = l_Behavior_0.Endlag and "Combo" or "Init";
+                        local l_VoidRushDashLength_0 = v158.Config.VoidRushDashLength;
+                        local l_VoidRushHallucinationLevel_0 = v158.Config.VoidRushHallucinationLevel;
+                        local l_v19_SpeedMultiplier_1 = v19:CreateSpeedMultiplier(v158.Rig, l_VoidRushDashSpeed_0 / v158.Config.Speed, "VoidRushDash");
+                        local function v185() --[[ Line: 827 ]] --[[ Name: stopDashAnimations ]]
+                            -- upvalues: l_VoidRush_0 (ref)
+                            for _, v184 in ipairs({
+                                "StartDashInit",
+                                "LoopDashCombo",
+                                "LoopDashInit",
+                                "StartDashCombo"
+                            }) do
+                                if l_VoidRush_0[v184] then
+                                    l_VoidRush_0[v184]:Stop();
+                                end;
+                            end;
+                        end;
+                        v185();
+                        local _ = l_VoidRush_0[("StartDash%*"):format(v179)];
+                        local _ = l_VoidRush_0[("LoopDash%*"):format(v179)];
+                        l_VoidRush_0[("StartDash%*"):format(v179)]:Play(0.05);
+                        l_VoidRush_0[("LoopDash%*"):format(v179)]:Play(0.05);
+                        v168("Dash" .. tostring(l_Behavior_0.Endlag and 2 or 1));
+                        if l_Behavior_0.EndlagComboThread then
+                            task.cancel(l_Behavior_0.EndlagComboThread);
+                            l_Behavior_0.EndlagComboThread = nil;
+                        end;
+                        local l_Behavior_1 = v158.Behavior;
+                        l_Behavior_1.VoidRushCombo = l_Behavior_1.VoidRushCombo + 1;
+                        l_Behavior_0.Endlag = nil;
+                        if v158.Behavior.VoidRushCombo == 5 then
+                            v9:IncrementAchievementProgress(v158.Player, "NoliCombo");
+                        end;
+                        l_Behavior_1 = false;
+                        local v189 = nil;
+                        local v190 = nil;
+                        local v191 = nil;
+                        local v192 = nil;
+                        local v193 = nil;
+                        local v194 = nil;
+                        local v195 = nil;
+                        v195 = v158.Rig:GetAttributeChangedSignal("Stunned"):Once(function() --[[ Line: 857 ]]
+                            -- upvalues: v192 (ref)
+                            v192 = true;
+                        end);
+                        local v196 = nil;
+                        v196 = v13:CreateHitbox(v158.Player, {
+                            Size = Vector3.new(6, 6, 4, 0),
+                            Damage = v158.Config.VoidRushBaseDamage,
+                            CFrameOffset = CFrame.new(0, 0, -2),
+                            Time = l_VoidRushDashLength_0,
+                            Knockback = 6,
+                            HitMultiple = true,
+                            ExecuteOnKill = false,
+                            Connections = {
+                                Hit = function(v197) --[[ Line: 868 ]] --[[ Name: Hit ]]
+                                    -- upvalues: l_Behavior_1 (ref), v19 (ref), v189 (ref), v9 (ref), v158 (ref), v196 (ref), v194 (ref)
+                                    if l_Behavior_1 then
+                                        return;
+                                    else
+                                        local l_v19_EntityType_0, v199 = v19:GetEntityType(v197);
+                                        if l_v19_EntityType_0 then
+                                            l_Behavior_1 = true;
+                                            v189 = v197;
+                                            if v189:GetAttribute("GuestCharging") then
+                                                v9:IncrementAchievementProgress(v158.Player, "NoliCar");
+                                                v9:IncrementAchievementProgress(game.Players:GetPlayerFromCharacter(v189), "NoliCar");
+                                            end;
+                                            if v196 then
+                                                v196:Cancel();
+                                                return;
+                                            end;
+                                        elseif v199 == "Building" then
+                                            l_Behavior_1 = true;
+                                            v194 = v197;
+                                            if v196 then
+                                                v196:Cancel();
+                                            end;
+                                        end;
+                                        return;
+                                    end;
+                                end,
+                                Ended = function() --[[ Line: 900 ]] --[[ Name: Ended ]]
+                                    -- upvalues: v190 (ref)
+                                    v190 = true;
+                                end
+                            }
+                        });
+                        local v200 = require(game.ReplicatedStorage.Modules.Network);
+                        local _ = v200:SetConnection(v161, "REMOTE_EVENT", function(v201, v202) --[[ Line: 908 ]]
+                            -- upvalues: v158 (ref), v191 (ref), v193 (ref)
+                            if v201 ~= v158.Player then
+                                v201:Kick("not slick at all");
+                                return;
+                            else
+                                v191 = v202;
+                                v193 = true;
+                                return;
+                            end;
+                        end);
+                        v19:CreateSpeedMultiplier(v158.Rig, 1, "VoidRushEndlag", 0);
+                        v19:CreateSpeedMultiplier(v158.Rig, 1, "VoidRushCharging", 0);
+                        v158.Rig:SetAttribute("VoidRushState", "Dashing");
+                        v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "Dash");
+                        task.spawn(function() --[[ Line: 929 ]]
+                            -- upvalues: v189 (ref), v190 (ref), v192 (ref), v191 (ref), v193 (ref), v194 (ref), v158 (ref), l_v19_SpeedMultiplier_1 (copy), v200 (copy), v161 (ref), v196 (ref), l_TweenService_0 (ref), v14 (ref), l_VoidRushHallucinationLevel_0 (copy), v40 (ref), v23 (ref), v19 (ref), v168 (ref), l_VoidRush_0 (ref), v18 (ref), v163 (ref), v16 (ref), v13 (ref), l_Behavior_0 (ref), v185 (copy)
+                            repeat
+                                task.wait();
+                            until v189 or v190 or v192 or v191 or v193 or v194 or not v158.Rig.PrimaryPart;
+                            local v204 = v190 and "Timeout" or v192 and "Stunned" or v191 and "Crashed" or v194 and "NonChar" or "Cancelled";
+                            l_v19_SpeedMultiplier_1:Destroy();
+                            v200:RemoveConnection(v161, "REMOTE_EVENT");
+                            v196:Cancel();
+                            if v158.VoidRushChargingSound then
+                                local l_VoidRushChargingSound_0 = v158.VoidRushChargingSound;
+                                v158.VoidRushChargingSound = nil;
+                                l_TweenService_0:Create(l_VoidRushChargingSound_0, TweenInfo.new(0.4), {
+                                    PlaybackSpeed = 0,
+                                    Volume = l_VoidRushChargingSound_0.Volume / 5
+                                }):Play();
+                                game.Debris:AddItem(l_VoidRushChargingSound_0, 0.5);
+                            end;
+                            if v189 then
+                                local v206 = v14:PlayerHasStatus(v189, "Hallucination");
+                                if v206 and v206.Data and v206.Data.Level >= l_VoidRushHallucinationLevel_0 then
+                                    v14:RemoveStatus(v189, "Hallucination");
+                                    v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown);
+                                    v40(v158.Behavior, "OnVoidRushSlam", v158);
+                                    v23:IncrementActorStats(v158.Player, {
+                                        Action = "Slammed Survivor with Void Rush",
+                                        RewardType = "RegularKillerAction"
+                                    });
+                                    v19:SetUpCutscene(v158.Rig, v189, CFrame.new(0, 0.01, 0) * (v158.Config.VoidRushCutsceneOffset or CFrame.identity), "Noli");
+                                    v168("Cutscene");
+                                    v19:GiveInvincible(v158.Rig, "Slam");
+                                    local l_CutsceneKillerRig_0 = l_VoidRush_0.CutsceneKillerRig;
+                                    l_CutsceneKillerRig_0:Play(0);
+                                    l_CutsceneKillerRig_0.TimePosition = 0;
+                                    local v208 = v19:LoadAnimationFromID(v189, v158.Config.Animations.VoidRushVictimRig, true);
+                                    v208:Play(0.05);
+                                    v208.TimePosition = l_CutsceneKillerRig_0.TimePosition;
+                                    v158.Rig:SetAttribute("VoidRushState", "HitLarge");
+                                    v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "Miss_HitLarge");
+                                    task.spawn(function() --[[ Line: 987 ]]
+                                        -- upvalues: v189 (ref), v158 (ref), v16 (ref), v13 (ref), v19 (ref)
+                                        v189.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+                                        task.wait(0.5);
+                                        v158:PlayVoiceline("Slam", {
+                                            Priority = 4
+                                        });
+                                        if v189 then
+                                            v16.AddProfile(v189, {
+                                                Velocity = Vector3.new(0, -5, 0, 0)
+                                            });
+                                            local _ = v13:CreateHitbox(v158.Player, {
+                                                Size = Vector3.new(4, 4, 4, 0),
+                                                CFrame = v189.PrimaryPart.CFrame,
+                                                Damage = v158.Config.VoidRushSlamDamage + (v158.Behavior.VoidRushCombo or 0) * v158.Config.VoidRushComboDamage,
+                                                Time = 0.1,
+                                                Knockback = 0,
+                                                HitMultiple = true,
+                                                PredictVelocity = false,
+                                                ExecuteOnKill = false,
+                                                Connections = {}
+                                            });
+                                            local v210 = RaycastParams.new();
+                                            v210.FilterDescendantsInstances = workspace.Players:GetDescendants();
+                                            v210.FilterType = Enum.RaycastFilterType.Exclude;
+                                            local l_Position_0 = v158.Rig.PrimaryPart.Position;
+                                            local v212 = v158.Rig.PrimaryPart.CFrame.LookVector * 2;
+                                            local v213 = workspace:Raycast(l_Position_0, v212, v210);
+                                            v189:SetPrimaryPartCFrame(v189.PrimaryPart.CFrame + v212 * (v213 and v213.Distance or v212.Magnitude) / 2);
+                                            v189.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+                                            v19:ToggleAnchored(v189, "Noli", false);
+                                            v16.EnableRagdoll(v189, 1.75);
+                                        end;
+                                        v158.Behavior.EnableVoidstar(v158);
+                                        v158.Behavior.ToggleTendril(v158, false);
+                                    end);
+                                    task.delay(0.5 + v158.Config.VoidRushCutsceneLength, function() --[[ Line: 1030 ]]
+                                        -- upvalues: v158 (ref), v19 (ref)
+                                        v158.Rig:SetAttribute("VoidRushState", nil);
+                                        v158.Rig.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+                                        v19:ToggleAnchored(v158.Rig, "Noli", false);
+                                        task.wait(0.5);
+                                        v19:RemoveInvincible(v158.Rig, "Slam");
+                                        v158.AbilitiesDisabled = false;
+                                        v158.DisabledAbilities = nil;
+                                    end);
+                                    if l_Behavior_0.Endlag then
+                                        v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown);
+                                    end;
+                                else
+                                    local l_VoidRushHitEndlag_0 = v158.Config.VoidRushHitEndlag;
+                                    local l_VoidRushComboWindow_0 = v158.Config.VoidRushComboWindow;
+                                    v40(v158.Behavior, "OnVoidRushHit", v158);
+                                    v23:IncrementActorStats(v158.Player, {
+                                        Action = "Hit player with Void Rush",
+                                        RewardType = "EasyKillerAction"
+                                    });
+                                    v158.Rig:SetAttribute("VoidRushState", "Hit");
+                                    v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "Hit");
+                                    v158:SetCooldownOf("VoidRush", l_VoidRushHitEndlag_0);
+                                    v14:ApplyStatus(v189, "Hallucination", {
+                                        Duration = v158.Config.VoidRushHallucinationDuration,
+                                        Level = l_VoidRushHallucinationLevel_0,
+                                        Killer = v158
+                                    });
+                                    v19:CreateSpeedMultiplier(v189, 1.5, "HitSpeedBonus", 1.25);
+                                    v158.AbilitiesDisabled = true;
+                                    v19:CreateSpeedMultiplier(v158.Rig, 0.6, "VoidRushEndlag", l_VoidRushHitEndlag_0 + (v158.Config.VoidRushComboWindow or 0), true);
+                                    l_Behavior_0.Endlag = true;
+                                    v158.WindowSound = v168("Window");
+                                    l_VoidRush_0.WeakHit:Play(0);
+                                    v158:PlayVoiceline("VoidRushWeakHit", {
+                                        Priority = 4
+                                    });
+                                    v168("WeakHit" .. tostring((math.clamp(v158.Behavior.VoidRushCombo, 1, 5))));
+                                    v158.AbilitiesDisabled = false;
+                                    v158.DisabledAbilities = {
+                                        Stab = true,
+                                        Nova = true,
+                                        Observant = true
+                                    };
+                                    l_Behavior_0.EndlagComboThread = task.delay(l_VoidRushHitEndlag_0 + l_VoidRushComboWindow_0, function() --[[ Line: 1085 ]]
+                                        -- upvalues: l_Behavior_0 (ref), v158 (ref), v18 (ref), v163 (ref)
+                                        l_Behavior_0.Endlag = nil;
+                                        v158.AbilitiesDisabled = false;
+                                        v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown);
+                                        v158.Behavior.EnableVoidstar(v158);
+                                        v158.Behavior.ToggleTendril(v158, false);
+                                        v158.DisabledAbilities = nil;
+                                        v158.Rig:SetAttribute("VoidRushState", nil);
+                                        v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "WindowMiss");
+                                    end);
+                                end;
+                            elseif v190 or v192 or v191 or v193 or v194 then
+                                local l_VoidRushMissEndlag_0 = v158.Config.VoidRushMissEndlag;
+                                v158.AbilitiesDisabled = true;
+                                v19:CreateSpeedMultiplier(v158.Rig, 0.6, "VoidRushEndlag", l_VoidRushMissEndlag_0 + 0, true);
+                                task.delay(l_VoidRushMissEndlag_0, function() --[[ Line: 725 ]]
+                                    -- upvalues: v158 (ref)
+                                    v158.AbilitiesDisabled = false;
+                                end);
+                                v40(v158.Behavior, "OnVoidRushMiss", v158);
+                                task.delay(v158.Config.VoidRushMissEndlag, function() --[[ Line: 1104 ]]
+                                    -- upvalues: v158 (ref)
+                                    v158.Behavior.EnableVoidstar(v158);
+                                    v158.Behavior.ToggleTendril(v158, false);
+                                end);
+                                v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown);
+                                v158.DisabledAbilities = nil;
+                                v158.Rig:SetAttribute("VoidRushState", v204);
+                                l_VoidRushMissEndlag_0 = "Miss_" .. v204;
+                                v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", l_VoidRushMissEndlag_0);
+                                if l_VoidRush_0["EndDash" .. v204] then
+                                    l_VoidRush_0["EndDash" .. v204]:Play();
+                                else
+                                    l_VoidRush_0.EndDash:Play();
+                                end;
+                                v168("Miss" .. v204);
+                                v158:PlayVoiceline("VoidRushMiss" .. v204, {
+                                    Priority = 3
+                                });
+                            end;
+                            v185();
+                        end);
+                        return;
+                    end;
+                end);
+                return {
+                    SentTick = not l_Behavior_0.Endlag and os.clock()
+                };
+            else
+                if l_RunService_0:IsClient() then
+                    local v217 = require(l_ReplicatedStorage_0.Systems.Character.Game.Sprinting);
+                    local v218 = v159 and v159.SentTick;
+                    local function _() --[[ Line: 1138 ]] --[[ Name: getState ]]
+                        -- upvalues: v158 (copy)
+                        return v158.Rig:GetAttribute("VoidRushState");
+                    end;
+                    v18:FireConnection("DisableSprinting", "VoidRushCharging", true);
+                    if v218 then
+                        local v220 = false;
+                        v217.StaminaCap = v217.Stamina + 1;
+                        while l_RunService_0.Heartbeat:Wait() do
+                            if not v158.HeldAbilities.VoidRush and not v220 then
+                                v220 = true;
+                                v18:FireServerConnection(v162, "REMOTE_EVENT");
+                            elseif v158.Rig:GetAttribute("VoidRushState") ~= "Charging" then
+                                break;
+                            end;
+                        end;
+                    end;
+                    if v158.Rig:GetAttribute("VoidRushState") == "ChargingCancelled" then
+                        v18:FireConnection("DisableSprinting", "VoidRushCharging", false);
+                        v217.StaminaCap = nil;
+                        v158.HeldAbilities.VoidRush = nil;
+                        return;
+                    else
+                        local v221 = 0;
+                        local v222 = false;
+                        local l_LookVector_0 = workspace.CurrentCamera.CFrame.LookVector;
+                        local l_Unit_0 = Vector3.new(l_LookVector_0.X, 0, l_LookVector_0.Z).Unit;
+                        local v225 = Vector3.new(0, 0, 0, 0);
+                        v18:FireConnection("DisableSprinting", "VoidRushCharging", true);
+                        v217.StaminaCap = v217.Stamina + 1;
+                        do
+                            local l_v221_0, l_v222_0, l_l_Unit_0_0, l_v225_0 = v221, v222, l_Unit_0, v225;
+                            l_RunService_0:BindToRenderStep("VoidRushCharging", Enum.RenderPriority.Character.Value + 1, function(v230) --[[ Line: 1190 ]]
+                                -- upvalues: l_v221_0 (ref), v158 (copy), l_v222_0 (ref), v18 (ref), v161 (copy), l_v225_0 (ref), l_l_Unit_0_0 (ref), l_TweenService_0 (ref)
+                                l_v221_0 = l_v221_0 + v230;
+                                if l_v221_0 >= 0.3 and v158.Rig.PrimaryPart.Velocity.Magnitude <= v158.Config.VoidRushDashSpeed / 3.5 then
+                                    if not l_v222_0 then
+                                        l_v222_0 = true;
+                                        v18:FireServerConnection(v161, "REMOTE_EVENT", v158.HeldAbilities.VoidRush);
+                                    end;
+                                    return;
+                                else
+                                    local l_SpeedMultipliers_0 = v158.Rig:FindFirstChild("SpeedMultipliers");
+                                    local v232 = l_SpeedMultipliers_0 and l_SpeedMultipliers_0:FindFirstChild("VoidRushDash");
+                                    if v232 then
+                                        local v233 = v158.Config.VoidRushDashSpeed / v158.Config.Speed;
+                                        local v234 = v230 * (v158.HeldAbilities.VoidRush and 1 or -3) * 2 * v233;
+                                        v232.Value = math.clamp(v232.Value + v234, 0, v233);
+                                    end;
+                                    local l_LookVector_1 = workspace.CurrentCamera.CFrame.LookVector;
+                                    l_v225_0 = Vector3.new(l_LookVector_1.X, 0, l_LookVector_1.Z).Unit;
+                                    local v236 = l_v225_0 - l_l_Unit_0_0;
+                                    local l_Magnitude_0 = v236.Magnitude;
+                                    if l_Magnitude_0 > 0 then
+                                        local l_VoidRushInitialTurnDuration_0 = v158.Config.VoidRushInitialTurnDuration;
+                                        local v239 = v158.Config.VoidRushInitialTurnMult * l_TweenService_0:GetValue((l_VoidRushInitialTurnDuration_0 - l_v221_0) / l_VoidRushInitialTurnDuration_0, Enum.EasingStyle.Sine, Enum.EasingDirection.In) + 1;
+                                        local v240 = v158.Config.VoidRushTurnSpeed * v230 * v239;
+                                        if l_Magnitude_0 <= v240 then
+                                            l_l_Unit_0_0 = l_v225_0;
+                                        else
+                                            l_l_Unit_0_0 = l_l_Unit_0_0 + v236.Unit * v240;
+                                        end;
+                                        l_l_Unit_0_0 = l_l_Unit_0_0.Unit;
+                                    end;
+                                    v158.Rig.Humanoid:Move(l_l_Unit_0_0);
+                                    return;
+                                end;
+                            end);
+                            while v158 and v158.Rig and v158.Rig:GetAttribute("VoidRushState") == "Dashing" do
+                                l_RunService_0.Heartbeat:Wait();
+                            end;
+                            v158.HeldAbilities.VoidRush = nil;
+                            v217.StaminaCap = nil;
+                            v18:FireConnection("DisableSprinting", "VoidRushCharging", false);
+                            l_RunService_0:UnbindFromRenderStep("VoidRushCharging");
+                        end;
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    Nova = {
+        LayoutOrder = 3,
+        Icon = "rbxassetid://70669903126039",
+        KeybindType = "AltAbility2",
+        Callback = function(v241, v242) --[[ Line: 1256 ]] --[[ Name: Callback ]]
+            -- upvalues: l_RunService_0 (copy), v19 (copy), v15 (copy), v17 (copy), v18 (copy)
+            local _ = v241.Behavior;
+            if l_RunService_0:IsServer() then
+                if v241.Behavior.Voidstar then
+                    v241.AbilitiesDisabled = true;
+                    task.delay(0.2, function() --[[ Line: 1263 ]]
+                        -- upvalues: v241 (copy)
+                        v241.AbilitiesDisabled = false;
+                    end);
+                    v241:SetCooldownOf("Nova", v241.Config.NovaCooldown);
+                    v241.Behavior.DetonateVoidstar(v241, v241.Behavior.Voidstar, true);
+                    v241.Behavior.Voidstar = nil;
+                    v241:PlayVoiceline("NovaDetonate", {
+                        Priority = 4
+                    });
+                    return "Detonate";
+                else
+                    local l_NovaWindup_0 = v241.Config.NovaWindup;
+                    local _ = v19:CreateSpeedMultiplier(v241.Rig, v241.Config.NovaWindupSpeed, "NovaWindupSlowness", l_NovaWindup_0 + 0.3, true);
+                    v241.AbilitiesDisabled = true;
+                    v241:SetCooldownOf("Nova", l_NovaWindup_0 + 0.2);
+                    v15:Play(v241.Config.Sounds.Nova, {
+                        Parent = v241.Rig.PrimaryPart,
+                        RollOffMaxDistance = 50
+                    });
+                    v241:PlayVoiceline("Nova", {
+                        Priority = 3
+                    });
+                    task.delay(l_NovaWindup_0, function() --[[ Line: 1287 ]]
+                        -- upvalues: v241 (copy), v19 (ref), v17 (ref), l_RunService_0 (ref)
+                        if v241.Rig:GetAttribute("Stunned") then
+                            v241.AbilitiesDisabled = false;
+                            return;
+                        else
+                            v241.Behavior.DisableVoidstar(v241);
+                            local l_PrimaryPart_0 = v241.Rig.PrimaryPart;
+                            if not l_PrimaryPart_0 then
+                                return;
+                            else
+                                local l_NovaProjectileSpeed_0 = v241.Config.NovaProjectileSpeed;
+                                local v248 = l_PrimaryPart_0.CFrame + Vector3.new(0, (v241.Rig.Humanoid.HipHeight + l_PrimaryPart_0.Size.Y / 2) / 2, 0);
+                                local _ = (v241.Rig.PrimaryPart.CFrame * CFrame.new(0, 0, -20)).Position;
+                                local l_Unit_1 = ((if v241.Player:GetAttribute("Device") == "Mobile" then v19:GetPlayerMousePosition(v241.Player, true) else v19:GetPlayerMousePosition(v241.Player)) - v241.Rig.PrimaryPart.Position).Unit;
+                                local l_NovaProjectile_0 = v241.Config.NovaProjectile;
+                                local v252 = (l_NovaProjectile_0:IsA("Folder") and l_NovaProjectile_0:GetChildren()[math.random(#l_NovaProjectile_0:GetChildren())] or l_NovaProjectile_0):Clone();
+                                v252.RootPriority = -2;
+                                local v253 = RaycastParams.new();
+                                v253.RespectCanCollide = true;
+                                v253.CollisionGroup = "Killers";
+                                v253.FilterType = Enum.RaycastFilterType.Exclude;
+                                v253.FilterDescendantsInstances = {
+                                    workspace.Players,
+                                    v252
+                                };
+                                local v254 = {
+                                    Size = Vector3.new(3.5, 3.5, 3.5, 0),
+                                    Damage = 0
+                                };
+                                local v255 = vector.create(math.random(-15, 15), math.random(-15, 15), math.random(-15, 15));
+                                local v264 = {
+                                    Owner = v241.Player,
+                                    HitboxConfig = v254,
+                                    Lifetime = 4,
+                                    InitialCFrame = v248,
+                                    InitialVelocity = l_Unit_1 * l_NovaProjectileSpeed_0,
+                                    Model = v252,
+                                    CastParams = v253,
+                                    Callbacks = {
+                                        HitHuman = function(v256, _) --[[ Line: 1350 ]] --[[ Name: HitHuman ]]
+                                            -- upvalues: v241 (ref)
+                                            v241.Behavior.DetonateVoidstar(v241, v256, false, true);
+                                        end,
+                                        HitOther = function(v258, v259) --[[ Line: 1353 ]] --[[ Name: HitOther ]]
+                                            -- upvalues: v241 (ref)
+                                            local v260 = math.deg((math.acos((Vector3.new(0, 1, 0, 0):Dot(v259.Normal))))) < v241.Config.NovaFloorAngle;
+                                            v241.Behavior.DetonateVoidstar(v241, v258, v260);
+                                        end,
+                                        Validate = function(_, v262) --[[ Line: 1358 ]] --[[ Name: Validate ]]
+                                            local v263 = v262 and v262.Instance;
+                                            if v263 and v263.Transparency > 0.9 then
+                                                return false;
+                                            else
+                                                return true;
+                                            end;
+                                        end
+                                    },
+                                    ClientCallbackData = {
+                                        OnHeartbeat = {
+                                            Rotation = {
+                                                rotation = v255
+                                            }
+                                        }
+                                    }
+                                };
+                                local v265 = v17.new(v264);
+                                v265:Launch();
+                                v241.Behavior.Voidstar = v265;
+                                task.delay(0.2, function() --[[ Line: 1380 ]]
+                                    -- upvalues: v241 (ref)
+                                    v241.AbilitiesDisabled = false;
+                                end);
+                                local v266 = nil;
+                                local _ = nil;
+                                v266 = l_RunService_0.Heartbeat:Connect(function(_) --[[ Line: 1388 ]]
+                                    -- upvalues: v265 (copy), v241 (ref), v266 (ref)
+                                    if not v265 or v265.State ~= "Running" then
+                                        if v265 then
+                                            v265:Destroy();
+                                        end;
+                                        v241:SetCooldownOf("Nova", v241.Config.NovaCooldown);
+                                        v241.Behavior.Voidstar = nil;
+                                        v266:Disconnect();
+                                        v241.Behavior.EnableVoidstar(v241);
+                                        v241.Behavior.ToggleTendril(v241, false);
+                                        return;
+                                    else
+                                        return;
+                                    end;
+                                end);
+                                return;
+                            end;
+                        end;
+                    end);
+                    return "Throw";
+                end;
+            else
+                if l_RunService_0:IsClient() then
+                    if v242 == "Detonate" then
+                        v241.Animations.NovaDet:Play(0.175);
+                        return;
+                    else
+                        v241.Animations.NovaThrow:Play(0.175);
+                        v18:FireConnection("DisableSprinting", "Nova", true);
+                        task.delay(v241.Config.NovaWindup, function() --[[ Line: 1419 ]]
+                            -- upvalues: v18 (ref)
+                            v18:FireConnection("DisableSprinting", "Nova", false);
+                        end);
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    Observant = {
+        LayoutOrder = 4,
+        Icon = "rbxassetid://86665948552323",
+        KeybindType = "AltAbility3",
+        Callback = function(v269, v270) --[[ Line: 1431 ]] --[[ Name: Callback ]]
+            -- upvalues: l_RunService_0 (copy), v15 (copy), v18 (copy), v19 (copy), l_TweenService_0 (copy)
+            if l_RunService_0:IsServer() then
+                if v269.Behavior.Observing then
+                    v269:PlayVoiceline("ObservantOff", {
+                        Priority = 4
+                    });
+                    v15:Play(v269.Config.Sounds.ObservantOff, {
+                        Parent = v269.Rig.PrimaryPart
+                    });
+                    v269.Behavior.RevertObservance(v269, false);
+                    v269.Behavior.ToggleGeneratorAura(v269, false);
+                    return {
+                        Result = false
+                    };
+                else
+                    v269:PlayVoiceline("ObservantOn", {
+                        Priority = 4
+                    });
+                    if not workspace:FindFirstChild("Map") or not workspace.Map:FindFirstChild("Ingame") or not workspace.Map.Ingame:FindFirstChild("Map") then
+                        return;
+                    else
+                        v269.Behavior.ToggleObservantVFX(v269, true);
+                        v269.Behavior.ToggleGeneratorAura(v269, true);
+                        v15:Play(v269.Config.Sounds.ObservantOn, {
+                            Parent = v269.Rig.PrimaryPart
+                        });
+                        v269.Behavior.Observing = true;
+                        v269.DisabledAbilities = {
+                            VoidRush = true,
+                            Nova = true,
+                            Stab = true
+                        };
+                        v269.AbilitiesDisabled = true;
+                        if v269.ObservantConnection then
+                            v269.ObservantConnection:Disconnect();
+                            v269.ObservantConnection = nil;
+                        end;
+                        v269.ObservantConnection = v269.Rig:GetAttributeChangedSignal("Stunned"):Connect(function() --[[ Line: 1465 ]]
+                            -- upvalues: v269 (copy), v18 (ref)
+                            if v269.Rig:GetAttribute("Stunned") then
+                                v269.Behavior.RevertObservance(v269, false);
+                                v269.Behavior.ToggleGeneratorAura(v269, false);
+                                v18:FireClientConnection(v269.Player, ("%*ObservantTeleport"):format(v269.Player.Name), "REMOTE_EVENT");
+                            end;
+                        end);
+                        v19:CreateSpeedMultiplier(v269.Rig, v269.Config.ObservantSpeed, "NoliObserving");
+                        task.delay(0.5, function() --[[ Line: 1475 ]]
+                            -- upvalues: v269 (copy)
+                            v269.AbilitiesDisabled = false;
+                        end);
+                        return {
+                            Result = true
+                        };
+                    end;
+                end;
+            else
+                if l_RunService_0:IsClient() then
+                    if not v270 then
+                        return;
+                    else
+                        v269.Behavior.Observing = v270.Result;
+                        if v269.Behavior.Observing then
+                            v18:FireConnection("DisableSprinting", "NoliObserving", true);
+                            v269.Animations.ObservantStart:Play(0.15);
+                            v269.Animations.ObservantLoop:Play();
+                            local v271 = RaycastParams.new();
+                            v271.FilterDescendantsInstances = {};
+                            v271.FilterType = Enum.RaycastFilterType.Include;
+                            local v272 = {};
+                            v272.__index = v272;
+                            v272.new = function(v273, v274) --[[ Line: 1501 ]] --[[ Name: new ]]
+                                -- upvalues: v272 (copy), l_TweenService_0 (ref), v19 (ref), v269 (copy)
+                                local v275 = setmetatable({}, v272);
+                                local l_Size_0 = v274.Size;
+                                v275.GarbageConnections = {};
+                                v275.IsHovering = false;
+                                v275.Generator = v273;
+                                v275.Billboard = v274;
+                                v275.Button = v274.ImageButton;
+                                v275.EnterTween = l_TweenService_0:Create(v274, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                                    Size = UDim2.new(l_Size_0.X.Scale * 1.2, l_Size_0.X.Offset * 1.2, l_Size_0.Y.Scale * 1.2, l_Size_0.Y.Offset * 1.2)
+                                });
+                                v275.LeaveTween = l_TweenService_0:Create(v274, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                                    Size = l_Size_0
+                                });
+                                if not v19:GetSettingValue("EpilepsyMode", game.Players.LocalPlayer) or not v269.Config.isScreamerSensitive then
+                                    v275.Button:SetAttribute("Spritesheet", v269.Config.ScreamerSpritesheet or "NoliLaugh");
+                                    v275.Button:SetAttribute("TimeScale", 0.35);
+                                    v275.Button:AddTag("Spritesheet");
+                                elseif v19:GetSettingValue("EpilepsyMode", game.Players.LocalPlayer) and v269.Config.isScreamerSensitive then
+                                    v275.Button.Image = v269.Config.SensitiveScreamerImage or "rbxassetid://89949595020859";
+                                end;
+                                v275.Button.MouseEnter:Connect(function() --[[ Line: 1521 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:OnMouseEntered();
+                                end);
+                                v275.Button.MouseLeave:Connect(function() --[[ Line: 1524 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:OnMouseLeft();
+                                end);
+                                v275.Button.MouseButton1Down:Connect(function() --[[ Line: 1527 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:OnClicked();
+                                end);
+                                table.insert(v275.GarbageConnections, v274.AncestryChanged:Connect(function() --[[ Line: 1531 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:Destroy();
+                                end));
+                                table.insert(v275.GarbageConnections, v273.AncestryChanged:Connect(function() --[[ Line: 1534 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:Destroy();
+                                end));
+                                return v275;
+                            end;
+                            v272.OnMouseEntered = function(v277) --[[ Line: 1540 ]] --[[ Name: OnMouseEntered ]]
+                                if v277.IsHovering then
+                                    return;
+                                else
+                                    v277.IsHovering = true;
+                                    v277.EnterTween:Play();
+                                    v277.Button:SetAttribute("TimeScale", 1);
+                                    return;
+                                end;
+                            end;
+                            v272.OnMouseLeft = function(v278) --[[ Line: 1546 ]] --[[ Name: OnMouseLeft ]]
+                                if not v278.IsHovering then
+                                    return;
+                                else
+                                    v278.IsHovering = false;
+                                    v278.LeaveTween:Play();
+                                    v278.Button:SetAttribute("TimeScale", 0.35);
+                                    return;
+                                end;
+                            end;
+                            v272.OnClicked = function(v279) --[[ Line: 1552 ]] --[[ Name: OnClicked ]]
+                                -- upvalues: v18 (ref), v269 (copy)
+                                v18:FireServerConnection(("%*ObservantTeleport"):format(v269.Player.Name), "REMOTE_EVENT", v279.Generator);
+                            end;
+                            v272.Destroy = function(v280) --[[ Line: 1555 ]] --[[ Name: Destroy ]]
+                                local l_ipairs_1 = ipairs;
+                                local v282 = v280.GarbageConnections or {};
+                                for _, v284 in l_ipairs_1(v282) do
+                                    v284:Disconnect();
+                                end;
+                                if v280.Billboard then
+                                    v280.Billboard:Destroy();
+                                end;
+                                table.clear(v280);
+                            end;
+                            local function v288(v285) --[[ Line: 1563 ]] --[[ Name: addGenerator ]]
+                                -- upvalues: v269 (copy), v272 (copy), v271 (copy)
+                                local v286 = v269.Config.ObservantTeleportButton:Clone();
+                                v286.Parent = v269.Player.PlayerGui;
+                                v286.Adornee = v285;
+                                local v287 = v272.new(v285, v286);
+                                v269.Behavior.Generators[v285] = {
+                                    Button = v287,
+                                    Instance = v285
+                                };
+                                v271:AddToFilter(v285);
+                            end;
+                            v269.Behavior.Generators = {};
+                            v269.Behavior.AddedGeneratorConnection = workspace.Map.Ingame.Map.ChildAdded:Connect(function(v289) --[[ Line: 1577 ]]
+                                -- upvalues: v288 (copy)
+                                if v289.Name == "Generator" or v289.Name == "FakeGenerator" then
+                                    v288(v289);
+                                end;
+                            end);
+                            for _, v291 in ipairs(workspace.Map.Ingame.Map:GetChildren()) do
+                                if v291.Name == "Generator" or v291.Name == "FakeGenerator" then
+                                    v288(v291);
+                                end;
+                            end;
+                            l_RunService_0:BindToRenderStep("ObservantTeleportValidation", 1, function() --[[ Line: 1590 ]]
+                                -- upvalues: v269 (copy), l_RunService_0 (ref)
+                                local l_pairs_0 = pairs;
+                                local v293 = v269.Behavior.Generators or {};
+                                for v294, v295 in l_pairs_0(v293) do
+                                    if not v269.Behavior.Generators then
+                                        l_RunService_0:UnbindFromRenderStep("ObservantTeleportValidation");
+                                        return;
+                                    else
+                                        local function _(v296, v297, v298) --[[ Line: 1597 ]] --[[ Name: changeProp ]]
+                                            if v296[v297] ~= v298 then
+                                                v296[v297] = v298;
+                                            end;
+                                        end;
+                                        local v300 = (v294:GetPivot().Position - v269.Rig.PrimaryPart.Position).Magnitude < v269.Config.ObservantMinDistance;
+                                        local l_Button_0 = v295.Button.Button;
+                                        local l_Highlight_1 = v294:FindFirstChildOfClass("Highlight");
+                                        local v303 = v300 and Enum.HighlightDepthMode.Occluded or Enum.HighlightDepthMode.AlwaysOnTop;
+                                        if l_Highlight_1.DepthMode ~= v303 then
+                                            l_Highlight_1.DepthMode = v303;
+                                        end;
+                                        if l_Button_0:GetAttribute("Paused") ~= v300 then
+                                            l_Button_0:SetAttribute("Paused", v300);
+                                            if v300 then
+                                                v295.Button:OnMouseLeft();
+                                            end;
+                                        end;
+                                        v303 = v300 and Color3.new(0.4, 0.4, 0.4) or Color3.new(1, 1, 1);
+                                        if l_Button_0.ImageColor3 ~= v303 then
+                                            l_Button_0.ImageColor3 = v303;
+                                        end;
+                                        v303 = not v300;
+                                        if l_Button_0.Interactable ~= v303 then
+                                            l_Button_0.Interactable = v303;
+                                        end;
+                                    end;
+                                end;
+                            end);
+                            return;
+                        else
+                            v269.Behavior.RevertObservance(v269, false);
+                        end;
+                    end;
+                end;
+                return;
+            end;
+        end
+    }
+};
+v11.ObservantUse = function(v304, v305) --[[ Line: 1636 ]] --[[ Name: ObservantUse ]]
+    -- upvalues: v40 (copy), v15 (copy), l_StunProtectionVFX_0 (copy), l_ReplicatedStorage_0 (copy), v14 (copy), v19 (copy), v18 (copy)
+    if v305 then
+        local v306 = v305:FindFirstChild("Positions") and v305.Positions:GetChildren() and v305.Positions.Center.CFrame or v305:GetPivot();
+        v304.Cache.Animations.Observant:Play();
+        v40(v304.Behavior, "ObservantTP", v304);
+        v304.Behavior.ToggleGeneratorAura(v304, false, v305);
+        v304.AbilitiesDisabled = true;
+        local v307 = v304.Behavior.ObservantWindupVFX(v304);
+        local function v312() --[[ Line: 1653 ]] --[[ Name: destroyVFX ]]
+            -- upvalues: v307 (copy)
+            local l_ipairs_2 = ipairs;
+            local v309 = v307 or {};
+            for _, v311 in l_ipairs_2(v309) do
+                v311:Destroy();
+            end;
+        end;
+        local v313 = v15:Play(v304.Config.Sounds.ObservantTeleportChannel, {
+            Parent = v304.Rig.PrimaryPart,
+            RollOffMaxDistance = 45
+        });
+        local v314 = nil;
+        do
+            local l_v314_0 = v314;
+            local v324 = task.delay(v304.Config.ObservantTeleportWindup, function() --[[ Line: 1663 ]]
+                -- upvalues: v312 (copy), v304 (copy), l_StunProtectionVFX_0 (ref), v306 (copy), l_ReplicatedStorage_0 (ref), v14 (ref), l_v314_0 (ref)
+                v312();
+                local v316 = nil;
+                v304.Rig:SetAttribute("StunnedDisabled", true);
+                v316 = l_StunProtectionVFX_0.StunProtection:Clone();
+                v316.Parent = v304.Rig.PrimaryPart;
+                task.delay(1.5, function() --[[ Line: 1673 ]]
+                    -- upvalues: v304 (ref), v316 (ref)
+                    v304.Rig:SetAttribute("StunnedDisabled", nil);
+                    v316.Spawn.Enabled = false;
+                    game.Debris:AddItem(v316, v316.Spawn.Lifetime.Max);
+                end);
+                v304.Behavior.Teleport(v304, v306);
+                v304:PlayVoiceline("Teleport", {
+                    Priority = 5
+                });
+                local v317 = require(l_ReplicatedStorage_0.Modules.Actors);
+                for _, v319 in pairs(v317.CurrentActors) do
+                    if v319.ActorType == "Survivor" and v319.Rig and v319.Rig.PrimaryPart then
+                        local l_Magnitude_1 = (v306.Position - v319.Rig.PrimaryPart.Position).Magnitude;
+                        for v321, v322 in ipairs(v304.Config.ObservantStatusThresholds) do
+                            if l_Magnitude_1 < v322 then
+                                local v323 = v321 - 1;
+                                if v323 > 0 then
+                                    v14:ApplyStatus(v319.Rig, "Hallucination", {
+                                        Level = v323,
+                                        Duration = v304.Config.ObservantStatusDuration,
+                                        Killer = v304
+                                    });
+                                    break;
+                                else
+                                    break;
+                                end;
+                            end;
+                        end;
+                    end;
+                end;
+                l_v314_0:Disconnect();
+            end);
+            l_v314_0 = v304.Rig:GetAttributeChangedSignal("Stunned"):Connect(function() --[[ Line: 1709 ]]
+                -- upvalues: v304 (copy), l_v314_0 (ref), v324 (copy), v312 (copy), v313 (copy)
+                if v304.Rig:GetAttribute("Stunned") then
+                    if l_v314_0 then
+                        l_v314_0:Disconnect();
+                    end;
+                    task.cancel(v324);
+                    v312();
+                    if v313 then
+                        v313:Destroy();
+                    end;
+                end;
+            end);
+            v19:CreateSpeedMultiplier(v304.Rig, 0, "ObservantTeleporting", v304.Config.ObservantTeleportWindup + v304.Config.ObservantTeleportEndlag, true);
+            v304.Behavior.RevertObservance(v304, true);
+            v18:FireClientConnection(v304.Player, ("%*ObservantTeleport"):format(v304.Player.Name), "REMOTE_EVENT");
+        end;
+    end;
+end;
+v11.DetonateVoidstar = function(v325, v326, v327, v328) --[[ Line: 1731 ]] --[[ Name: DetonateVoidstar ]]
+    -- upvalues: l_RunService_0 (copy), v13 (copy), v19 (copy), l_Debris_0 (copy), l_TweenService_0 (copy), v23 (copy), l_Players_0 (copy), v18 (copy)
+    assert(l_RunService_0:IsServer(), "what are you doing");
+    assert(v326, "no voidstar :(");
+    assert(v326.State == "Running", "voidstar is already go boom boom");
+    assert(v325, "use dot notation when calling");
+    v325.Behavior.VoidstarExplosionVFX(v325, v326.PreviousCFrame);
+    local v329 = v325.Config.NovaExplosionRadius / (v327 and 1.5 or 1);
+    local l_PreviousCFrame_0 = v326.PreviousCFrame;
+    local v331 = v325.Config.NovaExplosionKnockback or 440;
+    local _ = v13:CreateHitbox(v325.Player, {
+        Size = Vector3.new(1, 1, 1, 0) * v329,
+        CFrame = l_PreviousCFrame_0,
+        Damage = v325.Config.NovaExplosionDamage,
+        Time = 0.1,
+        HitMultiple = true,
+        Knockback = 0,
+        ExecuteOnKill = false,
+        PredictVelocity = false,
+        DeathProfile = {
+            KillEffects = {
+                Explode = true
+            }
+        },
+        Shape = Enum.PartType.Ball,
+        Connections = {
+            Hit = function(v332) --[[ Line: 1763 ]] --[[ Name: Hit ]]
+                -- upvalues: v19 (ref), l_PreviousCFrame_0 (copy), v328 (copy), v329 (copy), l_Debris_0 (ref), v331 (copy), l_TweenService_0 (ref), v325 (copy), v23 (ref)
+                local l_PrimaryPart_1 = v332.PrimaryPart;
+                local l_v19_Actor_0 = v19:GetActor(v332);
+                local v335 = l_v19_Actor_0 and l_v19_Actor_0.GetPivot and l_v19_Actor_0:GetPivot() or v332.PrimaryPart.CFrame;
+                local l_Magnitude_2 = (l_PreviousCFrame_0.Position - v335.Position).Magnitude;
+                local v337 = v328 and 1.35 or math.clamp(1 - l_Magnitude_2 / v329, 0, 1);
+                local v338 = Instance.new("BodyPosition", l_PrimaryPart_1);
+                l_Debris_0:AddItem(v338, 0.35);
+                v338.Position = l_PreviousCFrame_0.Position;
+                v338.MaxForce = Vector3.new(10000, 7000, 10000, 0);
+                v338.P = v331 * 1500 * (v337 / 2 + 0.5);
+                v338.D = 1200 - v331;
+                task.delay(0.35, function() --[[ Line: 1779 ]]
+                    -- upvalues: l_PrimaryPart_1 (copy)
+                    if l_PrimaryPart_1 then
+                        local l_l_PrimaryPart_1_0 = l_PrimaryPart_1;
+                        l_l_PrimaryPart_1_0.AssemblyLinearVelocity = l_l_PrimaryPart_1_0.AssemblyLinearVelocity / 1000;
+                    end;
+                end);
+                local v340 = 0.5 + v337;
+                local l_v19_SpeedMultiplier_3 = v19:CreateSpeedMultiplier(v332, 0.4 - v337 / 4, "VoidstarExplosion", v340);
+                l_TweenService_0:Create(l_v19_SpeedMultiplier_3, TweenInfo.new(v340), {
+                    Value = 1
+                }):Play();
+                if v332.Parent == workspace.Players.Survivors then
+                    v23:IncrementActorStats(v325.Player, {
+                        Action = "Hit Survivor with Nova",
+                        RewardType = "EasyKillerAction"
+                    });
+                end;
+            end
+        }
+    });
+    for _, v344 in ipairs(l_Players_0:GetPlayers()) do
+        local v345 = v344.Character and v344.Character.PrimaryPart and v344.Character.PrimaryPart.Position;
+        local v346 = v345 and (v326.PreviousCFrame.Position - v345).Magnitude;
+        local v347 = v325.Config.NovaExplosionRadius * 2;
+        if v346 and v346 < v347 then
+            v18:FireClientConnection(v344, "ApplyCameraShake", "REMOTE_EVENT", math.clamp(v347 - v346, 0, v347) / v347 * 0.5, 0.7);
+        end;
+    end;
+    v326:Destroy();
+end;
+v11.RevertObservance = function(v348, v349) --[[ Line: 1811 ]] --[[ Name: RevertObservance ]]
+    -- upvalues: l_RunService_0 (copy), v19 (copy), v18 (copy)
+    if l_RunService_0:IsServer() then
+        v348.Behavior.ToggleObservantVFX(v348, false);
+        if not v348.Behavior.Observing then
+            return;
+        else
+            if v348.ObservantConnection then
+                v348.ObservantConnection:Disconnect();
+                v348.ObservantConnection = nil;
+            end;
+            l_RunService_0:UnbindFromRenderStep("ObservantTeleportValidation");
+            v348.Behavior.Observing = false;
+            v348:SetCooldownOf("Observant", v348.Config.ObservantC00ldown / (not v349 and 2 or 1));
+            v348.DisabledAbilities = nil;
+            v348.AbilitiesDisabled = true;
+            v19:CreateSpeedMultiplier(v348.Rig, 1, "NoliObserving", 0);
+            task.delay(v349 and v348.Config.ObservantTeleportWindup + v348.Config.ObservantTeleportEndlag or 0.5, function() --[[ Line: 1839 ]]
+                -- upvalues: v348 (copy)
+                v348.AbilitiesDisabled = false;
+            end);
+            return;
+        end;
+    else
+        if l_RunService_0:IsClient() then
+            if not v348.Behavior.Generators then
+                return;
+            else
+                v348.Animations.ObservantStart:Stop(0.15);
+                v348.Animations.ObservantLoop:Stop(0.15);
+                local l_pairs_1 = pairs;
+                local v351 = v348.Behavior.Generators or {};
+                for _, v353 in l_pairs_1(v351) do
+                    if v353.Button then
+                        v353.Button:Destroy();
+                    end;
+                end;
+                table.clear(v348.Behavior.Generators);
+                v348.Behavior.Generators = nil;
+                if v348.Behavior.AddedGeneratorConnection then
+                    v348.Behavior.AddedGeneratorConnection:Disconnect();
+                end;
+                v18:FireConnection("DisableSprinting", "NoliObserving", false);
+            end;
+        end;
+        return;
+    end;
+end;
+v11.VoidstarExplosionVFX = function(v354, v355) --[[ Line: 1870 ]] --[[ Name: VoidstarExplosionVFX ]]
+    -- upvalues: v19 (copy), v15 (copy)
+    local l_Explosion_0 = v354.Config.NovaProjectile:FindFirstChild("Explosion");
+    if l_Explosion_0 and l_Explosion_0.ClassName == "Attachment" then
+        local v357 = l_Explosion_0:Clone();
+        v357.Parent = workspace.Terrain;
+        v357.WorldCFrame = v355;
+        v19:EmitParticles(v357);
+        v15:Play(v354.Config.Sounds.Explosion, {
+            Parent = v357,
+            RollOffMaxDistance = 60
+        });
+        game.Debris:AddItem(v357, 6);
+    end;
+end;
+v11.Teleport = function(v358, v359) --[[ Line: 1888 ]] --[[ Name: Teleport ]]
+    -- upvalues: l_Debris_0 (copy), v19 (copy)
+    local v360 = typeof(v359) == "Vector3" and CFrame.new(v359) or v359;
+    local function v364(v361) --[[ Line: 1893 ]] --[[ Name: findGroundPosition ]]
+        local v362 = RaycastParams.new();
+        v362.CollisionGroup = "Killers";
+        v362.FilterDescendantsInstances = {
+            workspace.Map.Ingame
+        };
+        v362.FilterType = Enum.RaycastFilterType.Include;
+        v362.RespectCanCollide = true;
+        local v363 = workspace:Raycast(v361, Vector3.new(0, -10, 0, 0), v362);
+        return v363 and v363.Position or v361 - Vector3.new(0, 10, 0, 0);
+    end;
+    local l_ObservantTeleportVFX_0 = v358.Config.ObservantTeleportVFX;
+    if l_ObservantTeleportVFX_0 then
+        if l_ObservantTeleportVFX_0:FindFirstChild("In") then
+            local v366 = l_ObservantTeleportVFX_0.In:Clone();
+            v366.Position = v364(v358.Rig.PrimaryPart.Position) + Vector3.new(0, 0.05999999865889549, 0, 0);
+            v366.Parent = workspace.Map.Ingame;
+            l_Debris_0:AddItem(v366, 6);
+            v19:EmitParticles(v366);
+        end;
+        if l_ObservantTeleportVFX_0:FindFirstChild("Out") then
+            local v367 = v358.Config.ObservantTeleportVFX.Out:Clone();
+            v367.Position = v364(v360.Position) + Vector3.new(0, 0.05999999865889549, 0, 0);
+            v367.Parent = workspace.Map.Ingame;
+            l_Debris_0:AddItem(v367, 6);
+            v19:EmitParticles(v367);
+        end;
+    end;
+    local l_ipairs_3 = ipairs;
+    local v369 = v358.Cache.Trails or {};
+    for _, v371 in l_ipairs_3(v369) do
+        v371.Enabled = false;
+        v371:Clear();
+    end;
+    v358:PivotTo(v360);
+    l_ipairs_3 = ipairs;
+    v369 = v358.Cache.Trails or {};
+    for _, v373 in l_ipairs_3(v369) do
+        v373.Enabled = true;
+    end;
+end;
+v11.ObservantWindupVFX = function(v374) --[[ Line: 1941 ]] --[[ Name: ObservantWindupVFX ]]
+    -- upvalues: l_TweenService_0 (copy)
+    local v375 = {};
+    local v376 = {};
+    local v377 = {
+        Glitch1 = 0.25,
+        Glitch2 = 0.75,
+        Star = 1.06
+    };
+    if v374.Rig:FindFirstChild("Noli") then
+        for _, v379 in ipairs(v374.Config.ObservantTeleportVFX.BodyParts:GetChildren()) do
+            if v379:IsA("ParticleEmitter") then
+                for _, v381 in ipairs(v374.Rig.Noli:GetChildren()) do
+                    if v381:IsA("BasePart") then
+                        local v382 = v379:Clone();
+                        v382.Parent = v381;
+                        v382.Enabled = false;
+                        table.insert(v376, v382);
+                        v375[v382.Name] = v375[v382.Name] or {};
+                        table.insert(v375[v382.Name], v382);
+                    end;
+                end;
+            end;
+        end;
+    end;
+    for v383, v384 in pairs(v377) do
+        task.delay(v384, function() --[[ Line: 1967 ]]
+            -- upvalues: v375 (copy), v383 (copy)
+            local l_ipairs_4 = ipairs;
+            local v386 = v375[v383] or {};
+            for _, v388 in l_ipairs_4(v386) do
+                if not v388 or not v388.Parent then
+                    return;
+                else
+                    v388.Enabled = true;
+                end;
+            end;
+        end);
+    end;
+    local v389 = v374.Config.ObservantTeleportVFX.BodyParts.Highlight:Clone();
+    v389.Parent = v374.Rig;
+    v389.Enabled = true;
+    l_TweenService_0:Create(v389, TweenInfo.new(v374.Config.ObservantTeleportWindup, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+        FillTransparency = 3
+    }):Play();
+    table.insert(v376, v389);
+    return v376;
+end;
+v11.ToggleObservantVFX = function(v390, v391) --[[ Line: 1985 ]] --[[ Name: ToggleObservantVFX ]]
+    if not v390.Rig.PrimaryPart then
+        return;
+    else
+        local v392 = v390.Rig:FindFirstChild("Noli") and v390.Rig.Noli:FindFirstChild("Glow");
+        local v393 = v392 and v392:FindFirstChild("HalluMouth");
+        local v394 = v392 and v392:FindFirstChild("HalluEye");
+        if v393 and v394 then
+            v393:FindFirstChildOfClass("Beam").Enabled = v391;
+            v394:FindFirstChildOfClass("Beam").Enabled = v391;
+        end;
+        return;
+    end;
+end;
+v11.ToggleGeneratorAura = function(v395, v396, v397) --[[ Line: 1999 ]] --[[ Name: ToggleGeneratorAura ]]
+    -- upvalues: l_RunService_0 (copy), v15 (copy), l_TweenService_0 (copy)
+    assert(l_RunService_0:IsServer(), "what are you doing");
+    local l_Map_1 = workspace.Map.Ingame:FindFirstChild("Map");
+    local v399 = ("%*NoliWarning"):format(v395.Player.Name);
+    local v400 = ("%*NoliAura"):format(v395.Player.Name);
+    if not l_Map_1 then
+        return;
+    else
+        for _, v402 in ipairs(l_Map_1:GetChildren()) do
+            if v402.Name == "Generator" or v402.Name == "FakeGenerator" then
+                if v396 then
+                    local v403 = v395.Config.ObservantWarningTemplate:Clone();
+                    v403.Name = v399;
+                    v403.CFrame = v402:GetPivot();
+                    v403.Parent = v402;
+                    local v404 = v395.Config.ObservantHighlightTemplate:Clone();
+                    v404.Parent = v402;
+                    v404.Name = v400;
+                    v404:AddTag(v395.Player.Name .. "GenHighlight");
+                    v15:Play(v395.Config.Sounds.ObservantGeneratorStart, {
+                        Parent = v403,
+                        Name = "AuraWarningSound",
+                        RollOffMaxDistance = 30
+                    });
+                    v15:Play(v395.Config.Sounds.ObservantGeneratorLoop, {
+                        Parent = v403,
+                        Name = "AuraWarningSound",
+                        Looped = true,
+                        RollOffMaxDistance = 30
+                    });
+                else
+                    local v405 = v397 == v402;
+                    local l_v402_FirstChild_0 = v402:FindFirstChild(v399);
+                    local l_v402_FirstChild_1 = v402:FindFirstChild(v400);
+                    if l_v402_FirstChild_0 and l_v402_FirstChild_1 then
+                        l_v402_FirstChild_0.Name = l_v402_FirstChild_0.Name .. "_Done";
+                        l_v402_FirstChild_1.Name = l_v402_FirstChild_1.Name .. "_Done";
+                        while l_v402_FirstChild_0:FindFirstChild("AuraWarningSound") do
+                            l_v402_FirstChild_0.AuraWarningSound:Destroy();
+                        end;
+                        v15:Play(v395.Config.Sounds[v405 and "ObservantGeneratorWarning" or "ObservantGeneratorEnd"], {
+                            Parent = l_v402_FirstChild_0,
+                            Name = "AuraDisappear",
+                            RollOffMaxDistance = 45
+                        });
+                        if v405 then
+                            task.spawn(function() --[[ Line: 2046 ]]
+                                -- upvalues: v395 (copy), v399 (copy), v402 (copy), l_v402_FirstChild_1 (copy)
+                                local v408 = v395.Config.ObservantIncomingTemplate:Clone();
+                                v408.Name = v399 .. "Incoming";
+                                v408.CFrame = v402:GetPivot();
+                                v408.Parent = v402;
+                                game.Debris:AddItem(v408, 5);
+                                task.wait(v395.Config.ObservantTeleportWindup);
+                                for _, v410 in ipairs(v408:GetDescendants()) do
+                                    if v410:IsA("ParticleEmitter") then
+                                        v410.Enabled = false;
+                                    end;
+                                end;
+                                l_v402_FirstChild_1:Destroy();
+                            end);
+                        else
+                            l_TweenService_0:Create(l_v402_FirstChild_1, TweenInfo.new(0.7), {
+                                FillTransparency = 1,
+                                OutlineTransparency = 1
+                            }):Play();
+                            game.Debris:AddItem(l_v402_FirstChild_1, 1);
+                        end;
+                        for _, v412 in ipairs(l_v402_FirstChild_0:GetDescendants()) do
+                            if v412:IsA("ParticleEmitter") then
+                                v412.Enabled = false;
+                            end;
+                        end;
+                        game.Debris:AddItem(l_v402_FirstChild_0, 5);
+                    end;
+                end;
+            end;
+        end;
+        return;
+    end;
+end;
+v11.ToggleTendril = function(v413, v414) --[[ Line: 2082 ]] --[[ Name: ToggleTendril ]]
+    if not v413.Rig:FindFirstChild("Right Arm") then
+        warn("No arm found!");
+        return;
+    else
+        local l_TentacleBase_0 = v413.Rig["Right Arm"]:FindFirstChild("TentacleBase");
+        if l_TentacleBase_0 then
+            for _, v417 in ipairs(l_TentacleBase_0:GetDescendants()) do
+                if v417:IsA("Beam") or v417:IsA("ParticleEmitter") or v417:IsA("Trail") then
+                    v417.Enabled = v414;
+                end;
+            end;
+        end;
+        return;
+    end;
+end;
+local function v422(v418) --[[ Line: 2097 ]] --[[ Name: __createVoidstar ]]
+    local l_NovaProjectile_1 = v418.Config.NovaProjectile;
+    local v420 = (l_NovaProjectile_1:IsA("Folder") and l_NovaProjectile_1:GetChildren()[math.random(#l_NovaProjectile_1:GetChildren())] or l_NovaProjectile_1):Clone();
+    v420.Name = "Voidstar";
+    v420.Parent = v418.Rig;
+    local l_Motor6D_0 = Instance.new("Motor6D");
+    l_Motor6D_0.C0 = CFrame.new((Vector3.new(0, -0.10000000149011612, 0, 0)));
+    l_Motor6D_0.C1 = CFrame.new((Vector3.new(0, -0.10000000149011612, 0, 0)));
+    l_Motor6D_0.Part0 = v418.Rig.PrimaryPart;
+    l_Motor6D_0.Part1 = v420;
+    l_Motor6D_0.Parent = v418.Rig.PrimaryPart;
+    return v420;
+end;
+v11.EnableVoidstar = function(v423) --[[ Line: 2121 ]] --[[ Name: EnableVoidstar ]]
+    -- upvalues: v422 (copy), v19 (copy), v15 (copy)
+    assert(v423, "must pass killerInfo as argument");
+    if v423.Behavior.VoidstarEnabled then
+        return;
+    else
+        v423.Behavior.VoidstarEnabled = true;
+        local l_Rig_1 = v423.Rig;
+        local v425 = l_Rig_1 and l_Rig_1:FindFirstChild("Voidstar") or v422(v423);
+        if v425 then
+            v425.Transparency = 0;
+            v425.Main.Main.Enabled = true;
+            for _, v427 in ipairs(v425.Main:GetDescendants()) do
+                if v427:IsA("ParticleEmitter") then
+                    v427.Enabled = true;
+                end;
+            end;
+            v19:EmitParticles(v19:MergeTables({
+                v425.Appear1,
+                v425.Appear2
+            }, v425.AppearT:GetChildren()));
+            v15:Play(v423.Config.Sounds.VoidstarEnable, {
+                Parent = v425,
+                Volume = 0.2,
+                RollOffMaxDistance = 13
+            });
+        end;
+        return;
+    end;
+end;
+v11.DisableVoidstar = function(v428) --[[ Line: 2144 ]] --[[ Name: DisableVoidstar ]]
+    -- upvalues: v422 (copy)
+    assert(v428, "must pass killerInfo as argument");
+    if not v428.Behavior.VoidstarEnabled then
+        return;
+    else
+        v428.Behavior.VoidstarEnabled = false;
+        local l_Rig_2 = v428.Rig;
+        local v430 = l_Rig_2 and l_Rig_2:FindFirstChild("Voidstar") or v422(v428);
+        if v430 then
+            v430.Main.Main.Enabled = false;
+            v430.Main.Main:Clear();
+            for _, v432 in ipairs(v430.Main:GetDescendants()) do
+                if v432:IsA("ParticleEmitter") then
+                    v432.Enabled = false;
+                end;
+            end;
+            v430.Transparency = 1;
+        end;
+        return;
+    end;
+end;
+return v11;
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Killers/c00lkidd/Behavior]====],before="53218:ec530791:a7ecfd82",after="53162:bdc93a29:73457d14",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local _ = require(game.ReplicatedStorage.GlobalTypes);
+local v1 = {};
+local v2 = require(game.ReplicatedStorage.Modules.Sounds);
+local v3 = require(game.ReplicatedStorage.Modules.Util);
+local v4 = require(game.ReplicatedStorage.Modules.Hitboxes);
+local v5 = require(game.ReplicatedStorage.Modules.Statuses);
+local l_RunService_0 = game:GetService("RunService");
+local v7 = require(game.ReplicatedStorage.Modules.Schematics.Lighting);
+local v8 = require(game.ReplicatedStorage.Modules.Projectiles);
+local v9 = require(game.ReplicatedStorage.Modules.AchievementUtil);
+local function _(v10, v11, v12) --[[ Line: 15 ]] --[[ Name: pcallMethod ]]
+    local l_status_0, l_result_0 = pcall(function() --[[ Line: 16 ]]
+        -- upvalues: v12 (copy), v10 (copy)
+        if v12.Behavior[v10] then
+            v12.Behavior[v10](v12);
+        end;
+    end);
+    if not l_status_0 then
+        warn((("[%*]: Failed to call .%*() due to: %*"):format(v11, v10, l_result_0)));
+    end;
+end;
+v1.Abilities = {
+    Punch = {
+        LayoutOrder = 1,
+        Icon = "rbxassetid://93874368032471",
+        KeybindType = "MainAbility",
+        Cooldown = 2,
+        Callback = function(v16) --[[ Line: 42 ]] --[[ Name: Callback ]]
+            -- upvalues: v2 (copy), v4 (copy), v3 (copy)
+            if game["Run Service"]:IsServer() then
+                v16.AbilitiesDisabled = true;
+                v2:Play(v16.Config.Sounds.Swing, {
+                    Parent = v16.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.25
+                });
+                task.delay(v16.Config.PunchWindup, function() --[[ Line: 49 ]]
+                    -- upvalues: v4 (ref), v16 (copy), v3 (ref), v2 (ref)
+                    local _ = v4:CreateHitbox(v16.Player, { AbilityType = "MainAbility", IsProjectile = false,
+                        Size = Vector3.new(4.5, 6, 5, 0),
+                        CFrameOffset = CFrame.new(0, 0, -2),
+                        Damage = v16.Config.AttackDamage,
+                        Time = v16.Config.PunchLinger,
+                        Knockback = 2,
+                        HitMultiple = false,
+                        ExecuteOnKill = true,
+                        Connections = {
+                            Hit = function(v17) --[[ Line: 61 ]] --[[ Name: Hit ]]
+                                -- upvalues: v3 (ref), v2 (ref), v16 (ref)
+                                v3:CreateSpeedMultiplier(v17, 1.5, "HitSpeedBonus", 1.25);
+                                v2:Play(v16.Config.Sounds.Hit, {
+                                    Parent = v16.Rig.PrimaryPart,
+                                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                    Volume = 0.25
+                                });
+                            end
+                        }
+                    });
+                end);
+                task.delay(0.75, function() --[[ Line: 70 ]]
+                    -- upvalues: v16 (copy)
+                    v16.AbilitiesDisabled = false;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v16.Animations.Attack:Play(0.025);
+                end;
+                return;
+            end;
+        end
+    },
+    CorruptNature = {
+        LayoutOrder = 2,
+        Icon = "rbxassetid://81200466982776",
+        KeybindType = "AltAbility1",
+        Cooldown = 16,
+        Callback = function(v19) --[[ Line: 87 ]] --[[ Name: Callback ]]
+            -- upvalues: v2 (copy), v3 (copy), v5 (copy), v8 (copy)
+            if game["Run Service"]:IsServer() then
+                v19.AbilitiesDisabled = true;
+                v2:Play(v19.Config.Sounds.CorruptThrow, {
+                    Parent = v19.Rig.PrimaryPart
+                });
+                local v20 = ("%*/CNStart"):format(script.Parent);
+                local l_pcall_0 = pcall;
+                local v22 = "CNStart";
+                local v23;
+                l_pcall_0, v23 = l_pcall_0(function() --[[ Line: 16 ]]
+                    -- upvalues: v19 (copy), v22 (copy)
+                    if v19.Behavior[v22] then
+                        v19.Behavior[v22](v19);
+                    end;
+                end);
+                if not l_pcall_0 then
+                    warn((("[%*]: Failed to call .CNStart() due to: %*"):format(v20, v23)));
+                end;
+                v20 = v3:CreateSpeedMultiplier(v19.Player, 0.01, "HinderedMovement");
+                task.delay(0.4, function() --[[ Line: 95 ]]
+                    -- upvalues: v20 (copy)
+                    game.TweenService:Create(v20, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {
+                        Value = 1
+                    }):Play();
+                    game.Debris:AddItem(v20, 0.5);
+                end);
+                task.delay(0.1, function() --[[ Line: 101 ]]
+                    -- upvalues: v19 (copy), v3 (ref), v2 (ref), v5 (ref), v8 (ref)
+                    local l_Position_0 = (v19.Rig.PrimaryPart.CFrame * CFrame.new(0, 0, -20)).Position;
+                    l_Position_0 = if v19.Player:GetAttribute("Device") == "Mobile" then v3:GetPlayerMousePosition(v19.Player, true) else v3:GetPlayerMousePosition(v19.Player);
+                    local v25 = CFrame.lookAt(v19.Rig.PrimaryPart.Position, l_Position_0) * CFrame.new(0, 0, -500);
+                    local l_PrimaryPart_0 = v19.Rig.PrimaryPart;
+                    local v27 = v19.Config.Projectile and v19.Config.Projectile:Clone() or Instance.new("Part");
+                    v27.Name = "HumanoidRootProjectile";
+                    v27.Anchored = true;
+                    v27.CanCollide = false;
+                    v27.CanQuery = false;
+                    v27.CanTouch = false;
+                    if not v19.Config.NoProjectileResize then
+                        v27.Size = Vector3.new(1, 2, 2, 0);
+                    end;
+                    local v28 = l_PrimaryPart_0.CFrame + Vector3.new(0, (v19.Rig.Humanoid.HipHeight + l_PrimaryPart_0.Size.Y / 2) / 2, 0);
+                    local v29 = (v25.Position - v28.Position) / 10;
+                    v2:Play(v19.Config.Sounds.CorruptAmbience, {
+                        Parent = v27,
+                        Looped = true
+                    });
+                    local v30 = 0;
+                    local v32 = {
+                        Size = Vector3.new(3, 3, 3, 0),
+                        Damage = v19.Config.RootPartDamage,
+                        Time = 10,
+                        Knockback = 0.5,
+                        HitMultiple = true,
+                        PredictVelocity = false,
+                        Connections = {
+                            Hit = function(v31) --[[ Line: 139 ]] --[[ Name: Hit ]]
+                                -- upvalues: v30 (ref), v19 (ref), v3 (ref), v5 (ref), v2 (ref)
+                                v30 = v30 + 1;
+                                if v30 >= 2 then
+                                    require(game.ReplicatedStorage.Modules.AchievementUtil):IncrementAchievementProgress(v19.Player, "c00lkiddProjectile");
+                                end;
+                                v3:RevealPlayerAuraTo(v19.Player, v31, 10);
+                                v5:ApplyStatus(v31, "Slowness", {
+                                    Level = 1,
+                                    Duration = 4
+                                });
+                                v2:Play(v19.Config.Sounds.CorruptHit, {
+                                    Parent = v31.PrimaryPart,
+                                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                    Volume = 0.4
+                                });
+                                if tostring(v31.Parent) == "Survivors" then
+                                    require(game.ReplicatedStorage.Modules.Actors):IncrementActorStats(v19.Player, {
+                                        Action = "Landed Corrupt Nature hit",
+                                        RewardType = "RegularKillerAction"
+                                    });
+                                end;
+                            end
+                        }
+                    };
+                    local v33 = vector.create(math.random(-360, 360), math.random(-360, 360), math.random(-360, 360));
+                    local v34 = {
+                        Owner = v19.Player,
+                        HitboxConfig = v32,
+                        Lifetime = 10,
+                        InitialCFrame = v28,
+                        InitialVelocity = v29,
+                        Model = v27,
+                        ClientCallbackData = v19.Config.NoProjectileJitter and {} or {
+                            OnHeartbeat = {
+                                Rotation = {
+                                    rotation = v33
+                                }
+                            }
+                        }
+                    };
+                    v8.new(v34):Launch();
+                end);
+                task.delay(1.2, function() --[[ Line: 186 ]]
+                    -- upvalues: v19 (copy)
+                    v19.AbilitiesDisabled = false;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v19.Animations.CorruptNature:Play(0.025);
+                end;
+                return;
+            end;
+        end
+    },
+    WalkspeedOverride = {
+        LayoutOrder = 3,
+        Icon = "rbxassetid://101955457812737",
+        KeybindType = "AltAbility2",
+        Cooldown = 20,
+        Callback = function(v35) --[[ Line: 203 ]] --[[ Name: Callback ]]
+            -- upvalues: v3 (copy), v2 (copy), v4 (copy), v5 (copy)
+            local l_WalkspeedOverrideDuration_0 = v35.Config.WalkspeedOverrideDuration;
+            local l_WalkspeedOverrideEndlag_0 = v35.Config.WalkspeedOverrideEndlag;
+            if game["Run Service"]:IsServer() then
+                v35.AbilitiesDisabled = true;
+                v3:SetSpeedCap(v35.Rig, "C00lkiddWalkspeedOverride", v35.Config.WalkspeedOverrideSpeed);
+                local l_TweenService_0 = game:GetService("TweenService");
+                local v39 = v35.Config.c00lguiTemplate:Clone();
+                local l_JointInstance_0 = v39:FindFirstChildWhichIsA("JointInstance");
+                if l_JointInstance_0 and v39:IsA("BasePart") then
+                    local l_Size_0 = v39.Size;
+                    local v42 = l_TweenService_0:Create(v39, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = l_Size_0
+                    });
+                    local v43 = l_TweenService_0:Create(v39, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                        Size = Vector3.new(0, 0, 0, 0)
+                    });
+                    v39.Parent = v35.Rig;
+                    v39.Anchored = false;
+                    v39.Size = Vector3.new(0, 0, 0, 0);
+                    l_JointInstance_0.Part0 = v35.Rig.PrimaryPart;
+                    v42:Play();
+                    task.delay(0.25, v43.Play, v43);
+                end;
+                game.Debris:AddItem(v39, 1);
+                local v44 = ("%*/WalkspeedStart"):format(script.Parent);
+                local l_pcall_1 = pcall;
+                local v46 = "WalkspeedStart";
+                local v47;
+                l_pcall_1, v47 = l_pcall_1(function() --[[ Line: 16 ]]
+                    -- upvalues: v35 (copy), v46 (copy)
+                    if v35.Behavior[v46] then
+                        v35.Behavior[v46](v35);
+                    end;
+                end);
+                if not l_pcall_1 then
+                    warn((("[%*]: Failed to call .WalkspeedStart() due to: %*"):format(v44, v47)));
+                end;
+                task.delay(v35.Config.WalkspeedOverrideWindup, function() --[[ Line: 234 ]]
+                    -- upvalues: v2 (ref), v35 (copy), v4 (ref), l_WalkspeedOverrideDuration_0 (copy), v3 (ref), v5 (ref), l_WalkspeedOverrideEndlag_0 (copy)
+                    local v48 = v2:Play(v35.Config.Sounds.WalkspeedOverrideLoop, {
+                        Parent = v35.Rig.PrimaryPart,
+                        Looped = true
+                    });
+                    local v49 = nil;
+                    local v50 = nil;
+                    local l_v4_Hitbox_1 = v4:CreateHitbox(v35.Player, {
+                        Size = Vector3.new(7, 5, 6, 0),
+                        Damage = v35.Config.WalkspeedOverrideDamage,
+                        CFrameOffset = CFrame.new(0, 0, -1.5),
+                        Time = l_WalkspeedOverrideDuration_0,
+                        Knockback = v35.Config.WalkspeedOverrideKnockback,
+                        HitMultiple = true,
+                        Connections = {
+                            Hit = function(v51) --[[ Line: 247 ]] --[[ Name: Hit ]]
+                                -- upvalues: v3 (ref), v49 (ref), v5 (ref), v35 (ref)
+                                local _, v53 = v3:GetEntityType(v51);
+                                if v53 == "Entity" then
+                                    return;
+                                else
+                                    v49 = v51;
+                                    v5:ApplyStatus(v51, "Burning", {
+                                        Level = 1,
+                                        Duration = 8
+                                    });
+                                    v5:ApplyStatus(v51, "Slowness", {
+                                        Level = 10,
+                                        Duration = 0.25,
+                                        Hidden = true
+                                    });
+                                    v3:RevealPlayerAuraTo(v35.Player, v51, 9);
+                                    local l_firebrand_0 = v35.Rig:FindFirstChild("firebrand");
+                                    if l_firebrand_0 then
+                                        l_firebrand_0.Transparency = 0;
+                                        task.delay(1.5, function() --[[ Line: 263 ]]
+                                            -- upvalues: l_firebrand_0 (copy)
+                                            game.TweenService:Create(l_firebrand_0, TweenInfo.new(0.5), {
+                                                Transparency = 1
+                                            }):Play();
+                                        end);
+                                    end;
+                                    local v55 = ("%*/Start"):format(script.Parent);
+                                    local l_v35_0 = v35;
+                                    local l_pcall_2 = pcall;
+                                    local v58 = "WalkspeedHit";
+                                    local v59;
+                                    l_pcall_2, v59 = l_pcall_2(function() --[[ Line: 16 ]]
+                                        -- upvalues: l_v35_0 (copy), v58 (copy)
+                                        if l_v35_0.Behavior[v58] then
+                                            l_v35_0.Behavior[v58](l_v35_0);
+                                        end;
+                                    end);
+                                    if not l_pcall_2 then
+                                        warn((("[%*]: Failed to call .WalkspeedHit() due to: %*"):format(v55, v59)));
+                                    end;
+                                    if tostring(v51.Parent) == "Survivors" then
+                                        v55 = require(game.ReplicatedStorage.Modules.Actors);
+                                        if v51.Humanoid.Health <= 0 then
+                                            v55:IncrementActorStats(v35.Player, {
+                                                Action = "Killed a Survivor with Walkspeed Override",
+                                                RewardType = "DifficultKillerAction"
+                                            });
+                                            return;
+                                        else
+                                            v55:IncrementActorStats(v35.Player, {
+                                                Action = "Landed Walkspeed Override hit",
+                                                RewardType = "RegularKillerAction"
+                                            });
+                                        end;
+                                    end;
+                                    return;
+                                end;
+                            end,
+                            Ended = function() --[[ Line: 283 ]] --[[ Name: Ended ]]
+                                -- upvalues: v48 (copy), v50 (ref)
+                                game.TweenService:Create(v48, TweenInfo.new(0.5), {
+                                    PlaybackSpeed = 0
+                                });
+                                game.Debris:AddItem(v48, 1);
+                                v50 = true;
+                            end
+                        }
+                    });
+                    local v61 = require(game.ReplicatedStorage.Modules.Network);
+                    local l_LookVector_0 = v35:GetPivot().LookVector;
+                    local v63 = v3:ApplyVelocity(v35.Rig.PrimaryPart, v35.Config.WalkspeedOverrideSpeed);
+                    v63.LineDirection = (l_LookVector_0 * Vector3.new(1, 0, 1, 0)).Unit;
+                    game.Debris:AddItem(v63, l_WalkspeedOverrideDuration_0 + 3);
+                    game.TweenService:Create(v63, TweenInfo.new(l_WalkspeedOverrideDuration_0 * 1.5), {
+                        LineVelocity = v35.Config.WalkspeedOverrideSpeed / 2
+                    }):Play();
+                    v2:Play(v35.Config.Sounds.WalkspeedOverrideLunge, {
+                        Parent = v35.Rig.PrimaryPart
+                    });
+                    local v64 = false;
+                    local v65 = ("%*C00lkiddCollision"):format(v35.Player.Name);
+                    v61:SetConnection(v65, "REMOTE_EVENT", function(v66) --[[ Line: 307 ]]
+                        -- upvalues: v35 (ref), v64 (ref)
+                        if v66 ~= v35.Player then
+                            v66:Kick("not slick at all");
+                            return;
+                        else
+                            v64 = true;
+                            return;
+                        end;
+                    end);
+                    repeat
+                        task.wait();
+                    until v49 or v50 or v64;
+                    local v67 = "IDK";
+                    if v49 then
+                        v67 = "Hit";
+                        v3:GiveInvincible(v35.Rig, "Walkspeed");
+                    elseif v64 then
+                        v67 = "Collide";
+                    elseif v50 then
+                        v67 = "Timeout";
+                    end;
+                    local v68 = (v67 == "Hit" and 1 or v35.Config.WalkspeedOverrideEndlagMultiplier) * l_WalkspeedOverrideEndlag_0;
+                    local l_StringValue_0 = Instance.new("StringValue");
+                    l_StringValue_0.Name = "Result";
+                    l_StringValue_0.Value = v67;
+                    l_StringValue_0.Parent = v35.Rig;
+                    game.Debris:AddItem(l_StringValue_0, v68);
+                    task.delay(v68, function() --[[ Line: 340 ]]
+                        -- upvalues: v35 (ref), v67 (ref), v3 (ref)
+                        v35.AbilitiesDisabled = false;
+                        if v67 == "Hit" then
+                            task.delay(1.5, function() --[[ Line: 343 ]]
+                                -- upvalues: v3 (ref), v35 (ref)
+                                v3:RemoveInvincible(v35.Rig, "Walkspeed");
+                            end);
+                        end;
+                    end);
+                    game.TweenService:Create(v63, TweenInfo.new(v67 == "Collide" and 0.25 or 0.5), {
+                        LineVelocity = 0
+                    }):Play();
+                    game.Debris:AddItem(v63, v68);
+                    v2:PlayVoiceline(v35, ("WalkspeedOverride%*"):format(v67), {
+                        Priority = 1.5
+                    });
+                    v2:Play(v35.Config.Sounds[("WalkspeedOverride%*"):format(v67)], {
+                        Parent = v35.Rig.PrimaryPart
+                    });
+                    v3:SetSpeedCap(v35.Rig, "C00lkiddWalkspeedOverride", nil);
+                    v61:RemoveConnection(v65, "REMOTE_EVENT");
+                    l_v4_Hitbox_1:Cancel();
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    local v70 = nil;
+                    v35.Animations.WalkspeedOverrideStart:Play();
+                    do
+                        local l_v70_0 = v70;
+                        task.delay(v35.Config.WalkspeedOverrideWindup, function() --[[ Line: 364 ]]
+                            -- upvalues: l_v70_0 (ref), v35 (copy)
+                            if l_v70_0 then
+                                return;
+                            else
+                                v35.Animations.WalkspeedOverrideLoop.Looped = true;
+                                v35.Animations.WalkspeedOverrideLoop:Play();
+                                return;
+                            end;
+                        end);
+                        v35.Rig:SetAttribute("FootstepsMuted", true);
+                        local l_v3_SpeedMultiplier_0 = v3:CreateSpeedMultiplier(v35.Player, 0, "HinderedMovement");
+                        task.spawn(function() --[[ Line: 379 ]]
+                            -- upvalues: v35 (copy), l_v70_0 (ref)
+                            v35.Rig.PrimaryPart:WaitForChild("LinearVelocity", 2);
+                            local v73 = 0;
+                            local v74 = false;
+                            while true do
+                                if not l_v70_0 and v35.Rig.PrimaryPart then
+                                    if v73 >= 0.2 and v35.Rig.PrimaryPart.AssemblyLinearVelocity.Magnitude <= v35.Config.WalkspeedOverrideSpeed / 3 then
+                                        if not v74 then
+                                            require(game.ReplicatedStorage.Modules.Network):FireServerConnection(("%*C00lkiddCollision"):format(v35.Player.Name), "REMOTE_EVENT");
+                                            v74 = true;
+                                        end;
+                                        return;
+                                    else
+                                        v73 = v73 + game["Run Service"].Heartbeat:Wait();
+                                    end;
+                                else
+                                    return;
+                                end;
+                            end;
+                        end);
+                        local v75 = v35.Rig:WaitForChild("Result", 6);
+                        l_v70_0 = v75 and v75.Value or "IDK BRUH";
+                        v35.Rig:SetAttribute("FootstepsMuted", nil);
+                        v35.Animations.WalkspeedOverrideStart:Stop();
+                        v35.Animations.WalkspeedOverrideLoop:Stop();
+                        if l_v70_0 == "Hit" then
+                            v35.Animations.WalkspeedOverrideHit:Play(0);
+                        elseif not v35.Animations.WalkspeedOverrideDuration and not v35.Animations.WalkspeedOverrideCollide then
+                            v35.Animations.WalkspeedOverrideMiss:Play(0.05);
+                        elseif l_v70_0 == "Timeout" and v35.Animations.WalkspeedOverrideDuration then
+                            v35.Animations.WalkspeedOverrideDuration:Play(0.05);
+                        elseif l_v70_0 == "Collide" and v35.Animations.WalkspeedOverrideCollide then
+                            v35.Animations.WalkspeedOverrideCollide:Play(0.05);
+                        end;
+                        if v75 then
+                            repeat
+                                task.wait();
+                            until not v75.Parent;
+                        end;
+                        game.TweenService:Create(l_v3_SpeedMultiplier_0, TweenInfo.new(0.5), {
+                            Value = 1
+                        }):Play();
+                        game.Debris:AddItem(l_v3_SpeedMultiplier_0, 0.5);
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    PizzaDelivery = {
+        LayoutOrder = 4,
+        Icon = "rbxassetid://105652328381208",
+        KeybindType = "AltAbility3",
+        Cooldown = 50,
+        Callback = function(v76) --[[ Line: 438 ]] --[[ Name: Callback ]]
+            -- upvalues: v2 (copy), v3 (copy), v9 (copy), v5 (copy)
+            if game["Run Service"]:IsServer() then
+                v76.AbilitiesDisabled = true;
+                v2:Play(v76.Config.Sounds.PizzaDeliveryPunchGround, {
+                    Parent = v76.Rig.PrimaryPart
+                });
+                local v77 = ("%*/Summon"):format(script.Parent);
+                local l_pcall_3 = pcall;
+                local v79 = "MinionSummon";
+                local v80;
+                l_pcall_3, v80 = l_pcall_3(function() --[[ Line: 16 ]]
+                    -- upvalues: v76 (copy), v79 (copy)
+                    if v76.Behavior[v79] then
+                        v76.Behavior[v79](v76);
+                    end;
+                end);
+                if not l_pcall_3 then
+                    warn((("[%*]: Failed to call .MinionSummon() due to: %*"):format(v77, v80)));
+                end;
+                task.delay(1, function() --[[ Line: 446 ]]
+                    -- upvalues: v76 (copy), v3 (ref), v2 (ref), v9 (ref), v5 (ref)
+                    local v81 = "";
+                    local function v86(v82, v83) --[[ Line: 449 ]] --[[ Name: __getGroundPosition ]]
+                        local v84 = RaycastParams.new();
+                        v84.FilterType = Enum.RaycastFilterType.Exclude;
+                        v84.FilterDescendantsInstances = v83 or {};
+                        v84.RespectCanCollide = true;
+                        local v85 = workspace:Raycast(v82.PrimaryPart.Position, Vector3.new(0, -100, 0, 0), v84);
+                        return v85 and v85.Position or v82.PrimaryPart.Position;
+                    end;
+                    for v87 = 1, 2 do
+                        local v88 = v76.Rig.PrimaryPart.CFrame * CFrame.new(v87 % 2 == 0 and 6 or -6, 0, 0);
+                        local v89 = OverlapParams.new();
+                        v89.FilterType = Enum.RaycastFilterType.Exclude;
+                        v89.FilterDescendantsInstances = {
+                            workspace.Players,
+                            v76.Rig
+                        };
+                        v89.RespectCanCollide = true;
+                        if not (#workspace:GetPartBoundsInBox(v88, Vector3.new(2, 5, 2, 0), v89) > 0) then
+                            local l_PizzaDeliveryRig_0 = v76.Config.PizzaDeliveryRig;
+                            local function _() --[[ Line: 479 ]] --[[ Name: __getRig ]]
+                                -- upvalues: l_PizzaDeliveryRig_0 (copy)
+                                return l_PizzaDeliveryRig_0:IsA("Folder") and l_PizzaDeliveryRig_0:GetChildren()[math.random(#l_PizzaDeliveryRig_0:GetChildren())] or l_PizzaDeliveryRig_0;
+                            end;
+                            local v92 = (l_PizzaDeliveryRig_0:IsA("Folder") and l_PizzaDeliveryRig_0:GetChildren()[math.random(#l_PizzaDeliveryRig_0:GetChildren())] or l_PizzaDeliveryRig_0):Clone();
+                            if v76.Config.PizzaDeliveryGuyNoRepeats and l_PizzaDeliveryRig_0:IsA("Folder") then
+                                local l_l_PizzaDeliveryRig_0_Children_0 = l_PizzaDeliveryRig_0:GetChildren();
+                                while v92.Name == v81 do
+                                    table.remove(l_l_PizzaDeliveryRig_0_Children_0, table.find(l_l_PizzaDeliveryRig_0_Children_0, v92));
+                                    if l_l_PizzaDeliveryRig_0_Children_0[1] then
+                                        v92 = (l_PizzaDeliveryRig_0:IsA("Folder") and l_PizzaDeliveryRig_0:GetChildren()[math.random(#l_PizzaDeliveryRig_0:GetChildren())] or l_PizzaDeliveryRig_0):Clone();
+                                    else
+                                        break;
+                                    end;
+                                end;
+                                v81 = v92.Name;
+                            end;
+                            v92:SetAttribute("Team", "Killers");
+                            v92.PrimaryPart.Anchored = true;
+                            v3:FixCharacter(v92, "Killers");
+                            v3:AddHitboxes(v92, "Killers");
+                            local l_Humanoid_0 = v92.Humanoid;
+                            l_Humanoid_0.WalkSpeed = v76.Config.PizzaDeliveryGuySpeed;
+                            l_Humanoid_0.MaxHealth = v76.Config.PizzaDeliveryGuyHealth;
+                            l_Humanoid_0.Health = v76.Config.PizzaDeliveryGuyHealth;
+                            l_Humanoid_0.StateChanged:Connect(function(_, _) --[[ Line: 510 ]]
+                                -- upvalues: l_Humanoid_0 (copy)
+                                l_Humanoid_0.PlatformStand = false;
+                                l_Humanoid_0:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false);
+                                l_Humanoid_0:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false);
+                                l_Humanoid_0:ChangeState(Enum.HumanoidStateType.GettingUp);
+                            end);
+                            local v97 = v2:Play(v76.Config.Sounds.PizzaDeliveryMinionIdle, {
+                                Parent = v92.PrimaryPart,
+                                Looped = true,
+                                Volume = 0
+                            });
+                            game.TweenService:Create(v97, TweenInfo.new(1.75), {
+                                RollOffMaxDistance = 115
+                            }):Play();
+                            local v98 = false;
+                            do
+                                local l_v92_0, l_v98_0 = v92, v98;
+                                local _ = function(v101) --[[ Line: 523 ]] --[[ Name: removeRigAfter ]]
+                                    -- upvalues: l_v98_0 (ref), v97 (copy), l_v92_0 (ref)
+                                    task.delay(v101 - 1, function() --[[ Line: 524 ]]
+                                        -- upvalues: l_v98_0 (ref), v97 (ref), l_v92_0 (ref)
+                                        if not l_v98_0 then
+                                            l_v98_0 = true;
+                                            if v97 and v97.Parent then
+                                                game.TweenService:Create(v97, TweenInfo.new(0.8), {
+                                                    PlaybackSpeed = 0
+                                                }):Play();
+                                            end;
+                                            game.Debris:AddItem(l_v92_0, 1);
+                                            for _, v103 in pairs(l_v92_0:GetDescendants()) do
+                                                if v103:IsA("BasePart") or v103:IsA("Decal") then
+                                                    game.TweenService:Create(v103, TweenInfo.new(1), {
+                                                        Transparency = 1
+                                                    }):Play();
+                                                end;
+                                            end;
+                                        end;
+                                    end);
+                                end;
+                                local l_PizzaDeliveryGuyLifetime_0 = v76.Config.PizzaDeliveryGuyLifetime;
+                                task.delay(l_PizzaDeliveryGuyLifetime_0 - 1, function() --[[ Line: 524 ]]
+                                    -- upvalues: l_v98_0 (ref), v97 (copy), l_v92_0 (ref)
+                                    if not l_v98_0 then
+                                        l_v98_0 = true;
+                                        if v97 and v97.Parent then
+                                            game.TweenService:Create(v97, TweenInfo.new(0.8), {
+                                                PlaybackSpeed = 0
+                                            }):Play();
+                                        end;
+                                        game.Debris:AddItem(l_v92_0, 1);
+                                        for _, v107 in pairs(l_v92_0:GetDescendants()) do
+                                            if v107:IsA("BasePart") or v107:IsA("Decal") then
+                                                game.TweenService:Create(v107, TweenInfo.new(1), {
+                                                    Transparency = 1
+                                                }):Play();
+                                            end;
+                                        end;
+                                    end;
+                                end);
+                                game.Debris:AddItem(l_v92_0, v76.Config.PizzaDeliveryGuyLifetime);
+                                l_PizzaDeliveryGuyLifetime_0 = workspace.Map.Ingame;
+                                l_v92_0.Parent = l_PizzaDeliveryGuyLifetime_0;
+                                l_PizzaDeliveryGuyLifetime_0 = {};
+                                local l_pairs_0 = pairs;
+                                local v109 = v76.Config.PizzaDeliverySpecificAnimations[l_v92_0.Name] or v76.Config.PizzaDeliveryAnimations;
+                                for v110, v111 in l_pairs_0(v109) do
+                                    l_PizzaDeliveryGuyLifetime_0[v110] = v3:LoadAnimationFromID(l_v92_0, v111, false);
+                                end;
+                                l_PizzaDeliveryGuyLifetime_0.Idle:Play();
+                                l_PizzaDeliveryGuyLifetime_0.Summoned:Play(0);
+                                local v112 = v76.Rig.PrimaryPart.CFrame * CFrame.new(v87 % 2 == 0 and 6 or -6, 0, 0);
+                                l_v92_0:SetPrimaryPartCFrame(v112);
+                                l_v92_0.Humanoid.Died:Once(function() --[[ Line: 558 ]]
+                                    -- upvalues: v97 (copy), v2 (ref), v76 (ref), l_v92_0 (ref)
+                                    v97:Destroy();
+                                    v2:Play(v76.Config.Sounds.PizzaDeliveryMinionDeath, {
+                                        Parent = l_v92_0.PrimaryPart,
+                                        PlaybackSpeed = Random.new():NextNumber(0.9, 1.1)
+                                    });
+                                end);
+                                v2:Play(v76.Config.Sounds.PizzaDeliveryGuySpawned, {
+                                    Parent = v76.Rig.PrimaryPart
+                                });
+                                l_v92_0:AddTag("Ragdoll");
+                                v3:RevealPlayerAuraTo(v76.Player, l_v92_0, 600, Color3.new(0.666667, 0, 0));
+                                task.wait(0.75);
+                                task.delay(1.75, function() --[[ Line: 571 ]]
+                                    -- upvalues: l_v92_0 (ref), l_PizzaDeliveryGuyLifetime_0 (copy), l_Humanoid_0 (copy), v3 (ref), v86 (copy), v76 (ref), v2 (ref), l_v98_0 (ref), v97 (copy), v9 (ref), v5 (ref)
+                                    if not l_v92_0.PrimaryPart then
+                                        return;
+                                    else
+                                        l_v92_0.PrimaryPart.Anchored = false;
+                                        l_PizzaDeliveryGuyLifetime_0.Walk:Play();
+                                        local v113 = require(game.ReplicatedStorage.Modules.Actors);
+                                        local v114 = require(game.ReplicatedStorage.Modules.SimplePath).new(l_v92_0);
+                                        while task.wait() and l_v92_0.Parent and l_v92_0.PrimaryPart and l_Humanoid_0.Health > 0 do
+                                            local v115 = nil;
+                                            local v116 = 1e999;
+                                            for _, v118 in ipairs(workspace.Players.Survivors:GetChildren()) do
+                                                if v3:IsAlive(v118) and not v118:GetAttribute("BeingExecuted") and (#v3:GetAliveSurvivorCharacters() <= 1 or not v118:GetAttribute("Undetectable")) then
+                                                    local l_Magnitude_0 = (v118.PrimaryPart.Position - l_v92_0.PrimaryPart.Position).Magnitude;
+                                                    if l_Magnitude_0 < v116 then
+                                                        v115 = v118;
+                                                        v116 = l_Magnitude_0;
+                                                    end;
+                                                end;
+                                            end;
+                                            local v120 = v115 and v115.PrimaryPart and v86(v115, workspace.Players:GetChildren());
+                                            local v121 = v115 and game.Players:GetPlayerFromCharacter(v115);
+                                            local v122 = v121 and v113.CurrentActors[v121];
+                                            if v76.Rig.Parent and v116 and v116 < v76.Config.PizzaDeliveryGuyAttackRadius then
+                                                require(game.ReplicatedStorage.Modules.Ragdolls).AddProfile(v115, {
+                                                    Velocity = (v115.PrimaryPart.Position - l_v92_0.PrimaryPart.Position).Unit * 30
+                                                });
+                                                v2:Play(v76.Config.Sounds.PizzaDeliveryMinionHit, {
+                                                    Parent = l_v92_0.PrimaryPart
+                                                });
+                                                task.delay(1, function() --[[ Line: 524 ]]
+                                                    -- upvalues: l_v98_0 (ref), v97 (ref), l_v92_0 (ref)
+                                                    if not l_v98_0 then
+                                                        l_v98_0 = true;
+                                                        if v97 and v97.Parent then
+                                                            game.TweenService:Create(v97, TweenInfo.new(0.8), {
+                                                                PlaybackSpeed = 0
+                                                            }):Play();
+                                                        end;
+                                                        game.Debris:AddItem(l_v92_0, 1);
+                                                        for _, v124 in pairs(l_v92_0:GetDescendants()) do
+                                                            if v124:IsA("BasePart") or v124:IsA("Decal") then
+                                                                game.TweenService:Create(v124, TweenInfo.new(1), {
+                                                                    Transparency = 1
+                                                                }):Play();
+                                                            end;
+                                                        end;
+                                                    end;
+                                                end);
+                                                l_PizzaDeliveryGuyLifetime_0.Walk:Stop(0);
+                                                l_PizzaDeliveryGuyLifetime_0.Hit:Play(0);
+                                                v3:ApplyDamage(v115, v76.Config.PizzaDeliveryGuyDamage, nil, v76.Rig);
+                                                if v115.Name == "Elliot" and not v3:IsAlive(v115) then
+                                                    v9:IncrementAchievementProgress(v76.Player, "c00lkiddPizzaMinion");
+                                                end;
+                                                v3:RevealPlayerAuraTo(v76.Player, v115, 7.5);
+                                                local v125 = ("%*/MinionHit"):format(script.Parent);
+                                                local l_v76_0 = v76;
+                                                local l_pcall_4 = pcall;
+                                                local v128 = "MinionHit";
+                                                local v129;
+                                                l_pcall_4, v129 = l_pcall_4(function() --[[ Line: 16 ]]
+                                                    -- upvalues: l_v76_0 (copy), v128 (copy)
+                                                    if l_v76_0.Behavior[v128] then
+                                                        l_v76_0.Behavior[v128](l_v76_0);
+                                                    end;
+                                                end);
+                                                if not l_pcall_4 then
+                                                    warn((("[%*]: Failed to call .MinionHit() due to: %*"):format(v125, v129)));
+                                                end;
+                                                v5:ApplyStatus(v115, "Burning", {
+                                                    Level = 1,
+                                                    Duration = 3
+                                                });
+                                                v5:ApplyStatus(v115, "Slowness", {
+                                                    Level = 2,
+                                                    Duration = 3
+                                                });
+                                                v2:PlayVoiceline(v76, "PizzaDeliveryHit", {
+                                                    Priority = 0,
+                                                    Chance = 1
+                                                });
+                                                if tostring(v115.Parent) == "Survivors" then
+                                                    require(game.ReplicatedStorage.Modules.Actors):IncrementActorStats(v76.Player, {
+                                                        Action = "A pizza delivery minion attacked a Survivor",
+                                                        RewardType = "EasyKillerAction"
+                                                    });
+                                                end;
+                                                if v122 and v122.Behavior then
+                                                    v122.Behavior.AILastSeen = nil;
+                                                    break;
+                                                else
+                                                    break;
+                                                end;
+                                            elseif v76.Rig.Parent and v120 then
+                                                local l_PrimaryPart_1 = l_v92_0.PrimaryPart;
+                                                if l_PrimaryPart_1 then
+                                                    if v114:Run(v120) then
+                                                        if v122 and v122.Behavior then
+                                                            v122.Behavior.AILastSeen = os.clock();
+                                                        end;
+                                                        if (l_PrimaryPart_1.Position - v120).Magnitude > v76.Config.PizzaDeliveryRange then
+                                                            l_v92_0.Humanoid.WalkSpeed = v76.Config.PizzaDeliveryOutOfRangeSpeed;
+                                                        else
+                                                            l_v92_0.Humanoid.WalkSpeed = v76.Config.PizzaDeliveryGuySpeed;
+                                                        end;
+                                                    end;
+                                                else
+                                                    break;
+                                                end;
+                                            else
+                                                task.delay(1, function() --[[ Line: 524 ]]
+                                                    -- upvalues: l_v98_0 (ref), v97 (ref), l_v92_0 (ref)
+                                                    if not l_v98_0 then
+                                                        l_v98_0 = true;
+                                                        if v97 and v97.Parent then
+                                                            game.TweenService:Create(v97, TweenInfo.new(0.8), {
+                                                                PlaybackSpeed = 0
+                                                            }):Play();
+                                                        end;
+                                                        game.Debris:AddItem(l_v92_0, 1);
+                                                        for _, v132 in pairs(l_v92_0:GetDescendants()) do
+                                                            if v132:IsA("BasePart") or v132:IsA("Decal") then
+                                                                game.TweenService:Create(v132, TweenInfo.new(1), {
+                                                                    Transparency = 1
+                                                                }):Play();
+                                                            end;
+                                                        end;
+                                                    end;
+                                                end);
+                                                l_Humanoid_0.WalkSpeed = 0;
+                                                l_PizzaDeliveryGuyLifetime_0.Walk:Stop(0);
+                                                break;
+                                            end;
+                                        end;
+                                        if v114 and v114.Destroy then
+                                            v114:Destroy();
+                                        end;
+                                        return;
+                                    end;
+                                end);
+                            end;
+                        end;
+                    end;
+                end);
+                task.delay(3, function() --[[ Line: 672 ]]
+                    -- upvalues: v76 (copy)
+                    v76.AbilitiesDisabled = false;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v76.Animations.SummonPizzaDelivery:Play(0.025);
+                    local l_v3_SpeedMultiplier_1 = v3:CreateSpeedMultiplier(v76.Player, 0, "HinderedMovement");
+                    task.delay(2.5, function() --[[ Line: 683 ]]
+                        -- upvalues: l_v3_SpeedMultiplier_1 (copy)
+                        game.TweenService:Create(l_v3_SpeedMultiplier_1, TweenInfo.new(0.5), {
+                            Value = 1
+                        }):Play();
+                        game.Debris:AddItem(l_v3_SpeedMultiplier_1, 0.5);
+                    end);
+                end;
+                return;
+            end;
+        end
+    }
+};
+v1.Created = function(_, v135) --[[ Line: 693 ]] --[[ Name: Created ]]
+    -- upvalues: v3 (copy)
+    local v136 = {};
+    for _, v138 in v135.Config.PizzaDeliveryAnimations do
+        table.insert(v136, v138);
+    end;
+    for _, v140 in v135.Config.PizzaDeliverySpecificAnimations do
+        for _, v142 in v140 do
+            table.insert(v136, v142);
+        end;
+    end;
+    task.spawn(v3.PreloadAssets, v3, v136);
+end;
+v1.OnIntroduction = function(_, v144, v145, v146) --[[ Line: 709 ]] --[[ Name: OnIntroduction ]]
+    task.spawn(function() --[[ Line: 710 ]]
+        -- upvalues: v145 (copy)
+        local v147 = v145:WaitForChild("firebrand", 20);
+        if v147 then
+            v147.Transparency = 0;
+        end;
+    end);
+    local v148 = nil;
+    task.delay(0.5, function() --[[ Line: 718 ]]
+        -- upvalues: v148 (ref)
+        v148 = game.Lighting.ClockTime;
+        game.TweenService:Create(game.Lighting, TweenInfo.new(0.75), {
+            ClockTime = 0
+        }):Play();
+    end);
+    task.delay(1.5, function() --[[ Line: 723 ]]
+        -- upvalues: v144 (copy), v148 (ref), v146 (copy)
+        local v149 = v144.Config.IntroSky:Clone();
+        v149.Parent = game.Lighting;
+        game.TweenService:Create(game.Lighting, TweenInfo.new(1.5), {
+            ClockTime = v148 or 12
+        }):Play();
+        game.Debris:AddItem(v149, v146 - 1.5);
+    end);
+end;
+v1.OnVictory = function(_, v151, v152, _, v154) --[[ Line: 731 ]] --[[ Name: OnVictory ]]
+    -- upvalues: v7 (copy), l_RunService_0 (copy)
+    if v151 == "Start" then
+        v7:SetCustomLighting(v152.Config.OutroLighting);
+        local _ = os.clock();
+        game.Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", true);
+        local v156 = l_RunService_0.RenderStepped:Connect(function() --[[ Line: 740 ]]
+            workspace.CurrentCamera.FieldOfView = 25;
+        end);
+        task.delay(v154, function() --[[ Line: 744 ]]
+            -- upvalues: v156 (copy)
+            v156:Disconnect();
+        end);
+        task.spawn(function() --[[ Line: 749 ]]
+            -- upvalues: v152 (copy), v154 (copy), l_RunService_0 (ref)
+            local v157 = v152.Config.IntroSky:Clone();
+            v157.Parent = game.Lighting;
+            game.Debris:AddItem(v157, v154 - 1.5);
+            local v158 = workspace.Misc:WaitForChild("KillerCutsceneBackground", 3);
+            if v158 then
+                local v159 = nil;
+                do
+                    local l_v159_0 = v159;
+                    l_v159_0 = l_RunService_0.RenderStepped:Connect(function(v161) --[[ Line: 757 ]]
+                        -- upvalues: v158 (copy), l_v159_0 (ref)
+                        if not v158 or not v158.Parent or not v158:FindFirstChild("People") then
+                            l_v159_0:Disconnect();
+                            return;
+                        else
+                            for v162, v163 in pairs(v158.People:GetChildren()) do
+                                local l_PrimaryPart_2 = v163.PrimaryPart;
+                                l_PrimaryPart_2.CFrame = l_PrimaryPart_2.CFrame * CFrame.Angles(0, v161 * (v162 % 2 == 0 and 2.25 or -2.25), 0);
+                            end;
+                            task.wait();
+                            return;
+                        end;
+                    end);
+                    task.delay(v154, l_v159_0.Disconnect, l_v159_0);
+                end;
+            end;
+        end);
+        return;
+    else
+        if v151 == "End" then
+            game.Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", false);
+            game.Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", nil);
+            v7:SetAsCurrentLighting();
+        end;
+        return;
+    end;
+end;
+v1.OnExecution = function(_, v166, v167) --[[ Line: 779 ]] --[[ Name: OnExecution ]]
+    local v168 = false;
+    if v167.Name == "007n7" then
+        v168 = v166.Rig.PrimaryPart.CFrame * CFrame.new(3, -2.75, 2.25) * CFrame.Angles(1.5707963267948966, 0, -0.3490658503988659);
+    end;
+    local v169 = v167.Name == "007n7" and Vector3.new() or (v166.Rig.PrimaryPart.CFrame * CFrame.new(5, 0.5, 1)).LookVector.Unit * 200;
+    local v170 = v167.Name == "007n7" and 3.6 or 3.5;
+    local v171 = require(game.ReplicatedStorage.Modules.Ragdolls);
+    task.delay(2.1, function() --[[ Line: 789 ]]
+        -- upvalues: v171 (copy), v167 (copy), v169 (copy)
+        v171.AddProfile(v167, {
+            AnchorDelay = true,
+            Applied = os.clock() + 5,
+            Velocity = v169
+        });
+        local l_Humanoid_1 = v167:FindFirstChild("Humanoid");
+        if l_Humanoid_1 then
+            l_Humanoid_1.BreakJointsOnDeath = false;
+            l_Humanoid_1.Health = 0;
+        end;
+    end);
+    task.delay(v170, function() --[[ Line: 798 ]]
+        -- upvalues: v167 (copy)
+        if v167 and v167.PrimaryPart then
+            v167.PrimaryPart.Anchored = false;
+        end;
+    end);
+end;
+return v1;
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Survivors/Chance/Behavior]====],before="28813:ef2dc65e:1a62bd35",after="28774:ddedd2a6:700a75a5",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local v0 = {};
+local v1 = {
+    InvalidShotArg = "\n\nForsakenCheatKiller 777:\nYou Lose!\n"
+};
+local l_ReplicatedStorage_0 = game:GetService("ReplicatedStorage");
+local l_RunService_0 = game:GetService("RunService");
+local v4 = require(l_ReplicatedStorage_0.Modules.Actors);
+local v5 = require(l_ReplicatedStorage_0.Modules.Sounds);
+local v6 = require(l_ReplicatedStorage_0.Modules.Util);
+local v7 = require(l_ReplicatedStorage_0.Modules.Hitboxes);
+local v8 = require(l_ReplicatedStorage_0.Modules.Statuses);
+local v9 = require(l_ReplicatedStorage_0.Modules.AchievementUtil);
+local v10 = require(l_ReplicatedStorage_0.Modules.Network);
+local function _(v11) --[[ Line: 17 ]] --[[ Name: coinflip ]]
+    local v12 = Random.new():NextNumber(0, 1) <= 0.5 + v11.CoinPity / 100;
+    if v12 then
+        v11.CoinPity = 0;
+        return v12;
+    else
+        v11.CoinPity = v11.CoinPity + v11.Config.CoinFlipPity;
+        return v12;
+    end;
+end;
+local function _(v14) --[[ Line: 31 ]] --[[ Name: validateVectorUnit ]]
+    if v14 ~= v14 then
+        return false;
+    else
+        return v14;
+    end;
+end;
+local function v20(v16, v17) --[[ Line: 37 ]] --[[ Name: updatePityDisplay ]]
+    local l_AbilityContainer_0 = v16.Player.PlayerGui.MainUI:FindFirstChild("AbilityContainer");
+    local v19 = l_AbilityContainer_0 and l_AbilityContainer_0:FindFirstChild("CoinFlip");
+    if not v19 then
+        return;
+    elseif v16.CoinPity > 0 then
+        v19.Charges.Text = string.format("+%.1f%%", v16.CoinPity);
+        if v17 then
+            v19.Charges.TextColor3 = Color3.new(1, 0, 0);
+            game.TweenService:Create(v19.Charges, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                TextColor3 = Color3.new(1, 1, 1)
+            }):Play();
+            return;
+        else
+            v19.Charges.TextColor3 = Color3.new(1, 1, 1);
+            return;
+        end;
+    else
+        v19.Charges.Text = "";
+        return;
+    end;
+end;
+local function v25(v21, v22, ...) --[[ Line: 70 ]] --[[ Name: __pcallMethod ]]
+    assert(v21, "bad moduleInfo, must be a table");
+    local l_status_0, l_result_0 = pcall(function(...) --[[ Line: 73 ]]
+        -- upvalues: v21 (copy), v22 (copy)
+        if v21[v22] then
+            return v21[v22](...);
+        else
+            return;
+        end;
+    end, ...);
+    if not l_status_0 then
+        warn((("Failed to call :%*() due to: %*"):format(v22, l_result_0)));
+    end;
+    return l_status_0, l_result_0;
+end;
+v0.Created = function(_, v27) --[[ Line: 84 ]] --[[ Name: Created ]]
+    -- upvalues: v10 (copy), v1 (copy), v4 (copy), v20 (copy)
+    if game["Run Service"]:IsServer() then
+        v27.Rig.Humanoid.MaxHealth = math.random(70, 90);
+        v27.Rig.Humanoid.Health = v27.Rig.Humanoid.MaxHealth;
+        v27.ShotBuffer = 0;
+        v27.CoinPity = 0;
+        v10:SetConnection(v27.Player.Name .. "ChanceFireShot", "REMOTE_EVENT", function(v28, ...) --[[ Line: 92 ]]
+            -- upvalues: v27 (copy), v1 (ref), v4 (ref)
+            if v28 ~= v27.Player then
+                v28:Kick(v1.InvalidShotArg);
+                return;
+            else
+                local v29 = v4.CurrentActors[v28];
+                if v29 and v29.Behavior and v29.Behavior.FireShot then
+                    v29.Behavior.FireShot(v29, ...);
+                end;
+                return;
+            end;
+        end);
+        return;
+    else
+        if game["Run Service"]:IsClient() then
+            v10:SetConnection(("%*ChancePityUpdate"):format(v27.Player.Name), "REMOTE_EVENT", function(v30, v31) --[[ Line: 104 ]]
+                -- upvalues: v27 (copy), v20 (ref)
+                v27.CoinPity = v30;
+                v20(v27, v31);
+            end);
+        end;
+        return;
+    end;
+end;
+v0.Destroyed = function(_, v33) --[[ Line: 111 ]] --[[ Name: Destroyed ]]
+    -- upvalues: v10 (copy)
+    if game["Run Service"]:IsServer() then
+        v10:RemoveConnection(v33.Player.Name .. "ChanceFireShot", "REMOTE_EVENT");
+        return;
+    else
+        if game["Run Service"]:IsClient() then
+            v10:RemoveConnection(("%*ChancePityUpdate"):format(v33.Player.Name), "REMOTE_EVENT");
+        end;
+        return;
+    end;
+end;
+v0.FireShot = function(v34, v35) --[[ Line: 120 ]] --[[ Name: FireShot ]]
+    -- upvalues: l_RunService_0 (copy), v1 (copy), v7 (copy), v8 (copy), v5 (copy), v4 (copy), v9 (copy)
+    assert(l_RunService_0:IsServer() and v34 and v34.Player, "what are you doing");
+    local _ = v35 * Vector3.new(1, 0, 1, 0);
+    local l_Player_0 = v34.Player;
+    if v34 and v34.ShotBuffer and v34.ShotBuffer > 0 and v35 then
+        local l_Unit_0 = v35.Unit;
+        if l_Unit_0 == l_Unit_0 and l_Unit_0 then
+            v34.ShotBuffer = v34.ShotBuffer - 1;
+            local l_PrimaryPart_0 = v34.Rig.PrimaryPart;
+            l_Unit_0 = 0;
+            local _ = v7:CreateHitbox(v34.Player, {
+                Size = Vector3.new(v34.Config.ShootHitboxSize, v34.Config.ShootHitboxSize, v34.Config.ShootHitboxRange),
+                CFrameOffset = CFrame.new(0, 0, -v34.Config.ShootHitboxRange / 2),
+                Damage = v34.Config.ShootDamage,
+                Time = 0.005,
+                HitMultiple = true,
+                Knockback = v34.Config.ShootKnockback,
+                Connections = {
+                    Hit = function(v40) --[[ Line: 150 ]] --[[ Name: Hit ]]
+                        -- upvalues: l_PrimaryPart_0 (copy), v34 (copy), v8 (ref), v5 (ref), v4 (ref), v9 (ref), l_Unit_0 (ref)
+                        local l_PrimaryPart_1 = v40.PrimaryPart;
+                        if l_PrimaryPart_1 then
+                            local v42 = (l_PrimaryPart_0.Position - l_PrimaryPart_1.Position).Magnitude / v34.Config.ShootHitboxRange;
+                            local function _(v43, v44, v45) --[[ Line: 156 ]] --[[ Name: getValue ]]
+                                return v43 + (v44 - v43) * (1 - math.clamp(v45, 0, 1));
+                            end;
+                            local l_ShootMinKnockback_0 = v34.Config.ShootMinKnockback;
+                            local _ = l_ShootMinKnockback_0 + (v34.Config.ShootMaxKnockback - l_ShootMinKnockback_0) * (1 - math.clamp(v42, 0, 1));
+                            local l_ShootMinStunDuration_0 = v34.Config.ShootMinStunDuration;
+                            l_ShootMinKnockback_0 = l_ShootMinStunDuration_0 + (v34.Config.ShootMaxStunDuration - l_ShootMinStunDuration_0) * (1 - math.clamp(v42, 0, 1));
+                            if l_ShootMinKnockback_0 > 1 then
+                                v8:ApplyStatus(v40, "Stunned", {
+                                    Duration = l_ShootMinKnockback_0
+                                });
+                            end;
+                            v5:Play(v34.Config.Sounds.GunHitSFX, {
+                                Parent = l_PrimaryPart_1,
+                                Volume = 0.3
+                            });
+                            if tostring(v40.Parent) == "Killers" then
+                                v4:IncrementActorStats(v34.Player, {
+                                    Action = "Shot the Killer",
+                                    RewardType = "Offensive"
+                                });
+                            end;
+                            if v34.TimeSinceLastHeads and os.clock() <= v34.TimeSinceLastHeads + 10 then
+                                v9:IncrementAchievementProgress(v34.Player, "ChanceReference");
+                            end;
+                            l_Unit_0 = l_Unit_0 + 1;
+                            if l_Unit_0 >= 3 then
+                                v9:IncrementAchievementProgress(v34.Player, "ChanceMomGetTheCamera");
+                            end;
+                        end;
+                    end
+                }
+            });
+            return;
+        end;
+    end;
+    l_Player_0:Kick(v1.InvalidShotArg);
+end;
+v0.Abilities = {
+    CoinFlip = {
+        LayoutOrder = 1,
+        KeybindType = "AltAbility1",
+        Icon = "rbxassetid://91225744028483",
+        Callback = function(v51, v52) --[[ Line: 201 ]] --[[ Name: Callback ]]
+            -- upvalues: v5 (copy), v9 (copy), v8 (copy), v10 (copy)
+            if game["Run Service"]:IsServer() then
+                v51.AbilitiesDisabled = true;
+                v51:ChangeExpression("Gambling");
+                v51:PlayVoiceline("FlipCoin", {
+                    Priority = 4
+                });
+                task.delay(1.75, function() --[[ Line: 209 ]]
+                    -- upvalues: v51 (copy)
+                    v51.AbilitiesDisabled = false;
+                end);
+                task.delay(0.1, function() --[[ Line: 214 ]]
+                    -- upvalues: v51 (copy)
+                    if not v51.Rig.Parent then
+                        return;
+                    else
+                        v51.Rig.Coin.Transparency = 0;
+                        for _, v54 in (v51.Rig.Coin:GetChildren()) do
+                            if v54:IsA("Decal") then
+                                v54.Transparency = 0;
+                            end;
+                        end;
+                        return;
+                    end;
+                end);
+                task.delay(1.375, function() --[[ Line: 230 ]]
+                    -- upvalues: v51 (copy)
+                    if not v51.Rig.Parent then
+                        return;
+                    else
+                        v51.Rig.Coin.Transparency = 1;
+                        for _, v56 in (v51.Rig.Coin:GetChildren()) do
+                            if v56:IsA("Decal") then
+                                v56.Transparency = 1;
+                            end;
+                        end;
+                        return;
+                    end;
+                end);
+                local v57 = Random.new():NextNumber(0, 1) <= 0.5 + v51.CoinPity / 100;
+                if v57 then
+                    v51.CoinPity = 0;
+                else
+                    v51.CoinPity = v51.CoinPity + v51.Config.CoinFlipPity;
+                end;
+                local l_v57_0 = v57;
+                if not v51.Charges then
+                    v51.Charges = 0;
+                end;
+                if not v51.WeaknessLevel then
+                    v51.WeaknessLevel = 0;
+                end;
+                if not v51.HeadsInARow then
+                    v51.HeadsInARow = 0;
+                end;
+                local l_PrimaryPart_2 = v51.Rig.PrimaryPart;
+                v5:Play(v51.Config.Sounds.FlipCoinSFX, {
+                    Parent = l_PrimaryPart_2
+                });
+                task.delay(1.15, function() --[[ Line: 257 ]]
+                    -- upvalues: l_v57_0 (copy), v51 (copy), v5 (ref), l_PrimaryPart_2 (copy), v9 (ref), v8 (ref), v10 (ref)
+                    if l_v57_0 then
+                        v51.TimeSinceLastHeads = os.clock();
+                        local l_v51_0 = v51;
+                        l_v51_0.HeadsInARow = l_v51_0.HeadsInARow + 1;
+                        v51.Charges = math.clamp(v51.Charges + 1, 0, 3);
+                        v51:ChangeExpression("Happy", 1.5);
+                        v51:IncrementCharges("Reroll", 1, 3);
+                        v51:PlayVoiceline("Heads", {
+                            Priority = 4
+                        });
+                        v5:Play(v51.Config.Sounds.FlipCoinHeadsSFX, {
+                            Parent = l_PrimaryPart_2
+                        });
+                        if v51.Charges >= 3 then
+                            v51:IncrementCharges("HatFix", 1, 1);
+                        end;
+                        if not v51.GunDisabled then
+                            v51:IncrementCharges("Shoot", 1, 3);
+                        end;
+                        if v51.HeadsInARow >= 5 then
+                            v9:IncrementAchievementProgress(v51.Player, "ChanceTime");
+                        end;
+                    else
+                        v51.HeadsInARow = 0;
+                        local l_v51_1 = v51;
+                        l_v51_1.WeaknessLevel = l_v51_1.WeaknessLevel + 1;
+                        v51:ChangeExpression("Sad", 1.5);
+                        v8:ApplyStatus(v51.Player, "Vulnerable", {
+                            Level = v51.WeaknessLevel,
+                            Duration = v51.Config.CoinFlipWeaknessDuration
+                        });
+                        v51:PlayVoiceline("Tails", {
+                            Priority = 4
+                        });
+                        v5:Play(v51.Config.Sounds.FlipCoinTailsSFX, {
+                            Parent = l_PrimaryPart_2
+                        });
+                        if v51.WeaknessLevel >= 50 then
+                            v9:IncrementAchievementProgress(v51.Player, "ChanceWeakness");
+                        end;
+                    end;
+                    v10:FireClientConnection(v51.Player, ("%*ChancePityUpdate"):format(v51.Player.Name), "REMOTE_EVENT", v51.CoinPity, not l_v57_0);
+                end);
+                return l_v57_0;
+            else
+                if game["Run Service"]:IsClient() then
+                    if v52 == "SUPERLUCKY" then
+                        v51.Animations.FlipCoinHeads:Play(0.05);
+                        return;
+                    elseif v52 then
+                        v51.Animations.FlipCoinHeads:Play(0.05);
+                        return;
+                    else
+                        v51.Animations.FlipCoinTails:Play(0.05);
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    Shoot = {
+        Name = "One Shot",
+        LayoutOrder = 2,
+        KeybindType = "AltAbility2",
+        Icon = "rbxassetid://78498256535383",
+        Charges = 0,
+        Callback = function(v62, v63) --[[ Line: 310 ]] --[[ Name: Callback ]]
+            -- upvalues: v25 (copy), v5 (copy), v7 (copy), v8 (copy), v9 (copy), v4 (copy), v6 (copy), v10 (copy)
+            if game["Run Service"]:IsServer() then
+                v62.AbilitiesDisabled = true;
+                v62:ChangeExpression("Gambling");
+                v25(v62.Behavior, "OnRolledOutcome", v62.Behavior, v62);
+                task.delay(2.25, function() --[[ Line: 319 ]]
+                    -- upvalues: v62 (copy)
+                    v62.AbilitiesDisabled = false;
+                end);
+                task.delay(0.1, function() --[[ Line: 324 ]]
+                    -- upvalues: v62 (copy)
+                    for _, v65 in pairs(v62.Rig:GetDescendants()) do
+                        if v65:IsA("BasePart") and v65.Name:find("Flintlock") and not v62.Config.GunAlwaysVisible then
+                            v65.Transparency = 0;
+                        end;
+                    end;
+                end);
+                task.delay(v62.Config.FlintlockHideTime or 1.7, function() --[[ Line: 333 ]]
+                    -- upvalues: v62 (copy)
+                    for _, v67 in pairs(v62.Rig:GetDescendants()) do
+                        if v67:IsA("BasePart") and v67.Name:find("Flintlock") and not v62.Config.GunAlwaysVisible then
+                            v67.Transparency = 1;
+                        end;
+                    end;
+                end);
+                local v68 = {
+                    explode = 25,
+                    nothing = 25,
+                    shoot = 50
+                };
+                for _ = 2, tonumber(v62.Charges) or 0 do
+                    v68.explode = math.clamp(v68.explode - v62.Config.ShootLessFailureChancePerCharge, 0, 100);
+                    v68.nothing = math.clamp(v68.nothing - v62.Config.ShootLessFailureChancePerCharge, 0, 100);
+                    v68.shoot = math.clamp(v68.shoot + v62.Config.ShootSuccessChancePerCharge, 0, 100);
+                end;
+                local v70 = 0;
+                for _, v72 in pairs(v68) do
+                    v70 = v70 + v72;
+                end;
+                local v73 = "explode";
+                local v74 = 0;
+                local v75 = Random.new():NextNumber(0, v70);
+                for v76, v77 in pairs(v68) do
+                    v74 = v74 + v77;
+                    if v75 <= v74 then
+                        v73 = v76;
+                        break;
+                    end;
+                end;
+                v62.Charges = 0;
+                v62:IncrementCharges("Reroll", 0, 0);
+                v62:IncrementCharges("Shoot", 0, 0);
+                v62:IncrementCharges("HatFix", 0, 0);
+                local l_PrimaryPart_3 = v62.Rig.PrimaryPart;
+                v5:Play(v62.Config.Sounds.GunWindUpSFX, {
+                    Parent = l_PrimaryPart_3,
+                    Volume = 0.1
+                });
+                v62:PlayVoiceline("Aim", {
+                    Priority = 4
+                });
+                if v73 == "shoot" then
+                    v62.ShotBuffer = v62.ShotBuffer + 1;
+                end;
+                task.delay(0.9, function() --[[ Line: 406 ]]
+                    -- upvalues: l_PrimaryPart_3 (copy), v73 (ref), v62 (copy), v7 (ref), v8 (ref), v9 (ref), v4 (ref), v5 (ref), v6 (ref)
+                    if l_PrimaryPart_3.Anchored then
+                        return;
+                    else
+                        if v73 == "explode" then
+                            v62:ChangeExpression("Uhoh", 0.4);
+                            task.wait(0.4);
+                            v62:PlayVoiceline("ExplodeGun", {
+                                Priority = 4
+                            });
+                            if l_PrimaryPart_3.Anchored then
+                                return;
+                            else
+                                local _ = v7:CreateHitbox(v62.Player, {
+                                    Size = Vector3.new(10, 10, 10, 0),
+                                    CFrame = function() --[[ Line: 419 ]] --[[ Name: CFrame ]]
+                                        -- upvalues: l_PrimaryPart_3 (ref)
+                                        return l_PrimaryPart_3.CFrame;
+                                    end,
+                                    CFrameOffset = CFrame.new(0, 0, 0),
+                                    Damage = v62.Config.ShootDamage,
+                                    Shape = Enum.PartType.Ball,
+                                    Time = 0.005,
+                                    HitMultiple = true,
+                                    Knockback = function(v79) --[[ Line: 426 ]] --[[ Name: Knockback ]]
+                                        -- upvalues: l_PrimaryPart_3 (ref), v62 (ref)
+                                        local l_PrimaryPart_4 = v79.PrimaryPart;
+                                        if l_PrimaryPart_4 then
+                                            return (l_PrimaryPart_4.Position - l_PrimaryPart_3.Position).Unit * v62.Config.ShootExplosionKnockback;
+                                        else
+                                            return 0;
+                                        end;
+                                    end,
+                                    Connections = {
+                                        Hit = function(v81) --[[ Line: 437 ]] --[[ Name: Hit ]]
+                                            -- upvalues: v8 (ref), v62 (ref), v9 (ref), v4 (ref)
+                                            if v81.PrimaryPart then
+                                                v8:ApplyStatus(v81, "Stunned", {
+                                                    Duration = v62.Config.ShootExplosionStunDuration
+                                                });
+                                                v9:IncrementAchievementProgress(v62.Player, "ChanceKablam");
+                                                v4:IncrementActorStats(v62.Player, {
+                                                    Action = "Blew up the Killer",
+                                                    RewardType = "Offensive"
+                                                });
+                                            end;
+                                        end
+                                    }
+                                });
+                                v5:Play(v62.Config.Sounds.GunExplodeSFX, {
+                                    Parent = l_PrimaryPart_3,
+                                    Volume = 0.3
+                                });
+                                v6:ApplyDamage(v62.Rig, v62.Config.ShootSelfDamage);
+                                v62.GunDisabled = true;
+                                for _, v84 in pairs(v62.Rig:GetDescendants()) do
+                                    if v84:IsA("BasePart") and v84.Name:find("Flintlock") and not v62.Config.GunAlwaysVisible then
+                                        v84.Transparency = 1;
+                                    end;
+                                end;
+                                if v62.Rig.Humanoid.Health <= 0 then
+                                    v9:IncrementAchievementProgress(v62.Player, "ChanceDead");
+                                end;
+                            end;
+                        elseif v73 == "nothing" then
+                            v62:ChangeExpression("Sad", 1.5);
+                            v62:PlayVoiceline("GunFail", {
+                                Priority = 4
+                            });
+                            v4:IncrementActorStats(v62.Player, {
+                                Action = "You Tried",
+                                RewardType = "Survivalist"
+                            });
+                        elseif v73 == "shoot" then
+                            v62:ChangeExpression("Happy", 1.5);
+                            v5:Play(v62.Config.Sounds.GunFireSuccessSFX, {
+                                Parent = l_PrimaryPart_3,
+                                Volume = 0.3
+                            });
+                            v62:PlayVoiceline("ShootSuccess", {
+                                Priority = 4
+                            });
+                        end;
+                        if v73 ~= "nothing" then
+                            for _, v86 in pairs(v62.Rig:GetDescendants()) do
+                                if (v86:IsA("Light") or v86:IsA("ParticleEmitter")) and v86.Parent.Name == "Muzzle" then
+                                    task.spawn(function() --[[ Line: 490 ]]
+                                        -- upvalues: v86 (copy)
+                                        v86.Enabled = true;
+                                        task.wait(0.1);
+                                        v86.Enabled = false;
+                                    end);
+                                end;
+                            end;
+                        end;
+                        return;
+                    end;
+                end);
+                return {
+                    Outcome = v73
+                };
+            else
+                if game["Run Service"]:IsClient() then
+                    local l_Outcome_0 = v63.Outcome;
+                    local _ = v63.Sent;
+                    v62.Animations.AimGun:Play();
+                    v62.Animations.AimGun:AdjustSpeed(1);
+                    v10:FireConnection("DisableSprinting", "ShootingGun", true);
+                    local l_v6_SpeedMultiplier_0 = v6:CreateSpeedMultiplier(v62.Player, 0.3, "ShootingGun");
+                    task.delay(0.9, function() --[[ Line: 518 ]]
+                        -- upvalues: v10 (ref), l_v6_SpeedMultiplier_0 (copy), l_Outcome_0 (copy), v62 (copy), v6 (ref)
+                        task.delay(1.2, function() --[[ Line: 520 ]]
+                            -- upvalues: v10 (ref), l_v6_SpeedMultiplier_0 (ref)
+                            v10:FireConnection("DisableSprinting", "ShootingGun", nil);
+                            game.TweenService:Create(l_v6_SpeedMultiplier_0, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                                Value = 1
+                            }):Play();
+                            game.Debris:AddItem(l_v6_SpeedMultiplier_0, 1);
+                        end);
+                        if l_Outcome_0 == "explode" then
+                            v62.Animations.AimGun:AdjustSpeed(0);
+                            task.wait(0.4);
+                            v62.Animations.GunExplode:Play(0);
+                            v62.Animations.AimGun:Stop(0);
+                            v6:ApplyCameraShake(v62.Config.CameraShakeMagnitude, v62.Config.CameraShakeDuration);
+                            return;
+                        elseif l_Outcome_0 == "nothing" then
+                            v62.Animations.GunFail:Play(0);
+                            return;
+                        else
+                            if l_Outcome_0 == "shoot" then
+                                v62.Animations.GunFire:Play(0);
+                                v62.Animations.AimGun:Stop(0);
+                                v6:ApplyCameraShake(v62.Config.CameraShakeMagnitude, v62.Config.CameraShakeDuration);
+                                v10:FireServerConnection(v62.Player.Name .. "ChanceFireShot", "REMOTE_EVENT", v62.Rig.PrimaryPart.CFrame.LookVector);
+                            end;
+                            return;
+                        end;
+                    end);
+                end;
+                return;
+            end;
+        end
+    },
+    Reroll = {
+        LayoutOrder = 3,
+        KeybindType = "AltAbility3",
+        Icon = "rbxassetid://80029151869083",
+        Charges = 0,
+        Callback = function(v90, v91) --[[ Line: 555 ]] --[[ Name: Callback ]]
+            -- upvalues: v5 (copy)
+            if game["Run Service"]:IsServer() then
+                v90.AbilitiesDisabled = true;
+                task.delay(2, function() --[[ Line: 561 ]]
+                    -- upvalues: v90 (copy)
+                    v90.AbilitiesDisabled = false;
+                end);
+                local v92 = math.min(math.round(math.random(v90.Config.HealthMin, v90.Config.HealthMax) - v90.Config.RerollBasePenalty) * (math.max(0, v90.Charges - 1) * 0.05 + 1), v90.Config.HealthMax);
+                local l_PrimaryPart_5 = v90.Rig.PrimaryPart;
+                v5:Play(v90.Config.Sounds.StatRerollSFX, {
+                    Parent = l_PrimaryPart_5,
+                    Volume = 0.25
+                });
+                v90.Charges = 0;
+                v90:IncrementCharges("Reroll", 0, 0);
+                v90:IncrementCharges("Shoot", 0, 0);
+                v90:IncrementCharges("HatFix", 0, 0);
+                v90:ChangeExpression("Gambling", 1.5);
+                local l_Humanoid_0 = v90.Rig.Humanoid;
+                local v95 = l_Humanoid_0.Health / l_Humanoid_0.MaxHealth;
+                l_Humanoid_0.MaxHealth = v92;
+                l_Humanoid_0.Health = v92 * v95;
+                return v91;
+            else
+                if game["Run Service"]:IsClient() then
+
+                end;
+                return;
+            end;
+        end
+    },
+    HatFix = {
+        LayoutOrder = 4,
+        KeybindType = "AltAbility4",
+        Icon = "rbxassetid://93434599531478",
+        Charges = 0,
+        Callback = function(v96, _) --[[ Line: 609 ]] --[[ Name: Callback ]]
+            -- upvalues: v8 (copy), v10 (copy)
+            if game["Run Service"]:IsServer() then
+                v96.AbilitiesDisabled = true;
+                v96:PlayVoiceline("HatFix", {
+                    Priority = 4
+                });
+                task.delay(2, function() --[[ Line: 616 ]]
+                    -- upvalues: v96 (copy)
+                    v96.AbilitiesDisabled = false;
+                end);
+                task.delay(1, function() --[[ Line: 621 ]]
+                    -- upvalues: v96 (copy), v8 (ref), v10 (ref)
+                    v96.Charges = 0;
+                    v96.WeaknessLevel = 0;
+                    v96.GunDisabled = nil;
+                    v96:IncrementCharges("Reroll", 0, 0);
+                    v96:IncrementCharges("Shoot", 0, 0);
+                    v96:IncrementCharges("HatFix", 0, 0);
+                    v96:ChangeExpression("Gambling", 1.5);
+                    v8:RemoveStatus(v96.Player, "Vulnerable");
+                    v96.CoinPity = 0;
+                    v10:FireClientConnection(v96.Player, ("%*ChancePityUpdate"):format(v96.Player.Name), "REMOTE_EVENT", 0, false);
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v96.Animations.HatFix:Play();
+                end;
+                return;
+            end;
+        end
+    }
+};
+return v0;
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Survivors/Chance/Config]====],before="9978:90a36e83:c0a12e96",after="9882:f32e7089:5a3f7596",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local v0 = {
+    DisplayName = "Chance",
+    Quote = "\"99% of gamblers quit before they win big\"",
+    Credits = "",
+    Class = "Sentinel",
+    RenderImage = "rbxassetid://126924178701380",
+    Price = 777,
+    Speed = 12,
+    HealthMin = 65,
+    HealthMax = 130,
+    CoinFlipCooldown = 1.75,
+    CoinFlipWeaknessDuration = 15,
+    CoinFlipPity = 2.5,
+    GunAlwaysVisible = false,
+    ShootSuccessChancePerCharge = 20,
+    ShootLessFailureChancePerCharge = 10,
+    ShootStunDurationDebuffPerChanceAlive = 15,
+    ShootCooldown = 45,
+    ShootHitboxSize = 2.5,
+    ShootHitboxRange = 90,
+    ShootMaxStunDuration = 4,
+    ShootMinStunDuration = 1,
+    ShootMaxKnockback = 14,
+    ShootMinKnockback = 5,
+    ShootDamage = 50,
+    ShootKnockback = 3,
+    ShootExplosionKnockback = 25,
+    ShootExplosionStunDuration = 5,
+    ShootSelfDamage = 25,
+    CameraShakeMagnitude = 1.5,
+    CameraShakeDuration = 0.4,
+    RerollBasePenalty = 10,
+    RerollCooldown = 20,
+    RandomnessDifferencePerCharge = 3,
+    HatFixCooldown = 60,
+	Expressions = {
+		Happy = "rbxassetid://92225688434461",
+		Default = "rbxassetid://76254460000954",
+		Hurt = "rbxassetid://102172172675803",
+		Injured = "rbxassetid://83906964540493",
+		Dead = "rbxassetid://123735458751609",
+		Drinking = "rbxassetid://89448343694123",
+		Gambling = "rbxassetid://113790771759092",
+		Sad = "rbxassetid://132238504335731",
+		Uhoh = "rbxassetid://90106827583875"
+    },
+    Animations = {
+        FlipCoinHeads = "rbxassetid://113049523133974",
+        FlipCoinTails = "rbxassetid://113238245087870",
+        AimGun = "rbxassetid://130898730062374",
+        GunFire = "rbxassetid://98303778862384",
+        GunFail = "rbxassetid://80859169196524",
+        GunExplode = "rbxassetid://108665611403553",
+        HatFix = "rbxassetid://117170871416506"
+    },
+    Sounds = {
+        FlipCoinHeadsSFX = "rbxassetid://104239877200025",
+        FlipCoinTailsSFX = "rbxassetid://101120969540575",
+        FlipCoinSFX = "rbxassetid://76040750930413",
+        StatRerollSFX = "rbxassetid://83163547903343",
+        GunWindUpSFX = "rbxassetid://139526116364056",
+        GunFireSuccessSFX = "rbxassetid://114083139823568",
+        GunExplodeSFX = "rbxassetid://2814355346",
+        GunHitSFX = "rbxassetid://124324777507465"
+    },
+    TextInteractions = {
+        Requests = {
+            ElliotPizza = {
+                "Heyy! Can\226\128\153t a guy like me get some pizza \226\128\152round here?",
+                "Hey kid! Mind if I get a good slice of pizza?",
+                "Lady Luck\226\128\153s not on my side right now, mind if I get a slice as a good luck charm?",
+                "Some pizza should set me right back on my feet. Spare some, won\226\128\153tcha?",
+                "Your pizza\226\128\153s got something to it, kid! Hurry and throw one my way!"
+            },
+            BuildermanSentry = {
+                "Heya\226\128\153, a sentry over here could do some quick work on those nutjobs.",
+                "One sentry over here, Builder bro!",
+                "Soo.. a sentry here should be fine, don\226\128\153tcha think?",
+                "Right here\226\128\153s a good spot for a sentry!",
+                "Buildin\226\128\153 a sentry over here should be good!"
+            },
+            BuildermanDispenser = {
+                "Hey Doc\226\128\153, a dispenser over here should work wonders!",
+                "Work your dispenser over in this spot!",
+                "Dispenser over here! Quick!",
+                "I gotta use some of your dispensers here! Put \226\128\152er down!",
+                "Put your dispenser over here, Doc!"
+            },
+            DusekkarProtection = {
+                "Pumpkin fella\226\128\153, I could use some of your magic!",
+                "A little help over here with your magic?",
+                "That magical force field of yours would be nice to have, you know?",
+                "Your force field might keep me safe in case my flintlock explodes!",
+                "A force field would be useful right about now!"
+            },
+            HemmorhageAsk = {
+                "Wow, ahaha... I'm... bleeding. Could ya' help with that? Please? Pretty please?",
+                "Ah. I'm bleeding.. caaannn I ask for some help?",
+                "Bleeding! Hurts! A lot..! It sucks! Help me out here, bud...",
+                "Spare some help for a dying fella' over here? I'll repay the favor! Someday!",
+                "I really, really hate bleeding, don't you? Help out a dying person here bud..."
+            }
+        },
+        Thanks = {
+            Regular = {
+                "Heh, thanks pal!",
+                "You won\226\128\153t regret this one bit!",
+                "Glad to have received the help, pal!",
+                "Thanks! This should be useful.",
+                "Thanks! Now to get back to shootin\226\128\153.",
+                "Alright, thanks pal!"
+            }
+        }
+    }
+};
+v0.Information = {
+    {
+        Separator = "GENERAL INFO"
+    },
+    {
+        Header = "CHANCE",
+        Text = "The sounds of machines promising great rewards spiral within his ears. Gambling with his life, his potential lies inside of the result of his coin. He also wields a shoddy flintlock that feels like it could break at any moment, but it's one that he'll take to his death.\n"
+    },
+    {
+        Header = "STATS",
+        Text = "Difficulty: \240\159\142\176 \240\159\142\176 \240\159\142\176 never stop gambling\n" .. ("Health: %*-%*\n"):format(v0.HealthMin, v0.HealthMax) .. ("Regular Speed: %*\n"):format(v0.Speed or 12) .. ("Sprinting Speed: %*\n"):format(v0.SprintSpeed or 26) .. ("Max Stamina: %*\n"):format(v0.MaxStamina or 100) .. ("Stamina Loss per sec: %*\n"):format(v0.StaminaLoss or 10) .. ("Stamina Gain per sec: %*\n"):format(v0.StaminaGain or 20)
+    },
+    {
+        Separator = "PASSIVES"
+    },
+    {
+        Header = "UNPREDICTABLE FATE",
+        Quote = "\"TAKE A CHANCE WITH CHAAAANCE BABY\" - Chance",
+        Text = "Chance's Max HP stat is set to be a random value of 70-90.\n"
+    },
+    {
+        Separator = "ABILITIES"
+    },
+    {
+        Image = "rbxassetid://91225744028483",
+        Header = "COIN FLIP",
+        Quote = "\"I gambled with my LIFE\" - ???     \"did you win though\" - Chance",
+        Text = ("Cooldown: %*s\n"):format(v0.CoinFlipCooldown) .. "Chance flips a coin.\n" .. "If the coin lands on heads, gain a charge for all other abilities.\n" .. ("If the coin lands on tails, gain <b>Vulnerable</b> for %*s.\n"):format(v0.CoinFlipWeaknessDuration) .. "For every time the coin lands on tails, the level of <b>Vulnerable</b> that gets inflicted on you goes up by 1.\n" .. "<b>The Vulnerable that gets inflicted has no cap.</b>\n" .. ("Coin Flip gains +%*%% increased chance to land on heads for every consecutive tails, resetting when a heads is rolled.\n"):format(v0.CoinFlipPity)
+    },
+    {
+        Image = "rbxassetid://78498256535383",
+        Header = "ONE SHOT",
+        Quote = "\"You only have one shot.\" - Talking Cat",
+        Text = ("Cooldown: %*s\n"):format(v0.ShootCooldown) .. "Chance pulls out an unreliable flintlock, and after a windup of 1s, pulls the trigger.\n" .. "Upon the flintlock being triggered, all of the possible outcomes can occur:\n" .. "  * (25% chance) Nothing happens.\n" .. ("  * (25%% chance) The flintlock explodes, dealing %* damage to the user and generating a 6\195\1516\195\1516 hitbox around Chance that stuns the Killer for %* seconds, then disables the ability indefinitely.\n"):format(v0.ShootSelfDamage, v0.ShootExplosionStunDuration) .. ("  * (50%% chance) The flintlock fires, stunning any killer that gets shot at within %* studs for %*-%*s. The shot becomes less effective depending on how far away Chance is from the killer.\n"):format(v0.ShootHitboxRange, v0.ShootMinStunDuration, v0.ShootMaxStunDuration) .. ("For every additional charge that this ability has, the chance of a successful shot will go up by %*%% while every other outcome's chance will decrease by %*%%.\n"):format(v0.ShootSuccessChancePerCharge, v0.ShootLessFailureChancePerCharge) .. ("For every additional Chance that's ingame, the duration of the flintlock's stun is decreased by %*%%.\n"):format(v0.ShootStunDurationDebuffPerChanceAlive) .. "This ability starts off with 0 charges and has a cap of 3 charges.\n" .. "Using this ability removes all charges on every ability.\n"
+    },
+    {
+        Image = "rbxassetid://80029151869083",
+        Header = "REROLL",
+        Quote = "\"Just one more go at it and I'll be a millionaire!\" - A College Student in Debt",
+        Text = ("Cooldown: %*s\n"):format(v0.RerollCooldown) .. "Chance rerolls the value of his Max HP stat.\n" .. "Upon activation, a random number between 55 to 120 is chosen.\n" .. "For every charge this ability has, the rolled value is modified as follows:\n" .. "  * 1 charge: No bonus.\n" .. "  * 2 charges: Rolled HP is increased by 5%.\n" .. "  * 3 charges: Rolled HP is increased by 10%.\n" .. "This ability starts off with 0 charges and has a cap of 3 charges.\n" .. "Chance's Maximum HP is unable to go beyond 130 HP.\n" .. "Using this ability removes all charges on every ability.\n"
+    },
+    {
+        Image = "rbxassetid://93434599531478",
+        Header = "HAT FIX",
+        Quote = "\"This hat demonstrates good taste and exudes class.\" - Roblox",
+        Text = ("Cooldown: %*s\n"):format(v0.HatFixCooldown) .. "Upon activating this ability, all <b>Vulnerable</b> stacks that were inflicted onto you through using <b>Coin Flip</b> are removed.\n" .. "This ability can only be used after reaching 3 charges for all other abilities.\n" .. "Using this ability removes all charges on every ability & re-enables the <b>One Shot</b> ability if it's disabled.\n"
+    }
+};
+return v0;
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior]====],before="54705:72193444:2864d995",after="3856:c87e17c3:9441b782",source=[====[
+-- Newest UPD Two Time mechanics for FCT. Ability media deliberately omitted.
+local RunService=game:GetService("RunService")
+local Util=require(game.ReplicatedStorage.Modules.Util)
+local Impl=require(RunService:IsServer() and script.Server or script.Client)
+local Behavior={}
+local function ability(name,order,icon,key,extra)
+ local result={LayoutOrder=order,Icon="rbxassetid://"..icon,KeybindType=key}
+ for k,v in pairs(extra or {}) do result[k]=v end
+ result.Callback=function(actor,data)
+  if RunService:IsServer() then return Impl[name](actor) end
+  if Impl[name] then return Impl[name](actor,data) end
+ end
+ return result
+end
+Behavior.Abilities={
+ Dagger=ability("Dagger",1,"129077533212750","AltAbility1"),
+ Crouch=ability("Crouch",2,"77707049887484","AltAbility2"),
+ Pray=ability("Pray",3,"83582849559932","AltAbility3",{Cooldown=0,Sensitive=true}),
+ Ritual=ability("Ritual",4,"95580729656404","AltAbility4",{Cooldown=5,Charges=1})
+}
+Behavior.AddRig = function(_, v121, v122) --[[ Line: 612 ]] --[[ Name: AddRig ]]
+    -- upvalues: v4 (copy)
+    local v123 = v121.Config.LifeAppearances[v122];
+    if v123 then
+        if v123:IsA("Folder") then
+            v123 = v123:GetChildren()[math.random(#v123:GetChildren())];
+        end;
+        for _, v125 in pairs(v121.Rig:GetDescendants()) do
+            if (v125:IsA("BasePart") or v125:IsA("Decal")) and v125.Name ~= "Expression" and v125.Name ~= "CollisionHitbox" and v125.Name ~= "QueryHitbox" then
+                v125.Transparency = 1;
+            end;
+        end;
+        if v121.LastRig then
+            v121.LastRig:Destroy();
+            v121.LastRig = nil;
+        end;
+        local v126 = v123:Clone();
+        for _,item in v126:GetDescendants() do if item:IsA("Sound") then item:Destroy() end end
+        for _, v128 in pairs(v126:GetDescendants()) do
+            if v128:IsA("BasePart") then
+                v128.CollisionGroup = "Survivors";
+                v128.CanCollide = false;
+                v128.CanTouch = false;
+                v128.CanQuery = false;
+                v128.Massless = true;
+            end;
+        end;
+        for _, v130 in (v121.Rig:GetChildren()) do
+            if v130:IsA("BasePart") then
+                v130.RootPriority = 1;
+            end;
+        end;
+        for _, v132 in pairs(v126:GetChildren()) do
+            local l_FirstChild_1 = v121.Rig:FindFirstChild(v132.Name);
+            if l_FirstChild_1 then
+                if v132:IsA("Humanoid") then
+                    v132.EvaluateStateMachine = false;
+                end;
+                if l_FirstChild_1:IsA("BasePart") then
+                    v132.Anchored = false;
+                    v132.CanCollide = false;
+                    v132.CFrame = l_FirstChild_1.CFrame;
+                    local l_WeldConstraint_0 = Instance.new("WeldConstraint");
+                    l_WeldConstraint_0.Part1 = v132;
+                    l_WeldConstraint_0.Part0 = l_FirstChild_1;
+                    l_WeldConstraint_0.Parent = v132;
+                end;
+            end;
+        end;
+        v126.Parent = v121.Rig;
+        v121.LastRig = v126;
+        v121.Config.Expressions = v121.Config.ExpressionsTable[v122] or v121.Config.Expressions;
+        v121:ChangeExpression("Hurt", 1);
+        Util:FixCharacter(v121.Rig);
+    end;
+end;
+
+function Behavior.Created(_,actor) Impl.Created(actor) end
+function Behavior.Destroyed(_,actor) Impl.Destroyed(actor) end
+function Behavior.OnHit(_,actor,hitbox,damage,lms)
+ if RunService:IsServer() then return Impl.OnHit(actor,hitbox,damage,lms) end
+end
+function Behavior.LastManStanding(_,actor)
+ if RunService:IsServer() and actor.Config.TwoTimeRoundHooks then return Impl.OnHit(actor,nil,0,true) end
+end
+function Behavior.OnHelpless(_,actor)
+ if RunService:IsServer() then Impl.Interrupt(actor) end
+end
+Behavior.OnStunned=Behavior.OnHelpless
+return Behavior
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,after="10077:dada0ab6:c0faa1f7",source=[====[
+-- Public image-based presentation only; gameplay never waits on an AnimationTrack.
+local RunService=game:GetService("RunService")
+local Players=game:GetService("Players")
+local UserInputService=game:GetService("UserInputService")
+local TweenService=game:GetService("TweenService")
+local Debris=game:GetService("Debris")
+local Modules=game.ReplicatedStorage.Modules
+local Network=require(Modules.Network)
+local Util=require(Modules.Util)
+local Client={}
+local function connect(a,signal,callback)
+ table.insert(a.TTClientConnections,signal:Connect(callback))
+end
+local function owner(a) return a.Player==Players.LocalPlayer end
+local function blood(a,value)
+ local display=a.HealthbarDisplay
+ if not display then return end
+ local fraction=math.clamp(value/a.Config.BloodRequiredForRespawn,0,1)
+ display.Bar.Inner.Size=UDim2.fromScale(1,fraction)
+ display.Display.Visible=fraction<1
+ display.Full.Visible=fraction>=1
+ display.Position=UDim2.fromScale(1,.5)
+ display.Size=UDim2.fromScale(1,.532)
+end
+local function sprite(a,image,module)
+ if not image or not module then return end
+ local frames=require(module)
+ task.spawn(function()
+  while not a.TTClientDestroyed and image.Parent do
+   if image.Visible then
+    for _,frame in frames do
+     if a.TTClientDestroyed or not image.Parent then return end
+     image.ImageRectOffset=Vector2.new(frame[1],frame[2]);image.ImageRectSize=Vector2.new(frame[3],frame[4])
+     task.wait(.03125)
+    end
+   else task.wait(.1) end
+  end
+ end)
+end
+local function stopPray(a,notify)
+ a.TTClientPraying=nil
+ if a.TTClientJump~=nil then
+  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTClientJump);a.TTClientJump=nil
+ end
+ if a.HeldAbilities then a.HeldAbilities.Pray=nil end
+ Network:FireConnection("DisableSprinting","TwoTimePray",false)
+ if notify then Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",false) end
+end
+local function locate(a,position)
+ if a.TTMarker then a.TTMarker:Destroy() end
+ local marker=Instance.new("Part");marker.Name="TwoTimeRitualMarker";marker.Anchored=true;marker.CanCollide=false;marker.CanTouch=false;marker.CanQuery=false;marker.Transparency=1;marker.Position=position+Vector3.new(0,3,0);marker.Parent=workspace
+ local gui=Instance.new("BillboardGui");gui.Size=UDim2.fromOffset(64,64);gui.AlwaysOnTop=true;gui.Parent=marker
+ local image=Instance.new("ImageLabel");image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayHighlightImage;image.Parent=gui
+ a.TTMarker=marker;Debris:AddItem(marker,a.Config.PrayHighlightDuration)
+end
+function Client.Pray(a,result)
+ if type(result)~="table" then return end
+ if result.Locate then locate(a,result.Locate);return end
+ if not result.Started then return end
+ a.TTClientPraying=true
+ a.TTClientJump=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
+ a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+ Network:FireConnection("DisableSprinting","TwoTimePray",true)
+ if not (a.HeldAbilities and a.HeldAbilities.Pray) then stopPray(a,true) end
+end
+function Client.Dagger(a,result)
+ if type(result)~="table" or result.Cancelled then return end
+ a.TTClientAttackUntil=os.clock()+1
+ Network:FireConnection("DisableSprinting","TwoTimeStab",true)
+end
+function Client.Ritual(a,result)
+ if type(result)~="table" or not result.Started then return end
+ a.TTClientRitualUntil=os.clock()+result.Duration
+ Network:FireConnection("DisableSprinting","TwoTimeRitual",true)
+end
+local function createIndicator(a)
+ local start=Instance.new("Attachment");start.Parent=workspace.Terrain
+ local finish=Instance.new("Attachment");finish.Parent=workspace.Terrain
+ local beam=Instance.new("Beam");beam.Attachment0=start;beam.Attachment1=finish;beam.Width0=.12;beam.Width1=.04;beam.FaceCamera=true;beam.Color=ColorSequence.new(Color3.fromRGB(160,160,170));beam.Transparency=NumberSequence.new(.35);beam.Enabled=false;beam.Parent=start
+ a.TTIndicator={start,finish,beam}
+end
+function Client.Created(a)
+ a.TTClientConnections={}
+ local rig=a.Rig
+ if not rig or not rig.PrimaryPart then return end
+ if not owner(a) then
+  local highlight=Instance.new("Highlight");highlight.Name="TwoTimeCrouchTeammateReveal";highlight.FillColor=Color3.fromRGB(130,131,137);highlight.OutlineColor=highlight.FillColor;highlight.FillTransparency=1;highlight.OutlineTransparency=1;highlight.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop;highlight.Parent=rig
+  a.TTHighlight=highlight
+  local previous=false
+  connect(a,RunService.Heartbeat,function()
+   local character=Players.LocalPlayer.Character
+   local isSurvivor=character and character.Parent and character.Parent.Name=="Survivors"
+   local visible=isSurvivor and character.PrimaryPart and rig.Parent and rig.PrimaryPart and rig:GetAttribute("Crouching")==true and (character.PrimaryPart.Position-rig.PrimaryPart.Position).Magnitude<=a.Config.CrouchTeammateRevealDistance
+   visible=not not visible
+   if visible~=previous then
+    previous=visible
+    if a.TTHighlightTween then a.TTHighlightTween:Cancel() end
+    a.TTHighlightTween=TweenService:Create(highlight,TweenInfo.new(a.Config.CrouchTeammateRevealFadeTime),{FillTransparency=visible and .75 or 1,OutlineTransparency=visible and .4 or 1});a.TTHighlightTween:Play()
+   end
+  end)
+  return
+ end
+ local Sprinting=require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
+ a.TTOriginalSprintSpeed=Sprinting.SprintSpeed or a.Config.SprintSpeed
+ local template=a.Config.HealthBar
+ local display=template:Clone();display.Parent=a.Player.PlayerGui:WaitForChild("MainUI")
+ a.HealthbarDisplay=display;blood(a,rig:GetAttribute("TwoTimeOblation") or 0)
+ sprite(a,display.Display,display.Display:FindFirstChild("Idle"))
+ sprite(a,display.Full,display.Full:FindFirstChild("Full"))
+ for _,name in {"Vines","Wings"} do
+  local image=display.Full:FindFirstChild(name)
+  if image then sprite(a,image,image:FindFirstChild("Sprite")) end
+ end
+ createIndicator(a)
+ Network:SetConnection("TwoTimePortState","REMOTE_EVENT",function(kind,data)
+  if kind=="Blood" then blood(a,data)
+  elseif kind=="Pray" and not data then stopPray(a,false)
+  elseif kind=="Revive" then
+   stopPray(a,true)
+   if a.HealthbarDisplay then a.HealthbarDisplay:Destroy();a.HealthbarDisplay=nil end
+   Sprinting.Stamina=math.clamp(Sprinting.Stamina+40,0,Sprinting.MaxStamina or 100)
+  end
+ end)
+ connect(a,UserInputService.WindowFocusReleased,function() stopPray(a,true) end)
+ connect(a,UserInputService.InputEnded,function(input)
+  if a.TTClientPraying and input.UserInputType==Enum.UserInputType.MouseButton1 then stopPray(a,true) end
+ end)
+ local pulse=0;local lastCrouch=false
+ connect(a,RunService.Heartbeat,function(dt)
+  if not rig.Parent or not rig.PrimaryPart then return end
+  local crouched=rig:GetAttribute("Crouching")==true
+  if crouched~=lastCrouch then
+   lastCrouch=crouched
+   Sprinting.SprintSpeed=crouched and a.Config.CrouchRunSpeed or a.TTOriginalSprintSpeed
+   if Sprinting.IsSprinting then Sprinting:Toggle(true) end
+  end
+  local folder=rig:FindFirstChild("SpeedMultipliers")
+  if folder then
+   local multiplier=folder:FindFirstChild("TwoTimeCrouching")
+   if crouched then
+    if not multiplier then multiplier=Util:CreateSpeedMultiplier(rig,1,"TwoTimeCrouching") end
+    -- Sprinting uses SprintSpeed/BaseSpeed. Walking and running need different base ratios.
+    multiplier.Value=Sprinting.IsSprinting and 1 or a.Config.CrouchSpeed/a.Config.Speed
+    local bonus=folder:FindFirstChild("CrouchBonusTT") or Util:CreateSpeedMultiplier(rig,1,"CrouchBonusTT")
+    bonus.Value=rig:GetAttribute("TwoTimeCrouchBonus") or 1
+   else
+    if multiplier then multiplier:Destroy() end
+    local bonus=folder:FindFirstChild("CrouchBonusTT");if bonus then bonus:Destroy() end
+   end
+  end
+  if a.TTClientAttackUntil and os.clock()>=a.TTClientAttackUntil then a.TTClientAttackUntil=nil;Network:FireConnection("DisableSprinting","TwoTimeStab",false) end
+  if a.TTClientRitualUntil and os.clock()>=a.TTClientRitualUntil then a.TTClientRitualUntil=nil;Network:FireConnection("DisableSprinting","TwoTimeRitual",false) end
+  if a.TTClientPraying then
+   pulse+=dt
+   if not (a.HeldAbilities and a.HeldAbilities.Pray) then stopPray(a,true)
+   elseif pulse>=.2 then pulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",true) end
+  end
+  local indicator=a.TTIndicator
+  if indicator then
+   indicator[3].Enabled=crouched
+   if crouched then
+    local root=rig.PrimaryPart
+    local origin=root.Position-Vector3.new(0,rig.Humanoid.HipHeight+root.Size.Y/2-.1,0)
+    local distance=(a.Config.DaggerLungeForce+a.Config.DaggerLungeForce/3)/2*a.Config.DaggerCrouchMoverEndlag
+    local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={rig}
+    local hit=workspace:Raycast(origin,root.CFrame.LookVector*distance,params)
+    indicator[1].WorldPosition=origin;indicator[2].WorldPosition=hit and hit.Position or origin+root.CFrame.LookVector*distance
+   end
+  end
+ end)
+end
+function Client.Destroyed(a)
+ a.TTClientDestroyed=true
+ for _,connection in a.TTClientConnections or {} do connection:Disconnect() end
+ if a.TTHighlight then a.TTHighlight:Destroy() end
+ if a.TTHighlightTween then a.TTHighlightTween:Cancel() end
+ if not owner(a) then return end
+ stopPray(a,true)
+ Network:RemoveConnection("TwoTimePortState","REMOTE_EVENT")
+ for _,name in {"TwoTimeStab","TwoTimeRitual"} do Network:FireConnection("DisableSprinting",name,false) end
+ if a.HealthbarDisplay then a.HealthbarDisplay:Destroy();a.HealthbarDisplay=nil end
+ if a.TTMarker then a.TTMarker:Destroy() end
+ if a.TTIndicator then for _,object in a.TTIndicator do object:Destroy() end end
+ local Sprinting=require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
+ if a.TTOriginalSprintSpeed then Sprinting.SprintSpeed=a.TTOriginalSprintSpeed end
+ local folder=a.Rig and a.Rig:FindFirstChild("SpeedMultipliers")
+ if folder then for _,name in {"TwoTimeCrouching","CrouchBonusTT"} do local v=folder:FindFirstChild(name);if v then v:Destroy() end end end
+end
+return Client
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Rules]====],before=false,after="2012:c07084eb:39174afa",source=[====[
+-- Pure kit math, shared by server, indicator, and regression tests.
+local Rules = {}
+function Rules.Oblation(config, backstab, crouched)
+ return (backstab and config.BloodFromBack or config.BloodFromFront) * (crouched and config.CrouchOblationMultiplier or 1)
+end
+function Rules.Stun(config, crouched, elapsed)
+ if not crouched then return 2 end
+ return config.DaggerCrouchMinStunTime + (config.DaggerBackstabStatusTime-config.DaggerCrouchMinStunTime)*math.clamp(elapsed/config.DaggerCrouchStunChargeTime,0,1)
+end
+function Rules.CrouchCooldown(config, elapsed)
+ return math.clamp(config.CrouchCooldown-elapsed,config.CrouchMinCooldown,config.CrouchCooldown)
+end
+function Rules.MissDuration(config, distance)
+ return math.clamp(distance/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
+end
+function Rules.Pray(config, blood, missingHealth, elapsed)
+ local requirement=config.BloodRequiredForRespawn
+ local spent=math.min(math.max(blood,0),requirement*elapsed/config.PrayFullConversionTime,math.max(missingHealth,0)*requirement/config.PrayHealthPerFullOblation)
+ return spent,spent/requirement*config.PrayHealthPerFullOblation
+end
+function Rules.LMS(config,blood)
+ local fraction=math.clamp(blood/config.BloodRequiredForRespawn,0,1)
+ return config.Health+(config.LastSurvivorMaxHealth-config.Health)*fraction,config.LastSurvivorHealthBonus*fraction,6*fraction
+end
+function Rules.Backstab(attackerPosition, attackerLook, victimPosition, victimLook, config)
+ local offset=victimPosition-attackerPosition
+ offset=Vector3.new(offset.X,0,offset.Z)
+ local facing=Vector3.new(victimLook.X,0,victimLook.Z)
+ local aim=Vector3.new(attackerLook.X,0,attackerLook.Z)
+ if offset.Magnitude<.001 or facing.Magnitude<.001 or aim.Magnitude<.001 then return false end
+ return offset.Unit:Dot(facing.Unit)>math.cos(math.rad(config.DaggerBackstabThreshold)) and aim.Unit:Dot(facing.Unit)>math.cos(math.rad(config.DaggerLookDirectionAngle))
+end
+return Rules
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,after="19452:b6a039bb:e64a3db6",source=[====[
+-- FCT APIs and FCT visual templates; newest UPD balance. No animation or sound calls.
+local RunService=game:GetService("RunService")
+local Players=game:GetService("Players")
+local Debris=game:GetService("Debris")
+local TweenService=game:GetService("TweenService")
+local Modules=game.ReplicatedStorage.Modules
+local Util=require(Modules.Util)
+local Statuses=require(Modules.Statuses)
+local Hitboxes=require(Modules.Hitboxes)
+local Network=require(Modules.Network)
+local Rules=require(script.Parent.Rules)
+local Server={}
+local function alive(a)
+ return not a.TTDestroyed and a.Rig and a.Rig.Parent and a.Rig.PrimaryPart and a.Rig:FindFirstChildOfClass("Humanoid") and a.Rig.Humanoid.Health>0
+end
+local function send(a,kind,data)
+ if a.Player and a.Player.Parent then Network:FireClientConnection(a.Player,"TwoTimePortState","REMOTE_EVENT",kind,data) end
+end
+local function lock(a,key,on)
+ a.AbilityDisablers=a.AbilityDisablers or {}
+ a.AbilityDisablers["TwoTimePort"..key]=on or nil
+end
+local function blocked(a)
+ local rig=a.Rig
+ return rig:GetAttribute("Stunned") or rig:GetAttribute("Helpless") or rig:GetAttribute("Ragdolling") or rig:GetAttribute("AbilitiesDisabled") or rig.PrimaryPart.Anchored
+end
+local function removeSpeed(a,key)
+ local folder=a.Rig and a.Rig:FindFirstChild("SpeedMultipliers")
+ local value=folder and folder:FindFirstChild(key)
+ if value then value:Destroy() end
+end
+local function knife(a,on)
+ for part,transparency in pairs(a.DaggerParts or {}) do
+  if part.Parent then part.Transparency=on and transparency or 1 end
+ end
+ -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
+end
+local function nearest(a)
+ local best,distance=nil,math.huge
+ local players=workspace:FindFirstChild("Players")
+ local killers=players and players:FindFirstChild("Killers")
+ if killers then for _,rig in killers:GetChildren() do
+  local humanoid=rig:FindFirstChildOfClass("Humanoid")
+  if rig~=a.Rig and rig.PrimaryPart and humanoid and humanoid.Health>0 and not rig:GetAttribute("TwoTimeIgnoreTarget") then
+   local range=(rig.PrimaryPart.Position-a.Rig.PrimaryPart.Position).Magnitude
+   if range<distance then best,distance=rig,range end
+  end
+ end end
+ return best,distance
+end
+local function updateBlood(a,value)
+ a.Blood=math.clamp(value,0,a.Config.BloodRequiredForRespawn)
+ a.Rig:SetAttribute("TwoTimeOblation",a.Blood)
+ send(a,"Blood",a.Blood)
+ local floor=a.RespawnLocation and a.RespawnLocation:FindFirstChild("EnabledFloor")
+ if floor then
+  local light=floor:FindFirstChild("Transparent")
+  if light and light:IsA("Light") then light.Brightness=2+8*a.Blood/a.Config.BloodRequiredForRespawn end
+  local shader=floor:FindFirstChild("FullShader")
+  if shader and shader:IsA("ParticleEmitter") then shader.Enabled=a.Blood>=a.Config.BloodRequiredForRespawn end
+ end
+end
+function Server.StopPray(a,interrupted)
+ if not a.TTPraying then return end
+ a.TTPraying=nil
+ a.Rig:SetAttribute("TwoTimePraying",nil)
+ lock(a,"Pray",false);removeSpeed(a,"TwoTimePray")
+ if a.TTJump then a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTJump.Enabled);a.TTJump=nil end
+ if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown) end
+ send(a,"Pray",false)
+end
+function Server.StopCrouch(a,manual)
+ if not a.TTCrouchStart then return end
+ local elapsed=os.clock()-a.TTCrouchStart
+ a.TTCrouchStart=nil;a.TTRamp=0
+ a.Rig:SetAttribute("Crouching",nil)
+ a.Rig:SetAttribute("FootstepsMuted",a.TTPreviousFootstepsMuted)
+ a.TTPreviousFootstepsMuted=nil
+ a.Rig:SetAttribute("TwoTimeCrouchBonus",nil)
+ a:SetCooldownOf("Crouch",Rules.CrouchCooldown(a.Config,elapsed))
+ Statuses:RemoveStatus(a.Player,"Invisibility");Statuses:RemoveStatus(a.Player,"Undetectable")
+ removeSpeed(a,"TwoTimeCrouching");removeSpeed(a,"CrouchBonusTT")
+ knife(a,false)
+ if manual and alive(a) then
+  local _,distance=nearest(a)
+  if distance<=30 then Statuses:ApplyStatus(a.Player,"Speed",{Level=2,Duration=a.Config.CrouchSpeedCloseTime}) end
+ end
+end
+local function cancelAttack(a)
+ a.TTAttackToken=(a.TTAttackToken or 0)+1
+ if a.TTHitbox then a.TTHitbox:Cancel();a.TTHitbox=nil end
+ if a.TTVelocity then a.TTVelocity:Destroy();a.TTVelocity=nil end
+ lock(a,"Dagger",false);removeSpeed(a,"TwoTimeStab");knife(a,false)
+end
+function Server.Dagger(a)
+ if not alive(a) or blocked(a) or a.TTPraying or a.TTRitualCasting or a.TTAttacking then return {Cancelled=true} end
+ a.TTAttacking=true
+ local crouched=a.TTCrouchStart~=nil
+ local charge=crouched and os.clock()-a.TTCrouchStart or 0
+ Server.StopCrouch(a,false)
+ cancelAttack(a)
+ local token=a.TTAttackToken
+ lock(a,"Dagger",true);knife(a,true)
+ Util:CreateSpeedMultiplier(a.Rig,.1,"TwoTimeStab")
+ local hit=false
+ local function current() return alive(a) and a.TTAttackToken==token and not blocked(a) end
+ task.delay(a.Config.DaggerWindup,function()
+  if not current() then cancelAttack(a);a.TTAttacking=nil;return end
+  local duration=crouched and a.Config.DaggerCrouchHitTime or a.Config.DaggerHitTime
+  local velocity=Util:ApplyVelocity(a.Rig.PrimaryPart,crouched and a.Config.DaggerLungeForce or a.Config.DaggerUncrouchedLungeForce)
+  a.TTVelocity=velocity
+  TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
+  Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
+  a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
+   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
+   Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
+   Connections={Hit=function(victim)
+    if hit or not current() then return end
+    local root=victim.PrimaryPart;local humanoid=victim:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid or humanoid.Health<=0 or victim:GetAttribute("Invincible") then return end
+    hit=true
+    -- Raw root transforms, never actor:GetPivot() prediction/extrapolation.
+    local ours=a.Rig.PrimaryPart
+    local back=Rules.Backstab(ours.Position,ours.CFrame.LookVector,root.Position,root.CFrame.LookVector,a.Config)
+    local immune=victim:GetAttribute("StunnedDisabled") or victim:GetAttribute("Stunned") or Statuses:PlayerHasStatus(victim,"Stunned")
+    local targetActor=require(Modules.Actors).CurrentActors[Players:GetPlayerFromCharacter(victim)] or require(Modules.Actors).CurrentActors[victim]
+    local exclusions=targetActor and targetActor.Config and targetActor.Config.StatusData and targetActor.Config.StatusData.ExcludeApplying
+    immune=immune or exclusions and table.find(exclusions,"Stunned")
+    Util:ApplyDamage(victim,back and a.Config.DaggerBackstabDamage or a.Config.DaggerDamage,nil,a.Rig)
+    if not immune then
+     if back then Statuses:ApplyStatus(victim,"Stunned",{Duration=Rules.Stun(a.Config,crouched,charge)})
+     else
+      Statuses:ApplyStatus(victim,"Slowness",{Level=2,Duration=a.Config.DaggerStatusTime})
+      Statuses:ApplyStatus(victim,"Helpless",{Level=1,Duration=a.Config.DaggerStatusTime,TimeStackable=false})
+     end
+     local team=tostring(victim.Parent)
+     local summon=victim:HasTag("SurvivorConstruct") or victim:HasTag("KillerConstruct") or victim:GetAttribute("IsMinion") or victim:GetAttribute("Summon")
+     if not summon and (team=="Killers" or team=="Survivors") and a.LivesUsed==1 then updateBlood(a,a.Blood+Rules.Oblation(a.Config,back,crouched)) end
+    end
+    if a.TTVelocity then a.TTVelocity:Destroy();a.TTVelocity=nil end
+   end}
+  })
+  task.delay(duration,function()
+   if a.TTAttackToken~=token then return end
+   a.TTHitbox=nil
+   if crouched and not hit and alive(a) then
+    local _,distance=nearest(a)
+    Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=Rules.MissDuration(a.Config,distance)})
+   end
+  end)
+ end)
+ Statuses:ApplyStatus(a.Player,"Resistance",{Level=a.Config.DaggerResLevel,Duration=a.Config.DaggerResDuration})
+ local total=a.Config.DaggerWindup+(crouched and a.Config.DaggerCrouchHitTime+a.Config.DaggerCrouchEndlag+a.Config.DaggerCrouchEndlagTweenTime or  .7)
+ task.delay(total,function()
+  if a.TTAttackToken==token then cancelAttack(a);a.TTAttacking=nil end
+ end)
+ return {Crouched=crouched,Duration=total}
+end
+function Server.Crouch(a)
+ if not alive(a) or blocked(a) or a.TTPraying or a.TTRitualCasting or a.TTAttacking then return {Cancelled=true} end
+ if a.TTCrouchStart then Server.StopCrouch(a,true);return end
+ a.TTCrouchStart=os.clock();a.TTRamp=0
+ a.TTPreviousFootstepsMuted=a.Rig:GetAttribute("FootstepsMuted")
+ a.Rig:SetAttribute("FootstepsMuted",true)
+ a.Rig:SetAttribute("Crouching",true)
+ a:SetCooldownOf("Crouch",1)
+ knife(a,true)
+ Statuses:ApplyStatus(a.Player,"Invisibility",{Level=a.Config.CrouchInvisibilityLevel,Duration=a.Config.CrouchDuration})
+ Statuses:ApplyStatus(a.Player,"Undetectable",{Level=a.Config.CrouchUndetectableLevel,Duration=a.Config.CrouchDuration})
+ return {Started=true}
+end
+function Server.Pray(a)
+ if not alive(a) or blocked(a) or a.TTAttacking or a.TTRitualCasting then return {Cancelled=true} end
+ if a.TTPraying then Server.StopPray(a,false);return end
+ local ritual=a.RespawnLocation
+ if not ritual or not ritual.Parent or a.LivesUsed~=1 then return {Cancelled=true} end
+ if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position} end
+ if a.Blood<=0 or a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then return {Cancelled=true} end
+ Server.StopCrouch(a,false)
+ a.TTPraying=true;a.TTPrayStart=os.clock();a.TTPrayLease=os.clock()
+ a.TTPrayDamage=0
+ a.Rig:SetAttribute("TwoTimePraying",true)
+ lock(a,"Pray",true)
+ Util:CreateSpeedMultiplier(a.Rig,0,"TwoTimePray")
+ a.TTJump={Enabled=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)}
+ a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+ return {Started=true}
+end
+local function effect(a,name,parent)
+ local template=a.Config.VFX and a.Config.VFX:FindFirstChild(name)
+ if not template then return end
+ local clone=template:Clone();clone.Parent=parent
+ for _,object in clone:GetDescendants() do
+  if object:IsA("Sound") then object:Destroy()
+  elseif object:IsA("ParticleEmitter") then object:Emit(object:GetAttribute("EmitCount") or 8) end
+ end
+ Debris:AddItem(clone,3)
+end
+function Server.Ritual(a)
+ local function invalid()
+  a:IncrementCharges("Ritual",1,1)
+  return {Cancelled=true}
+ end
+ if not alive(a) or blocked(a) or a.TTAttacking or a.TTPraying or a.TTRitualCasting or a.RespawnLocation or a.LivesUsed~=1 then return invalid() end
+ local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+ local players=workspace:FindFirstChild("Players")
+ params.FilterDescendantsInstances=players and {players} or {a.Rig}
+ local root=a.Rig.PrimaryPart
+ local forward=workspace:Raycast(root.Position,root.CFrame.LookVector*2.648,params)
+ local distance=forward and math.max(0,forward.Distance-1) or 2.648
+ local ground=workspace:Raycast(root.Position+root.CFrame.LookVector*distance,Vector3.new(0,-12,0),params)
+ if not ground or ground.Normal.Y<.65 then return invalid() end
+ local ingame=workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Ingame") or workspace
+ for _,part in ingame:GetDescendants() do
+  if part:IsA("BasePart") and (part.Name:find("RespawnLocation") or part.Name:find("Builderman")) and (part.Position-ground.Position).Magnitude<a.Config.RespawnLocationDistance then return invalid() end
+ end
+ a.TTRitualCasting=true;a.TTRitualToken=(a.TTRitualToken or 0)+1
+ local token=a.TTRitualToken
+ lock(a,"Ritual",true);Server.StopCrouch(a,false);knife(a,true)
+ Util:CreateSpeedMultiplier(a.Rig,0,"TwoTimeRitual")
+ local startPosition=root.Position
+ task.delay(1.5,function()
+  if not alive(a) or not a.TTRitualCasting or a.TTRitualToken~=token or blocked(a) or (root.Position-startPosition).Magnitude>4 then return end
+  local spawn=a.Config.RespawnLocation:Clone()
+  spawn.Name=a.Player.Name.."RespawnLocation";spawn.Anchored=true;spawn.CanCollide=false
+  spawn.CFrame=CFrame.lookAt(ground.Position-Vector3.new(0,.1,0),ground.Position-Vector3.new(0,.1,0)+root.CFrame.LookVector*Vector3.new(1,0,1))
+  for _,item in spawn:GetDescendants() do if item:IsA("Sound") then item:Destroy() end end
+  spawn.Parent=ingame;a.RespawnLocation=spawn
+  effect(a,"Ritual",spawn)
+  local floor=a.Config.VFX and a.Config.VFX:FindFirstChild("EnabledFloor")
+  if floor then local clone=floor:Clone();clone.Parent=spawn;for _,v in clone:GetDescendants() do if v:IsA("Sound") then v:Destroy() end end end
+  updateBlood(a,a.Blood)
+ end)
+ task.delay(3.5,function()
+  if a.TTDestroyed or a.TTRitualToken~=token then return end
+  a.TTRitualCasting=nil;lock(a,"Ritual",false);removeSpeed(a,"TwoTimeRitual");knife(a,false)
+  if not a.RespawnLocation then a:IncrementCharges("Ritual",1,1);a:SetCooldownOf("Ritual",0) end
+ end)
+ return {Started=true,Duration=3.5}
+end
+function Server.Interrupt(a)
+ Server.StopCrouch(a,false);Server.StopPray(a,true)
+ if a.TTAttacking then cancelAttack(a);a.TTAttacking=nil end
+ if a.TTRitualCasting then
+  a.TTRitualToken=(a.TTRitualToken or 0)+1
+  a.TTRitualCasting=nil;lock(a,"Ritual",false);removeSpeed(a,"TwoTimeRitual");knife(a,false)
+  if not a.RespawnLocation then a:IncrementCharges("Ritual",1,1);a:SetCooldownOf("Ritual",0) end
+ end
+end
+function Server.OnHit(a,hitbox,damage,lms)
+ if not alive(a) then return end
+ damage=math.max(0,tonumber(damage) or 0)
+ if a.TTPraying then
+  a.TTPrayDamage=(a.TTPrayDamage or 0)+damage
+  if a.TTPrayDamage>=a.Config.PrayInterruptDamage then Server.StopPray(a,true) end
+ end
+ if damage>0 then a.TTRamp=0;a.TTRampResetUntil=os.clock()+.15;a.Rig:SetAttribute("TwoTimeCrouchBonus",1) end
+ if a.LivesUsed~=1 or a.TTReviving then return end
+ if not lms and (damage<a.Rig.Humanoid.Health or a.Blood<a.Config.BloodRequiredForRespawn or not a.RespawnLocation or not a.RespawnLocation.Parent) then return end
+ a.TTReviving=true
+ if hitbox then hitbox.TimePast=9999 end -- FCT Util/Hitboxes cancel the lethal hit before applying it.
+ cancelAttack(a);a.TTAttacking=nil;Server.StopPray(a,false);Server.StopCrouch(a,false)
+ a.TTRitualCasting=nil;a.TTRitualToken=(a.TTRitualToken or 0)+1
+ lock(a,"Ritual",false);removeSpeed(a,"TwoTimeRitual")
+ local blood=a.Blood
+ a.LivesUsed=2;a.Rig:SetAttribute("IsSecondLife",true)
+ Statuses:RemoveStatuses(a.Player,true)
+ local h=a.Rig.Humanoid
+ if lms then
+  local maxHealth,healing=Rules.LMS(a.Config,blood)
+  h.MaxHealth=maxHealth;h.Health=math.min(maxHealth,h.Health+healing)
+ else h.MaxHealth=a.Config.Health/a.Config.NextLifeHealthDivisor;h.Health=h.MaxHealth end
+ Util:GiveInvincible(a.Rig,"TTRevive",a.Config.InvincibilityDuration)
+ -- AddRig uses FCT's already-owned appearance templates and public expression decals.
+ a.Behavior:AddRig(a,2)
+ knife(a,false)
+ local ritual=a.RespawnLocation
+ if not lms and ritual and ritual.Parent then
+  local height=(Util:GetDistanceFromGround(a.Rig) or 3)
+  a:PivotTo(ritual.CFrame+Vector3.new(0,height,0))
+  effect(a,"Respawned",ritual)
+ else effect(a,"Respawned",a.Rig.PrimaryPart) end
+ if ritual then Debris:AddItem(ritual,2);a.RespawnLocation=nil end
+ local ritualAbility=a.Behavior.Abilities.Ritual
+ if ritualAbility then a:IncrementCharges("Ritual",0,0) end
+ updateBlood(a,0);send(a,"Revive",true)
+ local _,_,speedTime=Rules.LMS(a.Config,blood)
+ if not lms or speedTime>0 then Statuses:ApplyStatus(a.Player,"Speed",{Level=2,Duration=lms and speedTime or 6,Instant=true}) end
+ if not lms then Statuses:ApplyStatus(a.Player,"Vulnerable",{Level=5,Duration=12,BypassInvincibility=true}) end
+ -- Explicit opt-in for a round-based host; continuous combat has no timer or automatic LMS.
+ if a.Config.TwoTimeRoundHooks then
+  a.TimeAddMultiplier=25/40
+  local round=game.ServerScriptService:FindFirstChild("RoundManager",true)
+  if round and not lms then require(round):AddTime(nil,15/40) end
+ end
+ a.TTReviving=nil
+ return "Ignored"
+end
+function Server.Created(a)
+ a.TTConnections={};a.LivesUsed=1;a.Blood=0;a.TTAttackToken=0
+ a.Behavior:AddRig(a,1)
+ local dagger=a.Config.DaggerTemplate:Clone()
+ for _,item in dagger:GetDescendants() do if item:IsA("Sound") then item:Destroy() end end
+ local motor=dagger:FindFirstChildOfClass("Motor6D")
+ if motor then motor.Part0=a.Rig.PrimaryPart;dagger.Parent=a.Rig else dagger:Destroy() end
+ a.DaggerParts={}
+ if dagger.Parent then for _,part in dagger:GetDescendants() do
+  if part:IsA("BasePart") or part:IsA("Decal") then a.DaggerParts[part]=part.Transparency;part.Transparency=1 end
+  if part:IsA("BasePart") then part.CanCollide=false;part.CanTouch=false;part.Massless=true end
+ end end
+ local remote="TwoTimePortHold_"..a.Player.UserId
+ Network:SetConnection(remote,"REMOTE_EVENT",function(player,holding)
+  if player~=a.Player or not a.TTPraying then return end
+  if holding==true then a.TTPrayLease=os.clock() else Server.StopPray(a,false) end
+ end)
+ a.TTHoldRemote=remote
+ table.insert(a.TTConnections,a.Rig.Humanoid.HealthChanged:Connect(function(health)
+  if a.TTLastHP and health<a.TTLastHP then a.TTRamp=0;a.TTRampResetUntil=os.clock()+.15 end
+  a.TTLastHP=health
+ end))
+ table.insert(a.TTConnections,RunService.Heartbeat:Connect(function(dt)
+  if not alive(a) then Server.Destroyed(a);return end
+  if blocked(a) then
+   Server.Interrupt(a)
+  end
+  if a.TTCrouchStart then
+   local elapsed=os.clock()-a.TTCrouchStart
+   if elapsed>=a.Config.CrouchDuration then Server.StopCrouch(a,false)
+   else
+    local target,distance=nearest(a);local h=a.Rig.Humanoid;local root=a.Rig.PrimaryPart
+    local direction=target and target.PrimaryPart.Position-root.Position
+    local motion=root.AssemblyLinearVelocity*Vector3.new(1,0,1)
+    local running=motion.Magnitude>a.Config.CrouchSpeed+1
+    if running and direction and direction.Magnitude>.001 and distance<=a.Config.CrouchSpeedBoostDistance and motion.Unit:Dot(direction.Unit)>a.Config.CrouchSpeedBoostDot and os.clock()>=(a.TTRampResetUntil or 0) then a.TTRamp=math.min(a.Config.CrouchSpeedBoostTime,a.TTRamp+dt) else a.TTRamp=0 end
+    a.Rig:SetAttribute("TwoTimeCrouchBonus",1+(a.Config.CrouchSpeedBoostMax-1)*a.TTRamp/a.Config.CrouchSpeedBoostTime)
+   end
+  end
+  if a.TTPraying then
+   local ritual=a.RespawnLocation
+   if os.clock()-a.TTPrayLease>1.25 or os.clock()-a.TTPrayStart>30 or not ritual or not ritual.Parent or (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then Server.StopPray(a,false)
+   else
+    local h=a.Rig.Humanoid
+    local spent,healed=Rules.Pray(a.Config,a.Blood,h.MaxHealth-h.Health,math.min(dt,.25))
+    if spent>0 then updateBlood(a,a.Blood-spent);h.Health=math.min(h.MaxHealth,h.Health+healed) end
+    if a.Blood<=.00001 or h.Health>=h.MaxHealth then Server.StopPray(a,false) end
+   end
+  end
+ end))
+ if a.Config.TwoTimeRoundHooks then
+  local survivors=workspace.Players.Survivors
+  table.insert(a.TTConnections,survivors.ChildRemoved:Connect(function()
+   if alive(a) and #survivors:GetChildren()==1 then Server.OnHit(a,nil,0,true) end
+  end))
+ end
+ updateBlood(a,0)
+end
+function Server.Destroyed(a)
+ if a.TTDestroyed then return end
+ Server.StopPray(a,false);Server.StopCrouch(a,false);cancelAttack(a)
+ a.TTDestroyed=true
+ lock(a,"Ritual",false);removeSpeed(a,"TwoTimeRitual")
+ for _,connection in a.TTConnections or {} do connection:Disconnect() end
+ if a.TTHoldRemote then Network:RemoveConnection(a.TTHoldRemote,"REMOTE_EVENT") end
+ if a.RespawnLocation then a.RespawnLocation:Destroy();a.RespawnLocation=nil end
+end
+return Server
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",after="14133:ea0af3d6:5f27dea5",source=[====[
+
+local t1 = {
+	DisplayName = "Two Time",
+	Quote = "\"Shadows die twice.\"",
+	Class = "Sentinel",
+	RenderImage = "rbxassetid://107234615040462",
+	Price = 500,
+	Exclusive = false,
+	LMSEffect = {
+		ProcessingModule = "BasicLMS",
+		SoundId = "heartbeat",
+		ImageId = function(s1: string) -- line: 14
+			if s1 == "Azure" then
+				return "rbxassetid://114627570317346"
+			end
+
+			return "rbxassetid://103025892289003"
+		end,
+		PrimaryColor = function(s2: string) -- line: 20
+			if s2 == "Azure" then
+				return Color3.fromRGB(115, 0, 255)
+			end
+
+			return Color3.fromRGB(255, 0, 0)
+		end,
+		SecondaryColor = Color3.fromRGB(0, 0, 0)
+	},
+	Health = 80,
+	Speed = 12,
+	DaggerCooldown = 30,
+	DaggerWindup = 0.3,
+	DaggerDamage = 10,
+	DaggerBackstabDamage = 20,
+	DaggerLungeForce = 110,
+	DaggerUncrouchedLungeForce = 50,
+	DaggerBackstabThreshold = 70,
+	DaggerLookDirectionAngle = 70,
+	DaggerStatusTime = 1,
+	DaggerBackstabStatusTime = 3.5,
+	DaggerCrouchMinStunTime = 2,
+	DaggerCrouchStunChargeTime = 1,
+	DaggerLifestealFromFront = 0,
+	DaggerLifestealFromBack = 0,
+	DaggerCrouchEndlag = 0.225,
+	DaggerCrouchEndlagTweenTime = 0.15,
+	DaggerCrouchMoverEndlag = 0.4,
+	DaggerCrouchSprintLockTime = 1,
+	DaggerUncrouchedSprintLockTime = 1,
+	DaggerMissSlownessDistanceInterval = 10,
+	DaggerMissSlownessDurationMultiplier = 1,
+	DaggerMissSlownessMaxDuration = 8,
+	DaggerMissSlownessLevel = 2,
+	PrayRange = 10,
+	PrayHoldTime = NumberRange.new(0.15, 30),
+	PrayHighlightDuration = 4,
+	PrayHighlightImage = "rbxassetid://100508591140926",
+	PrayHealthPerFullOblation = 66.66666666666667,
+	PrayFullConversionTime = 10,
+	PrayInterruptDamage = 5,
+	PrayInterruptCooldown = 6,
+	DaggerResLevel = 1,
+	DaggerResDuration = 0.7,
+	BloodReqIncreasePerTwoTime = 1,
+	CrouchCooldown = 30,
+	CrouchMinCooldown = 15,
+	CrouchDuration = 15,
+	CrouchSpeed = 10,
+	CrouchRunSpeed = 23,
+	CrouchInvisibilityLevel = 3,
+	CrouchUndetectableLevel = 1,
+	CrouchSpeedCloseTime = 1,
+	CrouchStabAmplifyTime = 4,
+	CrouchRevealTime = 2,
+	CrouchSpeedBoostMax = 1.5,
+	CrouchSpeedBoostTime = 4,
+	CrouchSpeedBoostDot = 0.2,
+	CrouchSpeedBoostDistance = 105,
+	CrouchTeammateRevealDistance = 100,
+	CrouchTeammateRevealFadeTime = 1.25,
+	CrouchOblationMultiplier = 1.25,
+	CrouchDistances = {
+		CLOSE = {
+			0,
+			30
+		},
+		DEBUFF_SLOWNESS = {
+			75,
+			-1
+		},
+		DEBUFF_HIGHLIGHT = {
+			125,
+			-1
+		}
+	},
+	CrouchSlownessDebuffMax = 150,
+	Lives = 2,
+	BloodRequiredForRespawn = 8,
+	BloodFromFront = 1.6,
+	BloodFromBack = 3.2,
+	RespawnLocationDistance = 10,
+	NextLifeHealthDivisor = 1.6,
+	InvincibilityDuration = 2,
+	LastSurvivorMaxHealth = 110,
+	LastSurvivorHealthBonus = 50,
+	RespawnLocation = script.Spawn,
+ HealthBar = script.Sidebar,
+ AudioReplication = script.AudioReplication,
+ VFX = script.TwoTimeVFX,
+ LifeAppearances = {[1]=script.Life1,[2]=script.Life2},
+ DaggerTemplate = script.GhostFire,
+	Animations = {},
+ Sounds = {},
+	ExpressionsTable = {
+		[1] = {
+			Happy = "rbxassetid://82471736046966",
+			Default = "rbxassetid://111259025475261",
+			Hurt = "rbxassetid://124079311211417",
+			Injured = "rbxassetid://82982231751339",
+			Dead = "rbxassetid://74288576584860",
+			Drinking = "rbxassetid://135845534213100"
+		},
+		[2] = {
+			Happy = "rbxassetid://105016806376431",
+			Default = "rbxassetid://80110682472998",
+			Hurt = "rbxassetid://91658006415418",
+			Injured = "rbxassetid://135831503096288",
+			Dead = "rbxassetid://86722867217862",
+			Drinking = "rbxassetid://116753879639619"
+		}
+	}
+}
+
+t1.Expressions = t1.ExpressionsTable[1]
+t1.TextInteractions = {
+	Requests = {
+		ElliotPizza = {
+			"Hey, hey. Pizza, pizza please.",
+			"Pizza’s something I haven’t tried much, mind if I get a slice?",
+			"I must ask for a pizza.",
+			"Do you have pizza? I could use one!",
+			"May I have a pizza slice?",
+			"I really want a pizza! May I have one?"
+		},
+		BuildermanSentry = {
+			"Your turrets may be of use over here.",
+			"A sentry here should be put to use. Place it here.",
+			"Place your sentry over here. It will help against the foes.",
+			"Put down a sentry here.",
+			"Your sentry will be of use over here."
+		},
+		BuildermanDispenser = {
+			"I’m in need of a dispenser in my position.",
+			"I require a dispenser to be placed here.",
+			"Dispenser here, please.",
+			"Put down one of your dispensers here.",
+			"Your dispenser is needed here."
+		},
+		DusekkarProtection = {
+			"Divine pumpkin, I humbly request your divine ability.",
+			"Divine pumpkin, I implore you to cast your ability onto me.",
+			"Divine pumpkin, I ask of thee to be blessed.",
+			"Divine pumpkin, blessed be thy heart should you cast a spell unto me.",
+			"Divine pumpkin, I ask for thy divine intervention."
+		},
+		HemmorhageAsk = {
+			"By the Spawn's grace... I ... I must ask for your aid...",
+			"My wounds.. are severe, I fear. Please, aid me, and the Spawn will smile at thy.",
+			"I beg, I plead.. I ask for your aid as my body drains with every second...",
+			"May you be blessed by the Spawn should you lend me your aid..",
+			"Lend me your aid, and the Spawn shall guide you forward..."
+		},
+		HelperPulse = {
+			"Your mechanisms are of most utmost importance right now, no time to waste..",
+			"Keep a steady pace, machine... You mustn't waste a minute in tending to the group.",
+			"Let your energy shine in those who need it most...",
+			"Perhaps you may use your energy on the ones who may need it?",
+			"We are in need of your energy, mechanism, and we must get it, fast.."
+		},
+		HelperInspire = {
+			"Make haste, for our group seem to have grown exhausted..",
+			"Let your mechanisms beam on the group, and may their beings feel ever so blessed by the Spawn while you do so.",
+			"Shall we huddle closer together so your energy is conserved when you activate it?",
+			"You've a keen eye for the others, do you not? You must see that they have grown tired.. You simply must help.",
+			"We need your assistance on the matter, do you still have the energy to do so?"
+		}
+	},
+	Thanks = {
+		Regular = {
+			"Much appreciated.",
+			"Very thankful for your service.",
+			"May good fortune come your way for your generosity.",
+			"The Spawn would be pleased with your acts of kindness.",
+			"I thank you for your service.",
+			"Oh give thanks to the Spawn, for he is good; for their steadfast love endures forever."
+		},
+		DusekkarProtection = {
+			{
+				"TwoTime: The Spawn would be pleased with your acts of kindness!",
+				"Dusekkar: ...",
+				"Dusekkar: Eugh..."
+			},
+			{
+				"TwoTime: Oh give thanks to the Spawn, for he is good; for their steadfast love endures forever.",
+				"Dusekkar: ...",
+				"Dusekkar: Ugh..."
+			}
+		}
+	}
+}
+
+local v2 = math.floor(t1.BloodFromFront / t1.BloodRequiredForRespawn * 100)
+local v3 = math.floor(t1.BloodFromBack / t1.BloodRequiredForRespawn * 100)
+
+t1.Information = {
+	{
+		Separator = "GENERAL INFO"
+	},
+	{
+		Header = "TWO TIME",
+		Text = "A fragile cultist that holds a terrible secret. Bearing nothing other than a sleek dagger and manic smile, they're able to earn a second life through risk and sacrifice.\n"
+	},
+	{
+		Header = "STATS",
+		Text = "Difficulty: ★★★★☆\n" .. `Health: { t1.Health or 100 }\n` .. `Regular Speed: { t1.Speed or 12 }\n` .. `Sprinting Speed: { t1.SprintSpeed or 26 }\n` .. `Max Stamina: { t1.MaxStamina or 100 }\n` .. `Stamina Loss per sec: { t1.StaminaLoss or 10 }\n` .. `Stamina Gain per sec: { t1.StaminaGain or 20 }\n`
+	},
+	{
+		Separator = "PASSIVES"
+	},
+	{
+		Header = "OBLATION",
+		Quote = "\"You both shall set out on the grand step to rebirth.\" - ██████",
+		Text = "<font color=\"#6c6e78\">Two Time</font> has a bar on the right side of the screen that, when filled, grants them a second life.\n" .. "The only way to fill this bar is by dealing damage to the Killer.\n\n" .. `Landing a stab to the front will fill { v2 }% of the bar.\n` .. `Landing a stab to the back will fill { v3 }% of the bar.\n` .. "Crouched Lunge Stabs increases the <b>OBLATION</b> gain by 25%.\n\n" .. "<font color=\"#6c6e78\">Two Time</font> will enter their second life upon taking lethal damage or being the last alive Survivor.\n" .. "In their second life, they only have 50 maximum health.\n" .. "Upon activation:\n\n" .. " * Stamina is restored by 40%\n" .. " * All status effects are removed\n" .. ` * <font color="#6c6e78">Two Time</font> is made invincible for { t1.InvincibilityDuration } seconds \n` .. " * <b>Speed II</b> is applied for 6 seconds\n" .. " * <b>Vulnerable V</b> is applied for 12 seconds\n"
+	},
+	{
+		Separator = "ABILITIES"
+	},
+	{
+		Header = "SACRIFICIAL DAGGER",
+		Image = "rbxassetid://129077533212750",
+		Quote = "\"Lookie, █████—they gave us this cool knife!\" - Two Time",
+		Text = `Cooldown: { t1.DaggerCooldown }s\n` .. `After a { t1.DaggerWindup }s windup, <font color="#6c6e78">Two Time</font> stabs forward and gains <b>Resistance { t1.DaggerResLevel }</b> for { t1.DaggerResDuration } seconds.\n\n` .. `Landing a stab to the front will do { t1.DaggerDamage } damage and inflict <b>Slowness II</b> and <b>Helpless I</b> for { t1.DaggerStatusTime }s.\n\n` .. `Landing a stab to the back will instead do { t1.DaggerBackstabDamage } damage and stun the Killer for 2s.\n\n` .. `Using this ability while <b>crouched</b> quickly lunges you forward with a stab that has increased endlag but grants 25% more <b>OBLATION</b> progress. A crouched backstab's stun scales linearly from { t1.DaggerCrouchMinStunTime }s to { t1.DaggerBackstabStatusTime }s after { t1.DaggerCrouchStunChargeTime }s of crouching. The charge is measured when the stab begins.\n\n` .. `Missing a <b>crouched stab</b> will inflict <font color="#6c6e78">Two Time</font> with Slowness II for up to { t1.DaggerMissSlownessMaxDuration }s depending on their distance from the Killer after it ends.\n\n` .. "Landing a stab on a summon or a stun immune Killer does not grant any <b>OBLATION</b> progress.\n"
+	},
+	{
+		Header = "CROUCH",
+		Image = "rbxassetid://77707049887484",
+		Quote = "\"Quiet, Two Time! They're not supposed to see us in here, hehe!\" - █████",
+		Text = `Cooldown: { t1.CrouchCooldown }s\n` .. "<font color=\"#6c6e78\">Two Time</font> crouches down to silence their footsteps and become stealthier.\n\n" .. `<font color="#6c6e78">Two Time</font> remains <b>crouched</b> for at most { t1.CrouchDuration } seconds, but can uncrouch whenever they need to.\n` .. `Crouching applies <b>Undetectable I</b> and <b>Invisibility III</b> for at most { t1.CrouchDuration } seconds.\n\n` .. `While <b>crouched</b>, <font color="#6c6e78">Two Time</font>'s aura is revealed to teammates within { t1.CrouchTeammateRevealDistance } studs.\n\n` .. `While <b>crouched</b>, <font color="#6c6e78">Two Time</font> will gradually gain speed while running towards the Killer, with this speed boost capping out at { math.round((t1.CrouchSpeedBoostMax - 1) * 100) }% after { t1.CrouchSpeedBoostTime }s of running. This speed boost is immediately lost if <font color="#6c6e78">Two Time</font> exits Crouch, takes damage, or stops running towards the Killer.\n\n` .. "Uncrouching manually will forcibly remove these statuses and if <font color=\"#6c6e78\">Two Time</font> is within 30 studs of the Killer, will additionally grant <font color=\"#6c6e78\">Two Time</font> <b>Speed II</b> for 1s.\n"
+	},
+	{
+		Header = "PRAY",
+		Image = "rbxassetid://83582849559932",
+		Quote = "\"May Spawn bless us today!\" - ██████",
+		Text = "<font color=\"#6c6e78\">Two Time</font> will kneel near their <b>RITUAL</b> and begin praying while this ability is held.\n" .. "Letting go of the ability will stop <b>PRAYING</b>.\n\n" .. "While <b>PRAYING</b>, <font color=\"#6c6e78\">Two Time</font> will rapidly exchange <b>OBLATION</b> progress for HP.\n" .. `<font color="#6c6e78">Two Time</font> will gain 1 HP for every { 100 / t1.PrayHealthPerFullOblation }% <b>OBLATION</b> progress spent, restoring up to approximately { string.format("%.2f", t1.PrayHealthPerFullOblation) } HP from a full bar, without exceeding their maximum health.\n\n` .. "If <font color=\"#6c6e78\">Two Time</font> is not near their <b>RITUAL</b> when attempting to use this ability, the location of their <b>RITUAL</b> will be revealed to them for 4s.\n\n" .. "<font color=\"#6c6e78\">Two Time</font> is unable to use this ability if they do not have a <b>RITUAL</b>.\n"
+	},
+	{
+		Header = "RITUAL",
+		Image = "rbxassetid://95580729656404",
+		Quote = "\"Spawn will be eternally pleased at our devotion!\" - ██████",
+		Text = "<font color=\"#6c6e78\">Two Time</font> inscribes a respawn location on the ground.\n" .. "Dying with a full <b>OBLATION</b> bar will instantly teleport <font color=\"#6c6e78\">Two Time</font> to this point.\n\n" .. "<b>This ability can only be used once per round.</b>\n\n" .. "If <font color=\"#6c6e78\">Two Time</font> becomes the last survivor alive and has not already entered their second life, <b>RITUAL</b> will automatically trigger regardless of whether <b>OBLATION</b> was full or not.\n" .. `If this happens, <font color="#6c6e78">Two Time</font> will have their maximum health increased up to { t1.LastSurvivorMaxHealth }, be healed for up to { t1.LastSurvivorHealthBonus } HP, and will not be afflicted with <b>Vulnerable V</b>.` .. "Additionally, they will not teleport to their Ritual, and any buffs they receive will be decreased depending on how much <b>OBLATION</b> they are missing.\n"
+	},
+	{
+		Separator = "CREDITS",
+		Text = "Writer: 4Montaigne, sayso_1230Programmer: voxov_tired, ffPranksterDesigner: astertudeAnimator: sayso_1230Renderer: doc"
+	}
+}
+
+-- Port choices where the export lacks authoritative server code:
+-- Preserve FCT's 4x6x5.5 hitbox size; apply documented latest forward offset (+1.5).
+-- Miss penalty: 1s per 10 studs, capped at 8s (inferred from exported settings).
+t1.DaggerHitboxSize=Vector3.new(4,6,5.5)
+t1.DaggerHitboxOffset=7
+t1.DaggerHitTime=.25
+t1.DaggerCrouchHitTime=.415
+t1.PraySensitiveButton=true
+-- Custom, server-validated hold lease; omit PrayHoldTime to avoid the old generic charge protocol.
+t1.PrayHoldTime=nil
+t1.TwoTimeRoundHooks=false
+t1.SprintSpeed=26
+t1.MaxStamina=100
+t1.StaminaLoss=10
+t1.StaminaGain=20
+t1.TwoTimePortVersion="1.0.0"
+return t1
+]====]},
+{path=[====[
+ReplicatedStorage/Modules/DamageRules]====],before=false,after="416:50d48657:d8a75f88",source=[====[
+-- Both damage routes call this once, before victim resistance is applied.
+local DamageRules={}
+function DamageRules.ScaleDamage(source,damage)
+ if not source then return damage end
+ if source:IsA("Player") then source=source.Character end
+ if not source then return damage end
+ local reduction=tonumber(source:GetAttribute("WeaknessNerf")) or 0
+ return damage*math.clamp(1-reduction/100,0,1)
+end
+return DamageRules
+]====]},
+{path=[====[
+ReplicatedStorage/Modules/Hitboxes]====],before="26712:88af87d8:f19ddb2f",after="26835:14305f77:9b51252e",source=[====[
+-- So, I've been trying to improve the engine recently and I just though: WHY NOT JUST RECODE EVERYTHING?????????????????
+-- also improving my comments!
+-- skiddy katamari will say this is trash because her engine needs to be better than anything
+
+-- // services:
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local AnalyticsService = game:GetService("AnalyticsService")
+local isStudio = RunService:IsStudio()
+local isServer = RunService:IsServer()
+
+-- // modules:
+local Ragdolls = require(ReplicatedStorage.Modules.Ragdolls)
+local Util = require(ReplicatedStorage.Modules.Util)
+local AchievementUtil = require(ReplicatedStorage.Modules.AchievementUtil)
+local Actors = require(ReplicatedStorage.Modules.Actors)
+local Network = require(ReplicatedStorage.Modules.Network)
+local Sounds = require(ReplicatedStorage.Modules.Sounds)
+local Stats = require(ReplicatedStorage.Modules.Stats)
+local Statuses = require(ReplicatedStorage.Modules.Statuses)
+
+-- // new modules (these were originally not on forsaken neither on aeternus)
+local Janitor = require(ReplicatedStorage.Modules.Misc.Janitor) -- expect to see this alot (maid will still be here to keep compatibility)
+local CoreLoader = require(ReplicatedStorage.CoreLoader)
+local Signal = require(ReplicatedStorage.Modules.Misc.Signal) -- why doesn't forsaken use this module
+
+local Hitboxes = {}
+
+
+-- new function to prevent wall clipping (aka. hitting someone if they are behind an wall)
+local function PreventWallClip(pOrigin, pTargetPos, pExcludeChar)
+	local diff = pTargetPos - pOrigin
+	local dist = diff.Magnitude
+	if dist > 10 then
+		pTargetPos = pOrigin + diff.Unit * 10
+		dist = 10
+	end
+	if dist < 0.1 then
+		return pTargetPos
+	end
+
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.FilterDescendantsInstances = { workspace.Players, pExcludeChar, workspace:FindFirstChild("Hitboxes") }
+
+	local raycastResult = workspace:Raycast(pOrigin, diff, rayParams)
+	if not raycastResult then
+		return pTargetPos
+	end
+
+	local safeDist = math.max(raycastResult.Distance - 0.5, 0)
+	return pOrigin + diff.Unit * safeDist
+end
+
+
+local function GetDictionaryLength(dict)
+	local count = 0
+	for _, _ in pairs(dict) do
+		count += 1
+	end
+	return count
+end
+
+
+function Hitboxes.LineOfSight(_, origin, targetChar)
+	local player = Players:GetPlayerFromCharacter(targetChar)
+
+	if player then
+		local _ = Actors.CurrentActors[player]
+	end
+
+	targetChar:FindFirstChild("Humanoid")
+
+	local hasReplicating = targetChar:FindFirstChild("QueryHitbox") and (player and targetChar:HasTag("Replicating"))
+	local raycastParams = RaycastParams.new()
+
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	raycastParams.FilterDescendantsInstances = if not typeof(origin == "Vector3") then {
+		workspace.Players,
+		targetChar,
+		origin
+	} else {
+			workspace.Players,
+			targetChar
+		}
+	raycastParams.CollisionGroup = tostring(typeof(origin) ~= "Vector3" and (not not origin.PrimaryPart and origin.PrimaryPart.CollisionGroup) or "Killers")
+
+	local function partCanBlock(hitPart)
+		local isHitbox = hitPart:GetAttribute("Hitbox") or (hitPart.CanCollide or hitPart.Transparency < 1)
+		local hitHumanoid = hitPart.Parent:FindFirstChild("Humanoid")
+
+		if isHitbox and not hitHumanoid then
+			return true
+		end
+
+		raycastParams:AddToFilter(hitPart)
+
+		if hitHumanoid then
+			raycastParams:AddToFilter(hitHumanoid.Parent)
+		end
+
+		return false
+	end
+
+	if typeof(origin) == "Vector3" then
+	else
+		local originPlayer = Players:GetPlayerFromCharacter(origin)
+		local originActor = originPlayer and Actors.CurrentActors[originPlayer]
+
+		origin = originActor and originActor:GetPivot(false).Position or origin.PrimaryPart.Position
+	end
+
+	for _, child in ipairs(targetChar:GetChildren()) do
+		if not child:IsA("BasePart") or not child.CanQuery or child:GetAttribute("Hitbox") then
+			continue
+		end
+
+		local objectSpace = targetChar.PrimaryPart.CFrame:ToObjectSpace(child.CFrame)
+		local targetPos = hasReplicating and targetChar.QueryHitbox.CFrame:ToWorldSpace(objectSpace).Position or child.Position
+		local attempts = 0
+		local raycastResult
+
+		repeat
+			raycastResult = workspace:Raycast(origin, targetPos - origin, raycastParams)
+			attempts += 1
+		until not raycastResult or partCanBlock(raycastResult.Instance) or attempts > 15
+
+		if not raycastResult and attempts <= 15 then
+			return true
+		end
+	end
+
+	return false
+end
+
+
+local function guestHitClient(target, ...)
+	if typeof(target) == "Instance" and target:IsA("Player") then
+		Network:FireClientConnection(target, ...)
+	end
+end
+local function guestIsPlayer(target)
+	return typeof(target) == "Instance" and target:IsA("Player")
+end
+local function guestCharacter(subject)
+	if typeof(subject) == "Instance" then
+		if subject:IsA("Player") then return subject.Character end
+		if subject:IsA("Model") then return subject end
+	elseif typeof(subject) == "table" then
+		return subject.Rig or subject.Character
+	end
+end
+local function guestActor(subject, rig)
+	local player = rig and Players:GetPlayerFromCharacter(rig)
+	local actor = subject and Actors.CurrentActors[subject] or player and Actors.CurrentActors[player] or rig and Actors.CurrentActors[rig]
+	if actor and actor.Rig == rig then return actor end
+	for _, candidate in pairs(Actors.CurrentActors) do
+		if candidate.Rig == rig then return candidate end
+	end
+end
+
+function Hitboxes.CreateHitbox(_, creator, hitboxParams)
+	local creatorChar = guestCharacter(creator)
+
+	if not creatorChar or not creatorChar.PrimaryPart then
+		return
+	end
+
+	local params = hitboxParams or {}
+	local config = {
+		Size = params.Size or Vector3.new(4, 7, 4),
+		CFrameOffset = params.CFrameOffset or CFrame.new(0, 0, 0),
+		CFrame = params.CFrame or nil,
+		CastPoint = if params.CastPoint ~= nil then params.CastPoint else nil,
+		Damage = params.Damage or 15,
+		AbilityType = params.AbilityType or nil,
+		Time = params.Time or 0.125,
+		Knockback = params.Knockback or 0,
+		HitMultiple = params.HitMultiple or false,
+		PredictVelocity = params.PredictVelocity == nil or params.PredictVelocity,
+		ExecuteOnKill = params.ExecuteOnKill or false,
+		FriendlyFire = params.FriendlyFire or false,
+		Team = params.Team,
+		Target = params.Target,
+		OnlyHitPlayers = params.OnlyHitPlayers or false,
+		RagdollOnHit = params.RagdollOnHit or false,
+		Hide = params.Hide or false,
+		DeathProfile = params.DeathProfile or {},
+		Shape = params.Shape or Enum.PartType.Block,
+		ExcludeChars = params.ExcludeChars or {},
+		Connections = params.Connections or {}
+	}
+	local overlapParams = OverlapParams.new()
+
+	overlapParams.FilterType = Enum.RaycastFilterType.Exclude
+	overlapParams.FilterDescendantsInstances = { creatorChar }
+
+	local hitboxState = {
+		TimePast = 0,
+		HumanoidsDamaged = {},
+		InvincibleProcs = {},
+		Creator = creator,
+		AbilityType = config.AbilityType,
+		Damage = config.Damage,
+		IsProjectile = if params.IsProjectile ~= nil then params.IsProjectile else config.CFrame ~= nil,
+
+		OnHit = Signal.new(),
+		OnEnded = Signal.new()
+	}
+
+	local hitboxJanitor = Janitor.new()
+	hitboxJanitor:Add(hitboxState.OnHit, "Destroy")
+	hitboxJanitor:Add(hitboxState.OnEnded, "Destroy")
+
+	local function runCallback(callbackName, ...)
+		if config.Connections[callbackName] then
+			config.Connections[callbackName](...)
+		end
+	end
+
+	function hitboxState.Cancel(_)
+		hitboxState.Cancelled = true
+		hitboxJanitor:Cleanup()
+	end
+
+	task.spawn(function()
+		local creatorActor = guestActor(creator, creatorChar)
+
+		while creatorChar.Parent and creatorChar.PrimaryPart and hitboxState.TimePast < config.Time and not hitboxState.Cancelled do
+			local humanoidsDamaged = hitboxState.HumanoidsDamaged
+			local hitCount = 0
+
+			for _, _ in pairs(humanoidsDamaged) do
+				hitCount += 1
+			end
+
+			if hitCount > 0 and not config.HitMultiple or creatorChar:GetAttribute("Stunned") or not Util:IsAlive(creatorChar) and not hitboxState.IsProjectile then
+				break
+			end
+
+			local pivotCF = creatorActor and creatorActor:GetPivot(not not config.PredictVelocity) or creatorChar.PrimaryPart.CFrame
+			local hitboxPart = Instance.new("Part")
+
+			hitboxPart.Name = tostring(creator) .. "Hitbox"
+			hitboxPart.Transparency = 1
+			hitboxPart.CanCollide = false
+			hitboxPart.CanTouch = false
+			hitboxPart.CanQuery = false
+			hitboxPart.CastShadow = false
+			hitboxPart.Anchored = true
+			hitboxPart.Shape = config.Shape
+			hitboxPart.Size = typeof(config.Size) == "function" and config.Size() or config.Size
+			hitboxPart.CFrame = typeof(config.CFrame) == "function" and config.CFrame() or (config.CFrame or pivotCF * if typeof(config.CFrameOffset) ~= "function" then config.CFrameOffset else config.CFrameOffset())
+			hitboxPart.Parent = workspace:FindFirstChild("Hitboxes")
+			hitboxState.Instance = hitboxPart
+
+			task.delay(0.36, function()
+				if hitboxPart and hitboxPart.Parent then hitboxPart:Destroy() end
+			end)
+
+			if config.Hide then
+				hitboxPart:SetAttribute("Hidden", true)
+			end
+
+			if config.PredictVelocity then
+				if typeof(creator) ~= "Instance" or not creator:IsA("Player") then
+				end
+			end
+
+			local partsFound = workspace:GetPartsInPart(hitboxPart, overlapParams)
+
+			table.sort(partsFound, function(partA, partB)
+				local parentA = partA.Parent
+				local parentB = partB.Parent
+				local priorityA = parentA:GetAttribute("HitboxPriority") or 1
+				local priorityB = parentB:GetAttribute("HitboxPriority") or 1
+
+				if priorityA == priorityB then
+					priorityA = (creatorChar.PrimaryPart.Position - partB.Position).Magnitude
+					priorityB = (creatorChar.PrimaryPart.Position - partA.Position).Magnitude
+				end
+
+				return priorityB < priorityA
+			end)
+
+			local targetsHit = {}
+
+			for _, hitPart in ipairs(partsFound) do
+				local victimHumanoid = hitPart.Parent:FindFirstChildOfClass("Humanoid")
+
+				if victimHumanoid and not (victimHumanoid.Health <= 0) and (not victimHumanoid.Parent:HasTag("Replicating") or not Players:GetPlayerFromCharacter(victimHumanoid.Parent) or hitPart.Name == "QueryHitbox") and ((not victimHumanoid.Parent:HasTag("SurvivorConstruct") or not config.OnlyHitPlayers) and not hitboxState.HumanoidsDamaged[victimHumanoid]) and (not config.Team or tostring(hitPart.Parent.Parent) == config.Team or tostring(hitPart.Parent:GetAttribute("Team")) == config.Team) and ((workspace:GetAttribute("FriendlyFire") or config.FriendlyFire or config.Team and config.Team == tostring(creatorChar.Parent) or tostring(hitPart.Parent:GetAttribute("Team")) ~= tostring(creatorChar.Parent) and tostring(hitPart.Parent.Parent) ~= tostring(creatorChar.Parent)) and (not config.Target or config.Target == victimHumanoid.Parent)) then
+					local castOrigin = if not config.CastPoint then if config.CFrame then hitboxPart.CFrame.Position else creatorChar else if typeof(config.CastPoint) ~= "function" then config.CastPoint else config.CastPoint()
+
+							if (config.CastPoint == false or Hitboxes:LineOfSight(castOrigin, victimHumanoid.Parent)) and not table.find(config.ExcludeChars, victimHumanoid.Parent) and not table.find(config.ExcludeChars, victimHumanoid) then
+								if victimHumanoid.Parent:GetAttribute("Invincible") then
+									if not hitboxState.InvincibleProcs[victimHumanoid] then
+										local victimPrimaryPart = victimHumanoid.Parent.PrimaryPart
+										local invincibleFX = victimPrimaryPart and victimPrimaryPart:FindFirstChild("InvincibleFX")
+
+										if invincibleFX and invincibleFX:FindFirstChild("Deflect") then
+											Sounds:Play("invincibleDeflect", {
+												Parent = victimPrimaryPart
+											})
+											invincibleFX.Deflect:Emit(1)
+										end
+									end
+
+									hitboxState.InvincibleProcs[victimHumanoid] = true
+								else
+									local hitPriority = victimHumanoid.Parent:GetAttribute("HitboxPriority") or 1
+
+									hitboxState.HumanoidsDamaged[victimHumanoid] = true
+									table.insert(targetsHit, victimHumanoid)
+
+									if not config.HitMultiple and hitPriority >= 0 then
+										break
+									end
+								end
+							end
+						end
+					end
+
+					hitboxPart.Color = #targetsHit > 0 and Color3.new(0.5, 1, 0.5) or Color3.new(1, 0.25, 0.25)
+
+					for i, victimHumanoid in ipairs(targetsHit) do
+						local victimChar = victimHumanoid.Parent
+						local victimPrimaryPart = victimChar and (victimChar:IsA("Model") and victimChar.PrimaryPart)
+						local rawDamage = typeof(config.Damage) == "number" and config.Damage or config.Damage(victimChar)
+						local resistanceSum = 0
+						local resistanceFolder = victimChar and victimChar:FindFirstChild("ResistanceMultipliers")
+
+						for _, resistanceValue in pairs(resistanceFolder and resistanceFolder:GetChildren() or {}) do
+							resistanceSum += resistanceValue.Value
+						end
+
+						local weakenedDamage = require(game.ReplicatedStorage.Modules.DamageRules).ScaleDamage(creatorChar, rawDamage)
+						local finalDamage = weakenedDamage * (1 - math.min(resistanceSum - (creatorChar:GetAttribute("StrengthBuff") or 0), 100) / 100)
+
+						if not victimPrimaryPart then
+							continue
+						end
+
+						victimChar:SetAttribute("TimesHit", (victimChar:GetAttribute("TimesHit") or 0) + 1)
+						runCallback("HitAbsolute", victimChar, i == 1)
+
+						local victimPlayer = Players:GetPlayerFromCharacter(victimChar)
+						local victimActor = guestActor(victimPlayer, victimChar)
+
+						if victimActor and victimActor.Behavior and victimActor.Behavior.OnHit then
+							local hitResponse = victimActor.Behavior:OnHit(
+								victimActor,
+								hitboxState,
+								finalDamage
+							)
+
+							if hitResponse == "Ignored" then
+								continue
+							end
+
+							if typeof(hitResponse) == "table"
+								and typeof(hitResponse.DamageOverride) == "number" then
+
+								finalDamage = math.max(0, hitResponse.DamageOverride)
+							end
+
+							if hitboxState.TimePast > config.Time then
+								break
+							end
+						end
+
+						local knockbackVal = not (typeof(config.Knockback) ~= "number" and typeof(config.Knockback) ~= "Vector3") and config.Knockback or config.Knockback(victimChar)
+						local isKbVector = typeof(knockbackVal) == "Vector3"
+						local kbDir = isKbVector and knockbackVal or hitboxPart.CFrame.LookVector
+
+						if isKbVector or knockbackVal > 0 then
+							local kbForce = (typeof(knockbackVal) == "Vector3" and knockbackVal or kbDir * knockbackVal) * 10
+
+							if victimPlayer then
+								guestHitClient(victimPlayer, "KB", "REMOTE_EVENT", Util:SerializeVector(kbForce))
+							else
+								victimPrimaryPart.AssemblyLinearVelocity = kbForce + victimPrimaryPart.AssemblyLinearVelocity / 2
+							end
+						end
+
+						local deathProfile = Util:CopyTable(config.DeathProfile)
+
+						if not deathProfile.Velocity then
+							if isKbVector then
+								deathProfile = {
+									Velocity = kbDir * 10
+								}
+							elseif knockbackVal > 0 then
+								deathProfile = {
+									Velocity = kbDir * knockbackVal * 10
+								}
+							end
+						end
+
+						Ragdolls.AddProfile(victimChar, deathProfile)
+
+						local damageDealt = finalDamage
+						local overhealVal = victimHumanoid:GetAttribute("Overheal") or 0
+						local shatterpointHP = victimChar:GetAttribute("ShatterpointHP") or 0
+						local _ = victimHumanoid.Health + overhealVal + shatterpointHP
+						local isVictimAlive = victimHumanoid.Health > 0
+						local remainingOverheal = math.max(0, overhealVal - finalDamage)
+
+						if remainingOverheal < (victimHumanoid:GetAttribute("OverhealDecayMin") or 0) then
+							victimHumanoid:SetAttribute("OverhealDecayMin", remainingOverheal > 0 and remainingOverheal or nil)
+						end
+
+						local damageToApply = finalDamage - overhealVal
+
+						if damageToApply > 0 and shatterpointHP > 0 then
+							local shatterDamage = damageToApply * (victimChar:GetAttribute("ShatterpointResistance") or 1)
+
+							if shatterDamage > 0 then
+								local victimBehaviorActor = guestActor(victimPlayer, victimChar)
+
+								if victimBehaviorActor and victimBehaviorActor.Behavior and victimBehaviorActor.Behavior.sv_DamageCrystalHP then
+									victimBehaviorActor.Behavior:sv_DamageCrystalHP(victimBehaviorActor, shatterDamage)
+								else
+									victimChar:SetAttribute("ShatterpointHP", (math.max(0, shatterpointHP - shatterDamage)))
+								end
+
+								local shatterRemainder = shatterDamage - shatterpointHP
+
+								damageDealt = shatterDamage + overhealVal
+								damageToApply = not (shatterRemainder > 0) and 0 or shatterRemainder
+							end
+						end
+
+						local finalDeductibleDamage = math.max(0, damageToApply)
+						local victimPosInt16 = Vector3int16.new(victimPrimaryPart.Position.X, victimPrimaryPart.Position.Y, victimPrimaryPart.Position.Z)
+						local isKilled = victimHumanoid.Health - finalDeductibleDamage <= 0
+						local creatorBehaviorActor = guestActor(creator, creatorChar)
+
+						if creatorBehaviorActor then
+							local _, _ = pcall(function()
+								return creatorBehaviorActor.Behavior.OnInflictedDamage(creatorBehaviorActor, victimChar, (math.min(victimHumanoid.Health, damageDealt)))
+							end)
+						end
+
+						if isVictimAlive and isKilled then
+							local protectionPlayerName = victimChar:GetAttribute("DusekkarProtected")
+							local protectionPlayer = protectionPlayerName and Players:FindFirstChild(protectionPlayerName)
+
+							if protectionPlayer then
+								local protectorChar = protectionPlayer.Character
+
+								print(`dusekkar moment ({ victimChar } protected by { protectionPlayer })`)
+								Actors:IncrementActorStats(protectionPlayer, {
+									Action = "Prevented the death of a Survivor",
+									Money = 10,
+									EXP = 30
+								})
+								victimChar:SetAttribute("DusekkarProtected", nil)
+								protectorChar:SetAttribute("Protecting", nil)
+								AchievementUtil:IncrementAchievementProgress(protectionPlayer, "DusekkarUbercharge")
+
+								return
+							end
+
+							if tostring(victimChar.Parent) == "Survivors" then
+								if guestIsPlayer(creator) then
+									Stats:UpdatePlayerStat(creator, "Kills", "Add", 1)
+								end
+
+								if creatorBehaviorActor then
+									creatorBehaviorActor.TotalKills =
+										(creatorBehaviorActor.TotalKills or 0) + 1
+
+									local ok, result = pcall(function()
+										AnalyticsService:LogCustomEvent(creator, "TotalKills", 1, {
+											[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = `Character - { creatorBehaviorActor.ActorName }`
+										})
+									end)
+
+									if not ok then
+										warn(`[AnalyticsService]: Failed to log custom event: TotalKills due to: { result }`)
+									end
+								end
+							end
+
+							local creatorVoicelines = creatorBehaviorActor and creatorBehaviorActor.Config.Voicelines
+
+							if creatorVoicelines and not victimChar:GetAttribute("ExecutionsDisabled") then
+								local killType = "Kill"
+
+								if isServer then
+									local RoundManager = require(game.ServerScriptService.Server.Systems.Core.RoundManager)
+
+									if RoundManager and RoundManager.CurrentSession and RoundManager.CurrentSession.LastSurvivorAlive then
+										killType = "LastKill"
+									end
+								end
+
+								for _, actionName in ipairs({
+									killType,
+									"Kill"
+									}) do
+									if creatorVoicelines[`{ actionName }{ tostring(victimChar:GetAttribute("SkinName")) }`] then
+										Sounds:PlayVoiceline(creatorBehaviorActor, `Kill{ tostring(victimChar:GetAttribute("SkinName")) }`)
+
+										break
+									end
+
+									if creatorVoicelines[`{ actionName }{ victimChar.Name }`] then
+										Sounds:PlayVoiceline(creatorBehaviorActor, `Kill{ victimChar.Name }`)
+
+										break
+									end
+
+									if creatorVoicelines[`{ actionName }`] then
+										Sounds:PlayVoiceline(creatorBehaviorActor, "Kill")
+
+										break
+									end
+								end
+							end
+
+							local RoundManager = game.ServerScriptService.Server.Systems.Core.RoundManager
+							local lib = require(RoundManager)
+
+							if tostring(victimChar.Parent) == "Survivors" and (lib.CurrentSession and lib.CurrentSession.TimePast or isStudio or workspace:GetAttribute("Testing")) then
+								lib:AddTime(nil, victimActor and victimActor.TimeAddMultiplier or 1, true)
+
+								if creatorBehaviorActor and creatorBehaviorActor.Behavior and creatorBehaviorActor.Behavior.OnKill then
+									local ok, result = pcall(function()
+										return creatorBehaviorActor.Behavior.OnKill(creatorBehaviorActor, victimChar)
+									end)
+
+									if not ok then
+										warn(`[{ script }/CreateHitbox]: Failed to call .OnKill() due to: { result }`)
+									end
+								end
+
+								require(game.ServerScriptService.Server.Systems.Core.EventHandlerServer):CallMethod("OnPlayerKilled", creator, victimPlayer)
+								if guestIsPlayer(creator) then
+									Actors:IncrementActorStats(creator, {
+										Action = "Killed a Survivor", Money = 15, EXP = 45
+									})
+								end
+							end
+
+							if config.ExecuteOnKill and guestIsPlayer(creator) and creatorBehaviorActor and not victimChar:GetAttribute("ExecutionsDisabled") and not (creatorBehaviorActor.AbilityDisablers or {}).Execution then
+								local skinName = victimChar:GetAttribute("SkinName")
+								local executionAnimName = nil
+
+								if not creatorBehaviorActor then
+									warn("Hitboxes: Non-Actor attempted to Execute!")
+								else
+									executionAnimName = if not skinName or (skinName == "" or not creatorBehaviorActor.Config.Animations[`Execution{ skinName }`]) then not creatorBehaviorActor.Config.Animations[`Execution{ victimChar.Name }`] and "Execution" or `Execution{ victimChar.Name }` else `Execution{ skinName }`
+								end
+
+								local executionAnimConfig = creatorBehaviorActor and creatorBehaviorActor.Config.Animations[executionAnimName]
+
+								if executionAnimConfig and executionAnimConfig.KillerRig and executionAnimConfig.PlayerRig then
+									task.spawn(function()
+										Statuses:RemoveStatuses(victimChar, true)
+										Util:GiveStackableAttribute(victimChar, "BeingExecuted", `{ creatorBehaviorActor.Player.Name }Execution`, 10)
+
+										local killerTrack = creatorBehaviorActor.Cache[`{ executionAnimName }Anim`]
+
+										if not killerTrack then
+											killerTrack = Util:LoadAnimationFromID(creatorBehaviorActor.Rig, executionAnimConfig.KillerRig, false)
+											creatorBehaviorActor.Cache[`{ executionAnimName }Anim`] = killerTrack
+										end
+
+										local killerPrimaryPart = creatorBehaviorActor.Rig.PrimaryPart
+										local victimTrack = Util:LoadAnimationFromID(victimChar, executionAnimConfig.PlayerRig, false)
+										local isExecutionFinished = false
+										local stateConn = nil
+
+										stateConn = victimHumanoid.StateChanged:Connect(function(_, newState)
+											if newState == Enum.HumanoidStateType.Dead then
+												isExecutionFinished = true
+
+												if stateConn then
+													stateConn:Disconnect()
+													hitboxJanitor:Remove("Execution_" .. victimHumanoid.Name)
+												end
+
+												guestHitClient(creator, "Hit", "UREMOTE_EVENT", damageDealt, victimPosInt16, nil, true)
+											end
+										end)
+
+										hitboxJanitor:Add(stateConn, "Disconnect", "Execution_" .. victimHumanoid.Name)
+
+										Util:GiveInvincible(creatorChar, "Executing")
+										Util:SetUpCutscene(creatorBehaviorActor.Rig, victimChar, executionAnimConfig.PlayerCFrameOffset, "Execution")
+										task.delay(killerTrack.Length + 1.5, function()
+											Util:RemoveInvincible(creatorChar, "Executing")
+										end)
+										creatorBehaviorActor:DisableAbilities("Execution", true)
+										task.delay(killerTrack.Length, function()
+											if stateConn then
+												stateConn:Disconnect()
+												hitboxJanitor:Remove("Execution_" .. victimHumanoid.Name)
+											end
+
+											if not isExecutionFinished then
+												isExecutionFinished = true
+												guestHitClient(creator, "Hit", "UREMOTE_EVENT", damageDealt, victimPosInt16, nil, true)
+											end
+
+											creatorBehaviorActor:DisableAbilities("Execution", false)
+											Util:ToggleAnchored(creatorBehaviorActor.Rig, "Execution", false)
+											Util:ToggleAnchored(victimChar, "Execution", false)
+											Util:RemoveStackableAttribute(victimChar, "NoItems", "Execution")
+											victimHumanoid.Health = 0
+											victimHumanoid:ChangeState(Enum.HumanoidStateType.Dead)
+										end)
+										killerTrack:Play(0)
+										victimTrack:Play(0)
+
+										local executionSound = creatorBehaviorActor.Config.Sounds[executionAnimName]
+
+										Sounds:Play(executionSound, {
+											Parent = killerPrimaryPart
+										})
+
+										if creatorBehaviorActor.Behavior.OnExecution then
+											creatorBehaviorActor.Behavior:OnExecution(creatorBehaviorActor, victimChar, {
+												victimInfo = victimActor,
+												Tracks = {
+													Killer = killerTrack,
+													Victim = victimTrack
+												}
+											})
+										end
+
+										if creatorBehaviorActor.Behavior.OnExecutionClient then
+											guestHitClient(creatorBehaviorActor.Player, "OnExecutionClientAsync", "REMOTE_EVENT", victimChar)
+										end
+									end)
+
+									return
+								end
+							end
+						end
+
+						if config.RagdollOnHit then
+							local ragdollTime = typeof(config.RagdollOnHit) == "number" and config.RagdollOnHit or 2
+
+							Ragdolls.EnableRagdoll(victimChar, ragdollTime)
+						end
+
+						victimChar:SetAttribute("RecentAttacker", (tostring(creator)))
+						victimChar:SetAttribute("RecentAttackerTime", os.clock())
+
+						if victimHumanoid:GetAttribute("Overheal") then
+							victimHumanoid:SetAttribute("Overheal", remainingOverheal > 0 and remainingOverheal or nil)
+						end
+
+						victimHumanoid.Health = victimHumanoid.Health - finalDeductibleDamage
+
+						if victimHumanoid.Health <= 0 then
+							victimHumanoid:SetAttribute("Overheal", nil)
+							victimHumanoid:ChangeState(Enum.HumanoidStateType.Dead)
+						end
+
+						runCallback("Hit", victimChar, i == 1)
+						hitboxState.OnHit:Fire(victimChar, i == 1)
+
+						guestHitClient(creator, "Hit", "UREMOTE_EVENT", damageDealt, victimPosInt16, nil, victimHumanoid.Health <= 0)
+					end
+
+					local stateRef = hitboxState
+
+					stateRef.TimePast = stateRef.TimePast + RunService.Heartbeat:Wait()
+				end
+
+				runCallback("Ended")
+				hitboxState.OnEnded:Fire()
+			end)
+
+	task.delay(config.Time + 1, function()
+		hitboxJanitor:Cleanup()
+	end)
+
+	return hitboxState
+end
+
+
+function Hitboxes.Start(_)
+	if isServer then
+		local Folder = Instance.new("Folder")
+
+		Folder.Name = "Hitboxes"
+		Folder.Parent = workspace
+	end
+end
+
+
+function Hitboxes.CreateMainAbilityHitbox(self, creator, options)
+	local params = table.clone(options or {})
+	if params.AbilityType == nil then params.AbilityType = "MainAbility" end
+	if params.IsProjectile == nil then params.IsProjectile = false end
+	return self:CreateHitbox(creator, params)
+end
+
+return Hitboxes
+]====]},
+{path=[====[
+ReplicatedStorage/Modules/StatusEffects/Slateskin]====],before="4998:9a5e48d5:de31b6a6",after="5002:3066f073:d46012d8",source=[====[
+local t1 = {
+	Data = {
+		Duration = 10,
+		MaxLevel = 5,
+		Stackable = false,
+		Description = "Gives the user overheal at the cost of being 45% slower.\n40 overheal is added for every level of this status.\nIf the overheal reaches 0 while still in effect, then the effect is forcibly cancelled.\nUser cannot be inflicted with Bleeding, Burning, Poisoned, Regeneration, Speed, or Vulnerable while in effect."
+	}
+}
+local t2 = {
+	"Bleeding",
+	"Burning",
+	"Poisoned",
+	"Regeneration",
+	"Speed",
+	"Vulnerable",
+	"Corrupted"
+}
+local _ = {
+	Head = true,
+	Torso = true,
+	LeftArm = true,
+	RightArm = true,
+	LeftLeg = true,
+	RightLeg = true
+}
+local Util = require(game.ReplicatedStorage.Modules.Util)
+local Statuses = require(game.ReplicatedStorage.Modules.Statuses)
+
+function t1.Applied(p1) -- line: 36
+	-- upvalues: t2 (copy), Statuses (copy), Util (copy)
+	if game["Run Service"]:IsServer() and not p1.LimbData then
+		for _, v in pairs(t2) do
+			Statuses:RemoveStatus(p1.Player, v)
+			p1.Character:SetAttribute(`{ v }Disabled`, true)
+		end
+
+		Util:ApplyOverheal(p1.Player, p1.Level * 40, true)
+
+		if p1.Character.PrimaryPart then
+			require(game.ReplicatedStorage.Modules.Sounds):Play("rbxassetid://11450310", {
+				Parent = p1.Character.PrimaryPart
+			})
+		end
+
+		p1.LimbData = {}
+		p1.ClothingData = {}
+
+		for _, descendant in pairs(p1.Character:GetDescendants()) do
+			if descendant:IsA("BasePart") then
+				local v11 = descendant.Name == "Handle"
+
+				p1.LimbData[descendant] = {
+					Color = descendant.Color,
+					Material = descendant.Material,
+					TextureId = v11 and (not not descendant:FindFirstChildOfClass("SpecialMesh") and descendant:FindFirstChildOfClass("SpecialMesh").TextureId) or nil,
+					MeshTextureID = descendant:IsA("MeshPart") and descendant.TextureID or nil
+				}
+				descendant.Color = Color3.fromRGB(99, 95, 98)
+				descendant.Material = Enum.Material.Slate
+
+				if v11 and descendant:FindFirstChildOfClass("SpecialMesh") then
+					descendant:FindFirstChildOfClass("SpecialMesh").TextureId = ""
+				end
+
+				if descendant:IsA("MeshPart") then
+					descendant.TextureID = ""
+				end
+			elseif descendant:IsA("Pants") then
+				p1.ClothingData[descendant] = {
+					PantsTemplate = descendant.PantsTemplate
+				}
+				descendant.PantsTemplate = ""
+			elseif descendant:IsA("Shirt") then
+				p1.ClothingData[descendant] = {
+					ShirtTemplate = descendant.ShirtTemplate
+				}
+				descendant.ShirtTemplate = ""
+			elseif descendant:IsA("Decal") then
+				p1.ClothingData[descendant] = {
+					DecalId = descendant.Texture
+				}
+				descendant.Texture = ""
+			end
+		end
+
+		if p1.Data.OnStart then
+			task.spawn(p1.Data.OnStart)
+		end
+
+		local Humanoid = p1.Character:FindFirstChild("Humanoid")
+
+		if Humanoid then
+			p1.OverhealConnection = Humanoid:GetAttributeChangedSignal("Overheal"):Connect(function() -- line: 98
+				-- upvalues: Humanoid (copy), p1 (copy), Statuses (copy)
+				local Overheal = Humanoid:GetAttribute("Overheal")
+
+				if not Overheal or Overheal <= 0 then
+					p1.Cancelled = true
+					Statuses:RemoveStatus(p1.Player, "Slateskin")
+				end
+			end)
+
+			return
+		end
+	elseif game["Run Service"]:IsClient() then
+		local Util2 = require(game.ReplicatedStorage.Modules.Util)
+
+		if not p1.SpeedMultiplier then
+			p1.SpeedMultiplier = Util2:CreateSpeedMultiplier(p1.Player, 1, "SlateskinStatus")
+		end
+
+		if not p1.FOVMultiplier then
+			p1.FOVMultiplier = Util2:CreateFOVMultiplier(p1.Player, 1, "SlateskinStatus")
+		end
+
+		local v14 = not p1.Data.Instant and 0.3 or 0
+
+		game.TweenService:Create(p1.SpeedMultiplier, TweenInfo.new(v14), {
+			Value = 0.55
+		}):Play()
+		game.TweenService:Create(p1.FOVMultiplier, TweenInfo.new(v14), {
+			Value = 0.85
+		}):Play()
+	end
+end
+function t1.Removed(p2) -- line: 120
+	-- upvalues: Util (copy), t2 (copy)
+	if p2.OverhealConnection then
+		p2.OverhealConnection:Disconnect()
+		p2.OverhealConnection = nil
+	end
+
+	if game["Run Service"]:IsServer() then
+		Util:ApplyOverheal(p2.Player, 0)
+
+		for k, v in pairs(p2.LimbData or {}) do
+			if v.TextureId and k:FindFirstChildOfClass("SpecialMesh") then
+				k:FindFirstChildOfClass("SpecialMesh").TextureId = v.TextureId
+			end
+
+			if v.MeshTextureID and k:IsA("MeshPart") then
+				k.TextureID = v.MeshTextureID
+			end
+
+			k.Color = v.Color
+			k.Material = v.Material
+		end
+
+		for v18, v19 in p2.ClothingData or {} do
+			if v18:IsA("Pants") then
+				v18.PantsTemplate = v19.PantsTemplate
+			elseif v18:IsA("Shirt") then
+				v18.ShirtTemplate = v19.ShirtTemplate
+			elseif v18:IsA("Decal") then
+				v18.Texture = v19.DecalId
+			end
+		end
+
+		if p2.Data.OnEnd then
+			task.spawn(p2.Data.OnEnd)
+		end
+
+		for _, v in pairs(t2) do
+			p2.Character:SetAttribute(`{ v }Disabled`, nil)
+		end
+
+		return
+	end
+
+	if game["Run Service"]:IsClient() then
+		for _, v in pairs({
+			p2.SpeedMultiplier,
+			p2.FOVMultiplier
+		}) do
+			game.TweenService:Create(v, TweenInfo.new(1), {
+				Value = 1
+			}):Play()
+			game.Debris:AddItem(v, 1)
+		end
+
+		p2.SpeedMultiplier = nil
+		p2.FOVMultiplier = nil
+	end
+end
+
+return t1
+
+]====]},
+{path=[====[
+ReplicatedStorage/Modules/StatusEffects/Vulnerable]====],before=false,after="743:0373d0fc:af74cb25",source=[====[
+
+return {
+	Data = {
+		Duration = 10,
+		MaxLevel = 10,
+		Stackable = false,
+		IsNegative = true,
+		Description = "Makes you more susceptible to damage.\nEvery level of this status makes you receive 20% more damage."
+	},
+	Applied = function(p1) -- line: 12
+		if game["Run Service"]:IsServer() and p1.Character then
+			local num = tonumber(p1.Level * 20)
+
+			if num then
+				require(game.ReplicatedStorage.Modules.Util):CreateResistanceMultiplier(p1.Character, -num, "VulnerableStatus", p1.Data.Duration)
+			end
+		end
+	end,
+	Removed = function(p2) -- line: 22
+		if game["Run Service"]:IsServer() and p2.Character then
+			require(game.ReplicatedStorage.Modules.Util):CreateResistanceMultiplier(p2.Character, 1, "VulnerableStatus", 0)
+		end
+	end
+}
+]====]},
+{path=[====[
+ReplicatedStorage/Modules/StatusEffects/Weakness]====],before="718:5cfee888:c64c5599",after="582:5e0bdd4e:d000e6e1",source=[====[
+
+return {
+	Data = {
+		Duration = 10,
+		MaxLevel = 10,
+		Stackable = false,
+		IsNegative = true,
+		Description = "Makes you deal less damage.\nEvery level of this status makes you deal 10% less damage."
+	},
+	Applied = function(p1) -- line: 12
+		if game["Run Service"]:IsServer() and p1.Character then
+			local num = tonumber(p1.Level * 10)
+
+			if num then
+				p1.Character:SetAttribute("WeaknessNerf", num)
+			end
+		end
+	end,
+	Removed = function(p2) -- line: 21
+		if game["Run Service"]:IsServer() and p2.Character then
+			p2.Character:SetAttribute("WeaknessNerf", nil)
+		end
+	end
+}
+]====]},
+{path=[====[
+ReplicatedStorage/Modules/Util]====],before="71923:caa514d6:c376730b",after="72069:ea508eaf:d0d8babe",source=[====[
+local t1 = {}
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+local Players = game:GetService("Players")
+local LocalizationService = game:GetService("LocalizationService")
+local DataHandler = require(game.ReplicatedStorage.Modules.DataHandler)
+local Janitor = require(game.ReplicatedStorage.Modules.Misc.Janitor) -- maid sucks
+local v11 = RunService:IsClient()
+local v12 = RunService:IsServer()
+local Initializer = require(game.ReplicatedStorage.Initializer)
+local Network = require(game.ReplicatedStorage.Modules.Network)
+local Sounds = require(game.ReplicatedStorage.Modules.Sounds)
+local spawn = task.spawn
+local floor = math.floor
+local sqrt = math.sqrt
+local t2 = {
+	Head = true,
+	Torso = true,
+	["Left Arm"] = true,
+	["Left Leg"] = true,
+	["Right Arm"] = true,
+	["Right Leg"] = true
+}
+
+PhysicalProperties.new(0.01, 0, 0, 0, 0)
+
+local physicalProperties = PhysicalProperties.new(0.7, 0.15, 0, 2, 2)
+
+t1.KillerDistanceVector = Vector3.new(1, 4, 1)
+
+function t1.RecursiveDestroy(_: {[any]: any}, t4: {[any]: any}) -- line: 43
+	-- upvalues: t1 (copy)
+	for _, v in pairs(t4) do
+		if typeof(v) == "table" then
+			t1:RecursiveDestroy(v)
+		elseif typeof(v) == "Instance" then
+			v:Destroy()
+		end
+	end
+end
+function t1.Lerp(_, p2, p3, p4) -- line: 53
+	return p2 + (p3 - p2) * p4
+end
+function t1.SerializeVector(_: {[any]: any}, vector3: Vector3) -- line: 57
+	local buf = buffer.create(12)
+	local t6 = {
+		vector3.X,
+		vector3.Y,
+		vector3.Z
+	}
+
+	for i, v in ipairs(t6) do
+		buffer.writef32(buf, 4 * (i - 1), v)
+	end
+
+	return buf
+end
+function t1.DeserializeVector(_: {[any]: any}, p5: buffer) -- line: 70
+	local function get(p6) -- line: 71
+		-- upvalues: p5 (copy)
+		return (buffer.readf32(p5, 4 * (p6 - 1)))
+	end
+
+	return (vector.create(buffer.readf32(p5, 0), buffer.readf32(p5, 4), (buffer.readf32(p5, 8))))
+end
+function t1.GetLocalTranslator(_) -- line: 78
+	-- upvalues: Players (copy), LocalizationService (copy)
+	local LocalPlayer = Players.LocalPlayer
+
+	if not LocalPlayer then
+		warn(`[{ script:GetFullName() }]: No local player found, returning...`)
+
+		return
+	end
+
+	local ok, result = pcall(function() -- line: 85
+		-- upvalues: LocalizationService (copy), LocalPlayer (copy)
+		return LocalizationService:GetTranslatorForPlayer(LocalPlayer)
+	end)
+
+	if not ok then
+		warn(`[{ script:GetFullName() }]: Failed to get translator for player: { LocalPlayer }, got: { result }`)
+
+		return
+	end
+
+	return result
+end
+function t1.AddHitboxes(_: {[any]: any}, p8, s1: string) -- line: 97
+	-- upvalues: physicalProperties (copy)
+	local v55 = typeof(p8) == "table" and p8.Config or {}
+	local v56 = typeof(p8) == "table" and p8.Rig or p8
+	local t9 = {}
+
+	assert(v56 and v56:IsA("Model"), "character must be a model")
+
+	for _, v in ipairs({
+		"CollisionHitbox",
+		"QueryHitbox"
+	}) do
+		while v56:FindFirstChild(v) do
+			v56[v]:Destroy()
+		end
+	end
+
+	local clone = (((if not v55 then nil else (if not v55.Instances then v55.CollisionHitbox else v55.Instances.CollisionHitbox))) or game.ReplicatedStorage.Assets.Instances.CollisionHitbox):Clone()
+	local v61 = clone:GetAttribute("CFrameOffset") or CFrame.new(0, 0.5, 0)
+
+	clone.CFrame = v56.PrimaryPart.CFrame * v61
+	clone.Name = "CollisionHitbox"
+
+	local clone2 = (((if not v55 then nil else (if not v55.Instances then v55.QueryHitbox else v55.Instances.QueryHitbox))) or game.ReplicatedStorage.Assets.Instances.QueryHitbox):Clone()
+	local v63 = clone:GetAttribute("CFrameOffset") or CFrame.new(0, -0.25, 0)
+
+	clone2.CFrame = v56.PrimaryPart.CFrame * v63
+	clone2.Name = "QueryHitbox"
+	clone2.CanQuery = true
+	clone2:SetAttribute("CFOffset", v63)
+
+	local v64 = v56:HasTag("Replicating") and game.Players:GetPlayerFromCharacter(v56)
+
+	for _, v in pairs({
+		clone,
+		clone2
+	}) do
+		local v67 = v == clone2 and v64
+		local WeldConstraint = Instance.new("WeldConstraint")
+
+		WeldConstraint.Enabled = not v67
+		WeldConstraint.Name = "CollisionConnector"
+		WeldConstraint.Parent = v
+		WeldConstraint.Part1 = v
+		WeldConstraint.Part0 = v56.PrimaryPart
+		v.CollisionGroup = s1
+		v.CustomPhysicalProperties = physicalProperties
+		v.Anchored = v67
+		v.Parent = v56
+		t9[v.Name] = v
+	end
+
+	return t9
+end
+function t1.FixCharacter(_: {[any]: any}, p9, s2: string) -- line: 149
+	-- upvalues: t2 (copy), physicalProperties (copy)
+	local v72 = s2 or "Survivors"
+	local t11 = {}
+
+	for _, descendant in ipairs(p9:GetDescendants()) do
+		if not descendant:GetAttribute("Hitbox") and descendant:IsA("BasePart") and descendant.CollisionGroup ~= "Ragdolls" then
+			local v76 = (t2[descendant.Name] or p9:GetAttribute("CustomRig")) and p9 == descendant.Parent
+
+			if v76 then
+				table.insert(t11, descendant)
+			end
+
+			descendant.Anchored = false
+			descendant.Massless = not v76 and descendant ~= p9.PrimaryPart
+
+			if descendant ~= p9.PrimaryPart then
+				descendant.CanCollide = false
+				descendant.CanQuery = v76 or false
+				descendant.CanTouch = v76 or false
+				descendant.CollisionGroup = "None"
+
+				if p9 ~= descendant.Parent then
+					descendant.RootPriority = -2
+				end
+			else
+				descendant.CanCollide = true
+				descendant.CanQuery = true
+				descendant.CanTouch = true
+				descendant.CustomPhysicalProperties = physicalProperties
+				descendant.CollisionGroup = v72
+			end
+		end
+	end
+
+	local v77 = 3.5 / #t11
+
+	for _, v in ipairs(t11) do
+		v.CustomPhysicalProperties = PhysicalProperties.new(v77, physicalProperties.Friction, physicalProperties.Elasticity, physicalProperties.FrictionWeight, physicalProperties.ElasticityWeight)
+	end
+end
+function t1.GetEntityType(_: {[any]: any}, p10) -- line: 201
+	local EntityType = p10:GetAttribute("EntityType")
+
+	if EntityType then
+		return EntityType == "Humanoid", EntityType
+	end
+
+	if p10:IsDescendantOf(workspace.Players) or p10:HasTag("SimulateSurvivor") then
+		return true, "Humanoid"
+	end
+
+	if p10:GetAttribute("OwnerName") then
+		return false, "Building"
+	end
+
+	return false, "Entity"
+end
+function t1.SnapToAxis(_: {[any]: any}, vector3: Vector3) -- line: 218
+	local v85 = math.abs(vector3.X)
+	local v86 = math.abs(vector3.Y)
+	local v87 = math.abs(vector3.Z)
+
+	if v86 < v85 and v87 < v85 then
+		return (Vector3.new(math.sign(vector3.X), 0, 0))
+	end
+
+	if v85 < v86 and v87 < v86 then
+		return (Vector3.new(0, math.sign(vector3.Y), 0))
+	end
+
+	return (Vector3.new(0, 0, (math.sign(vector3.Z))))
+end
+function t1.IsPlayerKiller(_: {[any]: any}, p11) -- line: 232
+	local Character = p11.Character
+
+	return Character and (Character.Parent and Character.Parent.Name == "Killers")
+end
+function t1.GetDistanceFromGround(_: {[any]: any}, p12) -- line: 237
+	local Humanoid = p12:FindFirstChildOfClass("Humanoid")
+	local v94 = p12 and p12.PrimaryPart
+	local v95 = Humanoid and Humanoid.HipHeight or 2
+
+	local function absVector(p13, p14, p15) -- line: 243
+		return (Vector3.new(math.abs(p13), math.abs(p14), (math.abs(p15))))
+	end
+
+	for _, v98 in {
+		p12:FindFirstChild("Left Leg"),
+		p12:FindFirstChild("Right Leg")
+	} do
+		if v98:IsA("Model") then
+			v95 = math.max(v98:GetExtentsSize().Y, v95)
+		elseif v98:IsA("BasePart") then
+			local v99 = v98.CFrame:VectorToWorldSpace(v98.Size)
+			local Z = v99.Z
+			local Y = v99.Y
+			local X = v99.X
+			local vector3 = Vector3.new(math.abs(Z), math.abs(Y), (math.abs(X)))
+			local v104 = v98.CFrame:VectorToObjectSpace(vector3)
+			local X2 = v104.X
+			local Y2 = v104.Y
+			local Z2 = v104.Z
+
+			v95 = math.max(Vector3.new(math.abs(X2), math.abs(Y2), (math.abs(Z2))).Y, v95)
+		end
+	end
+
+	if v94 then
+		v95 += v94.Size.Y / 2
+	end
+
+	return (math.clamp(v95, 2, 10))
+end
+function t1.IsAlive(_, p17) -- line: 268
+	return p17 and (typeof(p17) == "Instance" and (p17.Parent and (p17.PrimaryPart and (p17:FindFirstChild("Humanoid") and p17.Humanoid.Health > 0))))
+end
+function t1.EmitParticlesFromAttachment(_: {[any]: any}, p18) -- line: 273
+	for _, child in pairs(p18:GetChildren()) do
+		if child:IsA("ParticleEmitter") then
+			child:Emit(child:GetAttribute("EmitCount") or 1)
+		end
+	end
+end
+function t1.RemoveInstancesFromTableOfInstances(_: {[any]: any}, t18: {[any]: any}, t19: {[any]: any}) -- line: 281
+	for k, v in pairs(t18) do
+		if t19[v.Name] or t19[v.ClassName] then
+			table.remove(t18, k)
+		end
+	end
+
+	return t18
+end
+function t1.DoFOVBop(_: {[any]: any}, p19, n1: number, n2: number, p20) -- line: 291
+	-- upvalues: t1 (copy), HttpService (copy), TweenService (copy)
+	local v124 = t1:CreateFOVMultiplier(p19, n1, HttpService:GenerateGUID(false))
+	local tween = TweenService:Create(v124, p20, {
+		Value = n2
+	})
+
+	tween:Play()
+	tween.Completed:Once(function(_) -- line: 297
+		-- upvalues: v124 (copy)
+		v124:Destroy()
+	end)
+end
+function t1.LoadAnimationFromID(_: {[any]: any}, p22, s3: string, b1: boolean) -- line: 303
+	if not p22 then
+		warn(debug.traceback("no rig found while loading animation from ID!"))
+
+		return
+	end
+
+	if not s3 then
+		warn(debug.traceback("no ID found while loading animation onto rig!"))
+
+		return
+	end
+
+	if typeof(s3) ~= "string" then
+		return
+	end
+
+	if s3 == "rbxassetid://0" then
+		warn(`[Util :: LoadAnimationFromID]: Invalid ID { s3 } for rig { p22.Name }!`)
+
+		return
+	end
+
+	local Animator = p22:FindFirstChild("Animator", true)
+
+	while not Animator do
+		task.wait()
+		Animator = p22:FindFirstChild("Animator", true)
+	end
+
+	local s3_2 = p22:FindFirstChild(s3)
+
+	if s3_2 then
+		return Animator:LoadAnimation(s3_2)
+	end
+
+	local Animation = Instance.new("Animation")
+
+	Animation.Name = s3
+	Animation.AnimationId = s3
+	Animation.Parent = p22
+
+	local track = Animator:LoadAnimation(Animation)
+	local n3 = 0
+
+	if b1 and track.Length <= 0 then
+		repeat
+			n3 += task.wait()
+		until track.Length > 0 or n3 >= 25
+	end
+
+	return track
+end
+function t1.PlayDummyCutsceneAnimations(_: {[any]: any}, p23, p24, s4: string) -- line: 341
+	-- upvalues: t1 (copy)
+	local KillerCutsceneBackground = workspace.Misc:WaitForChild("KillerCutsceneBackground", 5)
+	local t23 = {}
+
+	if KillerCutsceneBackground then
+		local Dummies = KillerCutsceneBackground:FindFirstChild("Dummies")
+
+		if not Dummies then
+			return
+		end
+
+		for _, child in ipairs(Dummies:GetChildren()) do
+			if p23.Config.Animations[s4][child.Name .. "Rig"] then
+				local v144 = t1:LoadAnimationFromID(child, p23.Config.Animations[s4][child.Name .. "Rig"])
+
+				v144.Looped = false
+				v144:Play()
+				v144.Stopped:Once(function() -- line: 354
+					-- upvalues: child (copy), v144 (copy)
+					for _, child2 in ipairs(child:GetChildren()) do
+						if child2:IsA("BasePart") then
+							child2.Anchored = true
+						end
+					end
+
+					v144:Play()
+					v144.TimePosition = v144.Length
+					v144:AdjustSpeed(0)
+				end)
+				game.Debris:AddItem(v144, p24 + 3)
+				t23[child] = v144
+			end
+		end
+	end
+
+	return t23
+end
+function t1.GetRandomFriendLocal(_) -- line: 374
+	-- upvalues: Players (copy)
+	assert(game:GetService("RunService"):IsClient(), "GetRandomFriendLocal() can only be called on the client context!")
+
+	local ok, result = pcall(function() -- line: 377
+		-- upvalues: Players (copy)
+		return Players:GetFriendsAsync(Players.LocalPlayer.UserId)
+	end)
+
+	if not ok then
+		warn(`[{ script.Name }:GetFirstFriendLocal()]: Failed to get friends list for local player: { result }`)
+
+		return nil
+	end
+
+	local CurrentPage = result:GetCurrentPage()
+
+	return CurrentPage and CurrentPage[math.random(#CurrentPage)]
+end
+function t1.ApplyDamage(_: {[any]: any}, p26, n4: number, n5: number?, damageSource: Instance?) -- line: 391
+	-- upvalues: t1 (copy)
+	local AchievementUtil = require(game.ReplicatedStorage.Modules.AchievementUtil)
+	local Actors = require(game.ReplicatedStorage.Modules.Actors)
+	local Humanoid = p26:FindFirstChild("Humanoid")
+	local num = tonumber(n4)
+	if num and damageSource then num = require(game.ReplicatedStorage.Modules.DamageRules).ScaleDamage(damageSource, num) end
+
+	if not num or (not Humanoid or not (Humanoid.Health > 0)) then
+		return
+	end
+
+	if p26:GetAttribute("Invincible") then
+		return
+	end
+
+	local ResistanceMultipliers = p26:FindFirstChild("ResistanceMultipliers")
+	local n6 = 0
+
+	for _, v in pairs(ResistanceMultipliers and ResistanceMultipliers:GetChildren() or {}) do
+		n6 += v.Value
+	end
+
+	local v161 = num * (1 - math.min(n6, 100) / 100)
+	local v162 = Actors.CurrentActors[game.Players:GetPlayerFromCharacter(p26)]
+
+	if v162 and v162.Behavior and v162.Behavior.OnHit then
+		local t25 = {
+			TimePast = 0
+		}
+
+		v162.Behavior:OnHit(v162, t25, v161)
+
+		if t25.TimePast ~= 0 then
+			return
+		end
+	end
+
+	local v164 = Humanoid:GetAttribute("Overheal") or 0
+	local v165 = p26:GetAttribute("ShatterpointHP") or 0
+	local _ = Humanoid.Health + v164 + v165
+	local v167 = if Humanoid.Health > 0 then p26:GetAttribute("DusekkarProtected") and game.Players:FindFirstChild(p26:GetAttribute("DusekkarProtected")) else p26:GetAttribute("DusekkarProtected") and game.Players:FindFirstChild(p26:GetAttribute("DusekkarProtected"))
+	local v168 = math.max(0, v164 - v161)
+
+	if v168 < (Humanoid:GetAttribute("OverhealDecayMin") or 0) then
+		Humanoid:SetAttribute("OverhealDecayMin", v168 > 0 and v168 or nil)
+	end
+
+	local v169 = v161 - v164
+
+	if v169 > 0 and v165 > 0 then
+		local v170 = v169 * (p26:GetAttribute("ShatterpointResistance") or 1)
+
+		if v170 > 0 then
+			local Actor = t1:GetActor(p26)
+
+			if Actor and Actor.Behavior and Actor.Behavior.sv_DamageCrystalHP then
+				Actor.Behavior:sv_DamageCrystalHP(Actor, v170)
+			else
+				p26:SetAttribute("ShatterpointHP", (math.max(0, v165 - v170)))
+			end
+
+			local v172 = v170 - v165
+
+			v169 = not (v172 > 0) and 0 or v172
+		end
+	end
+
+	local v173 = math.clamp(v169, 0, Humanoid.Health - (n5 or 0))
+
+	if Humanoid.Health - v173 <= 0 and v167 then
+		local Character = v167.Character
+
+		Actors:IncrementActorStats(v167, {
+			Action = "Prevented the death of a Survivor",
+			Money = 10,
+			EXP = 30,
+			KillerChance = 0.5
+		})
+		p26:SetAttribute("DusekkarProtected", nil)
+		Character:SetAttribute("Protecting", nil)
+		AchievementUtil:IncrementAchievementProgress(v167, "DusekkarUbercharge")
+
+		return
+	end
+
+	if Humanoid:GetAttribute("Overheal") then
+		Humanoid:SetAttribute("Overheal", v168 > 0 and v168 or nil)
+	end
+
+	Humanoid.Health = Humanoid.Health - v173
+
+	if Humanoid.Health <= 0 then
+		Humanoid:SetAttribute("Overheal", nil)
+		Humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+	end
+
+	if Humanoid.Health <= 0 and tostring(p26.Parent) == "Survivors" then
+		local RoundManager = game.ServerScriptService.Server.Systems.Core.RoundManager
+		local lib = require(RoundManager)
+
+		require(RoundManager.Configuration)
+
+		if lib.CurrentSession and lib.CurrentSession.TimePast then
+			local CurrentSession = lib.CurrentSession
+
+			CurrentSession.TimePast = CurrentSession.TimePast - (tonumber(lib.CurrentSession.Gamemode and lib.CurrentSession.Gamemode.TimeAddedOnKill) or 20)
+		end
+
+		local str = tostring(p26:GetAttribute("RecentAttacker"))
+		local v179 = tonumber(p26:GetAttribute("RecentAttackerTime")) or 0
+		local str2 = game.Players:FindFirstChild(str)
+
+		if str2 and v179 + 12.5 >= os.clock() then
+			require(game.ReplicatedStorage.Modules.Stats):UpdatePlayerStat(str2, "Kills", "Add", 1)
+
+			local Actor = t1:GetActor(str2)
+
+			if Actor and Actor.Behavior and Actor.Behavior.OnKill then
+				local ok, result = pcall(function() -- line: 514
+					-- upvalues: Actor (copy), p26 (copy)
+					return Actor.Behavior.OnKill(Actor, p26)
+				end)
+
+				if not ok then
+					warn(`[{ script }/CreateHitbox]: Failed to call .OnKill() due to: { result }`)
+				end
+			end
+
+			Actors:IncrementActorStats(str2, {
+				Action = "Killed a Survivor through damage over time",
+				Money = 15,
+				EXP = 45
+			})
+		end
+	end
+end
+function t1.Heal(_: {[any]: any}, p27, n7: number, _) -- line: 540
+	local v188 = p27:GetAttribute("HardDamage") or 0
+
+	if p27.Health > p27.MaxHealth - v188 then
+		return false
+	end
+
+	p27.Health = math.clamp(p27.Health + n7, 0, p27.MaxHealth - v188)
+
+	return true
+end
+
+t1.SpeedCaps = {}
+
+function t1.SetSpeedCap(_: {[any]: any}, p29, s5: string, n8: number?, n9: number?) -- line: 553
+	-- upvalues: t1 (copy)
+	if game["Run Service"]:IsClient() then
+		return
+	end
+
+	if not s5 then
+		return
+	end
+
+	local v194 = p29 and (p29:IsA("Model") and p29 or p29.Character)
+
+	if not v194 then
+		return
+	end
+
+	if n8 then
+		if not t1.SpeedCaps[v194] then
+			t1.SpeedCaps[v194] = {}
+		end
+
+		t1.SpeedCaps[v194][s5] = {
+			Value = n8,
+			ID = math.random(0, 1000000)
+		}
+
+		return
+	end
+
+	if t1.SpeedCaps[v194] then
+		if tonumber(n9) then
+			local ID = t1.SpeedCaps[v194].ID
+
+			task.delay(n9, function() -- line: 572
+				-- upvalues: t1 (copy), v194 (copy), ID (copy), s5 (copy)
+				if t1.SpeedCaps[v194] and t1.SpeedCaps[v194].ID == ID then
+					t1.SpeedCaps[v194][s5] = nil
+				end
+			end)
+
+			return
+		end
+
+		t1.SpeedCaps[v194][s5] = nil
+	end
+end
+
+local t28 = {}
+local t29 = {}
+
+function t1.GiveStackableAttribute(_: {[any]: any}, p30, s6: string, s7: string, n10: number?) -- line: 589
+	-- upvalues: t1 (copy), t28 (copy)
+	if not p30 then
+		return
+	end
+
+	if typeof(p30) == "Model" and (not p30 or not t1:IsAlive(p30)) then
+		return
+	end
+
+	local v201 = s7 or "Default"
+	local v202 = t28[p30]
+
+	if not v202 then
+		v202 = {}
+		t28[p30] = v202
+		p30.Destroying:Once(function() -- line: 601
+			-- upvalues: t28 (copy), p30 (copy)
+			table.clear(t28[p30] or {})
+			t28[p30] = nil
+		end)
+	end
+
+	local u203 = v202[s6]
+
+	if not u203 then
+		u203 = {}
+		v202[s6] = u203
+	end
+
+	local v204 = not p30:GetAttribute(s6) and 0 or (typeof(p30:GetAttribute(s6)) ~= "number" and 1 or p30:GetAttribute(s6))
+	local v205 = u203[v201]
+
+	if v205 then
+		if typeof(v205) == "thread" then
+			pcall(task.cancel, v205)
+		end
+
+		v204 -= 1
+	end
+
+	u203[v201] = nil
+	p30:SetAttribute(s6, v204 + 1)
+
+	if n10 then
+		u203[v201] = task.delay(n10, function() -- line: 633
+			-- upvalues: t1 (copy), p30 (copy), t28 (copy), u203 (ref), v201 (copy), s6 (copy)
+			if not t1:IsAlive(p30) then
+				return
+			end
+
+			if not t28[p30] then
+				return
+			end
+
+			u203[v201] = nil
+
+			if not next(u203) then
+				p30:SetAttribute(s6, nil)
+
+				return
+			end
+
+			local v650 = not p30:GetAttribute(s6) and 0 or (typeof(p30:GetAttribute(s6)) ~= "number" and 1 or p30:GetAttribute(s6))
+
+			p30:SetAttribute(s6, v650 - 1)
+		end)
+	else
+		u203[v201] = true
+	end
+end
+function t1.RemoveStackableAttribute(_: {[any]: any}, p31, s8: string, s9: string?) -- line: 651
+	-- upvalues: t1 (copy), t28 (copy)
+	if not p31 then
+		return
+	end
+
+	if typeof(p31) == "Model" and (not p31 or not t1:IsAlive(p31)) then
+		return
+	end
+
+	local v210 = t28[p31]
+
+	if not v210 then
+		return
+	end
+
+	local v211 = v210[s8]
+
+	if not v211 then
+		return
+	end
+
+	if not s9 then
+		for k, v in pairs(v211) do
+			if typeof(v) == "thread" then
+				pcall(task.cancel, v)
+			end
+
+			v211[k] = nil
+		end
+
+		table.clear(v211 or {})
+		p31:SetAttribute(s8, nil)
+
+		return
+	end
+
+	local v214 = v211[s9]
+
+	if not v214 then
+		return
+	end
+
+	if typeof(v214) == "thread" then
+		pcall(task.cancel, v214)
+	end
+
+	v211[s9] = nil
+
+	if not next(v211) then
+		p31:SetAttribute(s8, nil)
+
+		return
+	end
+
+	p31:SetAttribute(s8, (not p31:GetAttribute(s8) and 0 or (typeof(p31:GetAttribute(s8)) ~= "number" and 1 or p31:GetAttribute(s8))) - 1)
+end
+function t1.GiveStackableProperty(_: {[any]: any}, p32, s10: string, s11: string) -- line: 695
+	-- upvalues: t29 (copy)
+	local v219 = s11 or "Default"
+	local v220 = t29[p32]
+
+	if not v220 then
+		v220 = {}
+		t29[p32] = v220
+		p32.Destroying:Once(function() -- line: 704
+			-- upvalues: t29 (copy), p32 (copy)
+			table.clear(t29[p32] or {})
+			t29[p32] = nil
+		end)
+	end
+
+	local v221 = v220[s10]
+
+	if not v221 then
+		v221 = {}
+		v220[s10] = v221
+	end
+
+	p32[s10] = true
+	v221[v219] = true
+end
+function t1.RemoveStackableProperty(_: {[any]: any}, p33, s12: string, s13: string?) -- line: 723
+	-- upvalues: t29 (copy)
+	if not p33 then
+		warn("no instance")
+
+		return
+	end
+
+	local v226 = t29[p33]
+
+	if not v226 then
+		warn(`[{ script }]: property cache was never created for character { p33 } (caller: { debug.info(2, "s") }:{ debug.info(2, "l") })`)
+
+		return
+	end
+
+	local v227 = v226[s12]
+
+	if not v227 then
+		warn(`[{ script }]: '{ s12 }' property cache was never created for { p33 } (caller: { debug.info(2, "s") }:{ debug.info(2, "l") })`)
+
+		return
+	end
+
+	if not s13 then
+		for k, _ in pairs(v227) do
+			v227[k] = nil
+		end
+
+		table.clear(v227 or {})
+		p33[s12] = false
+
+		return
+	end
+
+	if not v227[s13] then
+		warn(s12, "not applied with reason", s13)
+
+		return
+	end
+
+	v227[s13] = nil
+
+	if not next(v227) then
+		p33[s12] = false
+
+		return
+	end
+
+	warn("reasons for property", s12, "still present, not removing", v227)
+end
+function t1.GiveInvincible(_: {[any]: any}, p34, s14: string, n11: number?) -- line: 774
+	-- upvalues: t1 (copy)
+	if typeof(p34) ~= "Instance" then
+		warn("Attempted to make a non-instance invincible")
+
+		return
+	end
+
+	local v234 = p34:IsA("Model") and p34.PrimaryPart
+
+	if v234 and not v234:FindFirstChild("InvincibleFX") then
+		game.ReplicatedStorage.Assets.UI.InvincibleVFX.InvincibleFX:Clone().Parent = v234
+	end
+
+	t1:GiveStackableAttribute(p34, "Invincible", s14)
+
+	if n11 then
+		task.delay(n11, function() -- line: 790
+			-- upvalues: t1 (copy), p34 (copy), s14 (copy)
+			t1:RemoveInvincible(p34, s14)
+		end)
+	end
+end
+function t1.RemoveInvincible(_: {[any]: any}, p35, s15: string) -- line: 796
+	-- upvalues: t1 (copy)
+	if typeof(p35) ~= "Instance" then
+		warn("Attempted to make a non-instance not invincible")
+
+		return
+	end
+
+	t1:RemoveStackableAttribute(p35, "Invincible", s15)
+
+	if not p35:GetAttribute("Invincible") then
+		local v238 = p35:IsA("Model") and p35.PrimaryPart
+
+		if v238 then
+			local InvincibleFX = v238:FindFirstChild("InvincibleFX")
+
+			if InvincibleFX then
+				InvincibleFX.Name = "Destroying"
+				InvincibleFX.Main.Enabled = false
+				game.Debris:AddItem(InvincibleFX, 0.6)
+			end
+		end
+	end
+end
+function t1.ToggleAnchored(_: {[any]: any}, p36, s16: string?, b2: boolean) -- line: 818
+	-- upvalues: t1 (copy)
+	local v244 = p36 and (p36:IsA("Model") and p36.PrimaryPart)
+
+	if not v244 then
+		return
+	end
+
+	if b2 then
+		t1:GiveStackableProperty(v244, "Anchored", s16)
+
+		return
+	end
+
+	t1:RemoveStackableProperty(v244, "Anchored", s16)
+end
+function t1.CreateValueMultiplier(_: {[any]: any}, p37, s17: string, n12: number, s18: string, n13: number?, b3: boolean?) -- line: 831
+	-- upvalues: TweenService (copy), Debris (copy)
+	local v252 = p37 and (p37:IsA("Model") and p37 or p37.Character)
+	local v253 = v252 and v252:FindFirstChild(`{ s17 }Multipliers`)
+	local v254 = v253 and v253:FindFirstChild((tostring(s18)))
+	local NumberValue = Instance.new("NumberValue")
+
+	NumberValue.Value = n12 or 1
+	NumberValue.Name = s18 or `{ s17 }Multiplier`
+	NumberValue:SetAttribute("Tick", os.clock())
+	NumberValue:SetAttribute("Duration", n13)
+	NumberValue.Parent = v253
+
+	if n13 then
+		if b3 then
+			task.delay(n13 - 0.3, function() -- line: 841
+				-- upvalues: TweenService (copy), NumberValue (copy)
+				TweenService:Create(NumberValue, TweenInfo.new(0.3), {
+					Value = 1
+				}):Play()
+			end)
+		end
+
+		Debris:AddItem(NumberValue, n13)
+	end
+
+	if v254 then
+		v254:Destroy()
+	end
+
+	return NumberValue
+end
+function t1.CreateSpeedMultiplier(_: {[any]: any}, p38, n14: number, s19: string, n15: number?, b4: boolean?) -- line: 855
+	-- upvalues: t1 (copy)
+	return t1:CreateValueMultiplier(p38, "Speed", n14, s19, n15, b4)
+end
+function t1.CreateFOVMultiplier(_: {[any]: any}, p39, n16: number, s20: string, n17: number, b5: boolean) -- line: 860
+	-- upvalues: t1 (copy)
+	return t1:CreateValueMultiplier(p39, "FOV", n16, s20, n17, b5)
+end
+function t1.CreateResistanceMultiplier(_: {[any]: any}, p40, n18: number, s21: string, n19: number, b6: boolean) -- line: 865
+	-- upvalues: t1 (copy)
+	return t1:CreateValueMultiplier(p40, "Resistance", n18, s21, n19, b6)
+end
+function t1.GetSettingValue(_, p42, p43) -- line: 870
+	-- upvalues: v11 (copy), DataHandler (copy)
+	if v11 then
+		local v277 = if not p43 then DataHandler:ReadPath("Settings"):FindFirstChild(p42, true) else DataHandler:ReadPathFrom(p43, "Settings"):FindFirstChild(p42, true)
+
+		return v277 and v277.Value or nil
+	end
+
+	local p42_2 = DataHandler:ReadPathFrom(p43, "Settings"):FindFirstChild(p42, true)
+
+	return p42_2 and p42_2.Value or nil
+end
+function t1.ApplyOverheal(_: {[any]: any}, p44, n20: number, b7: boolean?) -- line: 886
+	local v283 = p44 and (p44:IsA("Model") and p44 or p44.Character)
+	local v284 = v283 and v283:FindFirstChild("Humanoid")
+
+	if not v284 then
+		return
+	end
+
+	if not tonumber(n20) then
+		return
+	end
+
+	if n20 <= 0 then
+		v284:SetAttribute("Overheal", nil)
+		v284:SetAttribute("DrainingID", nil)
+
+		return
+	end
+
+	if b7 then
+		v284:SetAttribute("Overheal", (v284:GetAttribute("Overheal") or 0) + n20)
+	else
+		v284:SetAttribute("Overheal", n20)
+	end
+
+	if b7 then
+		local v285 = math.random(-10000000, 10000000)
+
+		v284:SetAttribute("DrainingID", v285)
+		task.spawn(function() -- line: 912
+			-- upvalues: v284 (copy), v285 (copy)
+			while v284.Parent and v284.Health > 0 and v285 == v284:GetAttribute("DrainingID") do
+				local v651 = v284:GetAttribute("OverhealDecayMin") or 0
+				local elapsed = task.wait()
+				local Overheal = v284:GetAttribute("Overheal")
+
+				if not Overheal then
+					break
+				end
+
+				local v654 = math.clamp(Overheal - 2 * elapsed, v651, 1e999)
+
+				if v654 <= v651 then
+					v284:SetAttribute("Overheal", v651 > 0 and v651 or nil)
+
+					break
+				end
+
+				v284:SetAttribute("Overheal", v654)
+			end
+
+			if v285 == v284:GetAttribute("DrainingID") then
+				local v655 = v284:GetAttribute("OverhealDecayMin") or 0
+
+				v284:SetAttribute("Overheal", v655 > 0 and v655 or nil)
+				v284:SetAttribute("DrainingID", nil)
+			end
+		end)
+	end
+end
+function t1.GetPlayerMousePosition(_: {[any]: any}, p45, ...) -- line: 942
+	-- upvalues: v12 (copy), Network (copy), v11 (copy)
+	if v12 then
+		return (Network:FireClientConnection(p45, "GetMousePosition", "REMOTE_FUNCTION", ...))
+	end
+
+	if v11 then
+		return require(game.ReplicatedStorage.Systems.Player.Miscellaneous.GetPlayerMousePosition):GetMousePos(...)
+	end
+end
+function t1.GetPlayerCameraCFrame(_: {[any]: any}, p46, ...) -- line: 953
+	-- upvalues: v12 (copy), Network (copy), v11 (copy)
+	if v12 then
+		return (Network:FireClientConnection(p46, "GetCameraCFrame", "REMOTE_FUNCTION", ...))
+	end
+
+	if v11 then
+		return require(game.ReplicatedStorage.Systems.Player.Miscellaneous.GetPlayerMousePosition):GetCameraCFrame(...)
+	end
+end
+function t1.GetActor(_: {[any]: any}, p47) -- line: 963
+	if typeof(p47) ~= "Instance" then return nil end
+	local actors = require(game.ReplicatedStorage.Modules.Actors).CurrentActors
+	local rig = p47:IsA("Model") and p47 or p47:IsA("Player") and p47.Character
+	if not rig then return nil end
+	local key = p47:IsA("Model") and (game.Players:GetPlayerFromCharacter(p47) or p47) or p47
+	local actor = actors[key]
+	if actor then return actor end
+	for _, candidate in pairs(actors) do
+		if candidate.Rig == rig then return candidate end
+	end
+end
+function t1.SetUpCutscene(_: {[any]: any}, p48, p49, cFrame: CFrame?, s22: string) -- line: 973
+	-- upvalues: t1 (copy)
+	local v297 = t1:GetActor(p48) or p48
+	local v298 = t1:GetActor(p49) or p49
+	local v299 = s22 or "Cutscene"
+	local PrimaryPart = p49.PrimaryPart
+	local PrimaryPart2 = p48.PrimaryPart
+	local v302 = typeof(v297) == "table" and v297:GetPivot().Position or PrimaryPart2.Position
+	local v303 = typeof(v298) == "table" and v298:GetPivot().Position or PrimaryPart.Position
+	local cFrame2 = CFrame.new(v302, (Vector3.new(v303.X, v302.Y, v303.Z)))
+
+	if cFrame2 ~= cFrame2 then
+		cFrame2 = PrimaryPart2.CFrame
+	end
+
+	v297:PivotTo(cFrame2)
+	v298:PivotTo(PrimaryPart2.CFrame * (cFrame or CFrame.new()))
+	p48.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+	p49.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+	t1:ToggleAnchored(p48, v299, true)
+	t1:ToggleAnchored(p49, v299, true)
+	t1:GiveStackableAttribute(p49, "NoItems", v299, 7)
+end
+function t1.RagdollLaunch(_: {[any]: any}, p50, p51, vector3: Vector3, n21: number) -- line: 1001
+	local raycastParams = RaycastParams.new()
+
+	raycastParams.FilterDescendantsInstances = workspace.Players:GetDescendants()
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+
+	local v311 = p50.Rig.PrimaryPart.Size.X / 2
+	local v312 = typeof(p50) == "table" and p50:GetPivot().Position or p50.PrimaryPart.Position
+	local Magnitude = vector3.Magnitude
+	local v314 = Magnitude / 10
+	local raycastResult = workspace:Raycast(p51.PrimaryPart.Position, vector3.Unit * v314, raycastParams)
+	local v316 = raycastResult and raycastResult.Distance or v314
+	local v317 = vector3 * game.TweenService:GetValue(v316 / v314, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+	p51:SetPrimaryPartCFrame(CFrame.new(v312 + vector3.Unit * v311))
+	p51.PrimaryPart.AssemblyLinearVelocity = v317
+
+	local Ragdolls = require(game.ReplicatedStorage.Modules.Ragdolls)
+
+	Ragdolls.AddProfile(p51, {
+		Velocity = v317
+	})
+	Ragdolls.EnableRagdoll(p51, n21 or math.clamp(Magnitude / 80, 0.5, 5))
+end
+function t1.SelectRandomKillers(_: {[any]: any}, t48: {[any]: any}, p52) -- line: 1027
+	-- upvalues: t1 (copy)
+	local t49 = {}
+	local t50 = {}
+
+	for _, v in pairs(t48) do
+		local v326 = v.Instance and v.Instance:FindFirstChild("PlayerData")
+		local v327 = v326 and v326:FindFirstChild("Stats")
+		local v328 = v327 and v327:FindFirstChild("KillerChance", true)
+
+		if v328 then
+			v.KillerChance = v328
+			table.insert(t50, v)
+		end
+	end
+
+	local v331 = workspace:GetAttribute("ServerType") == "VIP"
+
+	if v331 then
+		t1:ShuffleTable(t50)
+	else
+		table.sort(t50, function(p53, p54) -- line: 1054
+			return p53.KillerChance.Value > p54.KillerChance.Value
+		end)
+	end
+
+	local v332 = math.clamp(#t48 - 1, not workspace:GetAttribute("ForcedKiller") and 0 or 1, 1e999)
+
+	if v332 >= 1 then
+		for _ = 1, math.clamp(p52, 1, v332) do
+			local v334 = nil
+			local v335 = nil
+			local ForcedKiller = workspace:GetAttribute("ForcedKiller")
+
+			workspace:SetAttribute("ForcedKiller", nil)
+
+			if ForcedKiller then
+				for k, v in pairs(t50) do
+					if ForcedKiller == tostring(v.Instance) then
+						v334 = v
+						v335 = k
+					end
+				end
+			end
+
+			if not v334 then
+				v334 = t50[1]
+				v335 = 1
+			end
+
+			if v334 and v335 then
+				if not v331 then
+					v334.KillerChance.Value = 1
+				end
+
+				table.insert(t49, v334)
+				table.remove(t50, v335)
+			end
+		end
+	end
+
+	if not v331 then
+		for _, v in pairs(t50) do
+			t1:AddToPlayerStat(v.Instance, "KillerChance", 1)
+		end
+	end
+
+	return t49, t50
+end
+function t1.PreloadAssets(_: {[any]: any}, t52: {[any]: any}, p55: ((...any) -> ...any)?) -- line: 1129
+	-- upvalues: v11 (copy)
+	task.spawn(function() -- line: 1133
+		-- upvalues: v11 (copy), t52 (copy), p55 (copy)
+		local t53 = {}
+
+		local function fetchAssets(p56) -- line: 1135
+			-- upvalues: fetchAssets (copy), v11 (copy), t53 (ref)
+			for k, v in pairs(p56) do
+				if typeof(v) == "table" then
+					fetchAssets(v)
+				elseif typeof(v) == "string" and v:find("rbxassetid://") then
+					if k == "Sounds" and v11 then
+						local Sound = Instance.new("Sound")
+
+						Sound.Parent = workspace:FindFirstChild("Sounds")
+						Sound.SoundId = v
+						Sound.Volume = 0
+						Sound:Play()
+						game.Debris:AddItem(Sound, 1)
+					end
+
+					table.insert(t53, v)
+				end
+			end
+		end
+
+		fetchAssets(t52)
+		game.ContentProvider:PreloadAsync(t53, p55)
+		table.clear(t53)
+		t53 = nil
+	end)
+end
+function t1.ToggleLockForAbilityIcon(_, p58, p59, p60) -- line: 1161
+	local AbilityContainer = game.Players.LocalPlayer.PlayerGui.MainUI:FindFirstChild("AbilityContainer")
+	local v349 = AbilityContainer and AbilityContainer:FindFirstChild((tostring(p58)))
+
+	if not v349 then
+		return
+	end
+
+	local function setAbilityIconTitleTransparencies(p61) -- line: 1169
+		-- upvalues: v349 (copy)
+		local Clipping = v349:FindFirstChild("Clipping")
+		local CooldownTime = v349:FindFirstChild("CooldownTime")
+
+		if Clipping then
+			Clipping.Visible = p61
+		end
+
+		if CooldownTime then
+			CooldownTime.Visible = p61
+		end
+	end
+
+	if p60 and not v349:FindFirstChild(p59) then
+		local clone = script.AbilityLock:Clone()
+
+		clone.Name = p59
+		clone.Parent = v349
+
+		local Clipping = v349:FindFirstChild("Clipping")
+		local CooldownTime = v349:FindFirstChild("CooldownTime")
+
+		if Clipping then
+			Clipping.Visible = false
+		end
+
+		if CooldownTime then
+			CooldownTime.Visible = false
+
+			return
+		end
+	elseif not p60 then
+		local Clipping = v349:FindFirstChild("Clipping")
+		local CooldownTime = v349:FindFirstChild("CooldownTime")
+
+		if Clipping then
+			Clipping.Visible = true
+		end
+
+		if CooldownTime then
+			CooldownTime.Visible = true
+		end
+
+		local p59_2 = v349:FindFirstChild(p59)
+
+		if p59_2 then
+			p59_2:Destroy()
+		end
+	end
+end
+function t1.ToggleLocksForAbilityIcons(_, p63, p64) -- line: 1196
+	-- upvalues: t1 (copy)
+	local AbilityContainer = game.Players.LocalPlayer.PlayerGui.MainUI:FindFirstChild("AbilityContainer")
+	local v361 = AbilityContainer and AbilityContainer:GetChildren() or {}
+
+	for _, v in pairs(v361) do
+		if v:IsA("GuiObject") then
+			t1:ToggleLockForAbilityIcon(v.Name, p63, p64)
+		end
+	end
+end
+
+local ScreenGui = nil
+
+function t1.CreateDisplayUI(_: {[any]: any}, t55: {[any]: any}) -- line: 1210
+	-- upvalues: ScreenGui (ref), TweenService (copy), Debris (copy)
+	if not ScreenGui then
+		ScreenGui = Instance.new("ScreenGui")
+		ScreenGui.Name = "KillerIntroUI"
+		ScreenGui.DisplayOrder = 10
+		ScreenGui.ResetOnSpawn = false
+		ScreenGui.Parent = game.Players.LocalPlayer.PlayerGui
+	end
+
+	local t56 = {}
+	local KillerDisplays = game.ReplicatedStorage.Assets.UI.KillerDisplays
+	local clone = KillerDisplays.KillerDisplayBackground:Clone()
+
+	clone.Parent = ScreenGui
+	clone.ImageTransparency = 1
+	clone.Title.TextTransparency = 1
+	clone.Title.Text = not (#t55 > 1) and "This round's killer is..." or "This round's killers are..."
+	TweenService:Create(clone, TweenInfo.new(0.2), {
+		ImageTransparency = 0
+	}):Play()
+	TweenService:Create(clone.Title, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {
+		TextTransparency = 0
+	}):Play()
+	table.insert(t56, clone)
+	table.insert(t56, clone.Title)
+	task.delay(0.65, function() -- line: 1233
+		-- upvalues: t55 (copy), KillerDisplays (copy), clone (copy), TweenService (copy), t56 (copy)
+		for k, v in pairs(t55) do
+			local clone3 = KillerDisplays.Display:Clone()
+
+			clone3.Parent = clone.Displays
+			clone3.LayoutOrder = k
+			clone3.KillerName.Text = v.KillerName
+			clone3.PlayerName.Text = `({ v.PlayerName })`
+			clone3.KillerName.TextTransparency = 1
+			clone3.PlayerName.TextTransparency = 1
+			TweenService:Create(clone3.KillerName, TweenInfo.new(0.2), {
+				TextTransparency = 0
+			}):Play()
+			TweenService:Create(clone3.PlayerName, TweenInfo.new(0.2), {
+				TextTransparency = 0.6
+			}):Play()
+			table.insert(t56, clone3.KillerName)
+			table.insert(t56, clone3.PlayerName)
+
+			if k ~= #t55 then
+				local clone4 = KillerDisplays.Separator:Clone()
+
+				clone4.Parent = clone.Displays
+				clone4.LayoutOrder = k
+				clone4.TextTransparency = 1
+				TweenService:Create(clone4, TweenInfo.new(0.2), {
+					TextTransparency = 0
+				}):Play()
+				table.insert(t56, clone4)
+			end
+		end
+	end)
+	task.delay(5, function() -- line: 1259
+		-- upvalues: t56 (copy), Debris (copy), TweenService (copy)
+		for _, v in pairs(t56) do
+			Debris:AddItem(v, 0.5)
+
+			if v:IsA("TextLabel") then
+				TweenService:Create(v, TweenInfo.new(0.5), {
+					TextTransparency = 1
+				}):Play()
+			elseif v:IsA("ImageLabel") then
+				TweenService:Create(v, TweenInfo.new(0.5), {
+					ImageTransparency = 1
+				}):Play()
+			end
+		end
+	end)
+end
+
+local u24 = nil
+
+function t1.CreateTooltip(_, p66) -- line: 1274
+	-- upvalues: u24 (ref), Sounds (copy), UserInputService (copy)
+	local LocalPlayer = game.Players.LocalPlayer
+
+	if u24 and (u24.Title.Text ~= tostring(p66) or not u24.Parent) then
+		if u24.Parent then
+			game.TweenService:Create(u24.Title, TweenInfo.new(0.15), {
+				TextSize = 0,
+				TextTransparency = 1
+			}):Play()
+			game.TweenService:Create(u24.Background, TweenInfo.new(0.15), {
+				ImageTransparency = 1,
+				Size = UDim2.fromScale()
+			}):Play()
+			game.Debris:AddItem(u24, 0.15)
+			Sounds:Play("hoverEnd")
+		end
+
+		u24 = nil
+	elseif not u24 and p66 then
+		local v372 = UserInputService:GetMouseLocation() - game.GuiService:GetGuiInset()
+
+		u24 = script.Tooltip:Clone()
+		u24.Title.Text = p66
+		u24.Title.Position = UDim2.fromOffset(v372.X, v372.Y + -28)
+		u24.Background.Position = UDim2.fromOffset(v372.X, v372.Y + -28 - u24.Title.AbsoluteSize.Y / 2)
+		u24.Background.Size = UDim2.fromOffset(u24.Title.AbsoluteSize.X + 64, u24.Title.AbsoluteSize.Y + 50)
+		u24.Parent = LocalPlayer.PlayerGui:FindFirstChild("MainUI")
+		Sounds:Play("hover")
+		task.spawn(function() -- line: 1297
+			-- upvalues: u24 (ref), UserInputService (copy)
+			while u24 and u24.Parent do
+				local v669 = UserInputService:GetMouseLocation() - game.GuiService:GetGuiInset()
+
+				u24.Title.Position = UDim2.fromOffset(v669.X, v669.Y + -28)
+				u24.Background.Position = UDim2.fromOffset(v669.X, v669.Y + -28 - u24.Title.AbsoluteSize.Y / 2)
+				u24.Background.Size = UDim2.fromOffset(u24.Title.AbsoluteSize.X + 64, u24.Title.AbsoluteSize.Y + 50)
+				task.wait()
+			end
+		end)
+	end
+
+	return u24
+end
+function t1.AddToPlayerStat(_: {[any]: any}, p67, s23: string, n22: number, b8: boolean?) -- line: 1311
+	-- upvalues: DataHandler (copy), t1 (copy)
+	if workspace:GetAttribute("ServerType") == "VIP" and b8 ~= true then
+		return
+	end
+
+	local v378 = typeof(p67) == "Instance" and DataHandler:Get(p67, 1)
+	local v379 = v378 and v378.Stats:FindFirstChild(tostring(s23), true)
+
+	if v379 and v379:IsA("NumberValue") then
+		if s23 == "KillerChance" and not b8 and v378.Settings.Game.MaliceDisabled.Value then
+			return
+		end
+
+		if s23 == "Money" or s23 == "KillerChance" or s23 == "EXPBoostTime" then
+			if typeof(p67) == "Instance" and p67:IsA("Player") then
+				game.AnalyticsService:LogEconomyEvent(p67, Enum.AnalyticsEconomyFlowType.Source, s23, tonumber(n22) or 0, v379.Value + (tonumber(n22) or 0), Enum.AnalyticsEconomyTransactionType.Gameplay.Name)
+			end
+		end
+
+		v379.Value = v379.Value + (tonumber(n22) or 0)
+
+		if s23 == "Money" then
+			t1:AddToPlayerStat(p67, "NetWorth", n22)
+		end
+	end
+end
+function t1.CopyTable(_: {[any]: any}, p68, t59: {[any]: any}?) -- line: 1356
+	-- upvalues: t1 (copy)
+	if typeof(p68) ~= "table" then
+		return p68
+	end
+
+	local v383 = t59 or {}
+	local v384 = v383[p68]
+
+	if v384 then
+		return v384
+	end
+
+	local t60 = {}
+
+	v383[p68] = t60
+
+	for k, v in next, p68 do
+		t60[k] = t1:CopyTable(v, v383)
+	end
+
+	return t60
+end
+function t1.JoinTables(_, ...) -- line: 1379
+	local t61 = {}
+
+	for _, v in ipairs(table.pack(...)) do
+		for _, v2 in pairs(v) do
+			table.insert(t61, v2)
+		end
+	end
+
+	return t61
+end
+function t1.MergeTables(_: {[any]: any}, t63: {[any]: any}, t64: {[any]: any}, t65: {[any]: any}) -- line: 1392
+	-- upvalues: t1 (copy)
+	if not t64 then
+		return t63
+	end
+
+	local t66 = {
+		Voicelines = true,
+		Emotes = true,
+		TerrorRadiusThemes = true
+	}
+	local t67 = {}
+
+	for k, v in pairs(t63 or {}) do
+		if typeof(v) == "table" and typeof(t64[k]) == "table" then
+			t67[k] = t1:MergeTables(v, t64[k], t65)
+		else
+			t67[k] = v
+		end
+	end
+
+	for k, v in pairs(t64 or {}) do
+		if typeof(v) == "table" and typeof(t63[k]) == "table" and not t66[k] then
+			t67[k] = t1:MergeTables(t63[k], v, t65)
+		elseif not table.find(t65 or {}, k) then
+			t67[k] = v
+		end
+	end
+
+	return t67
+end
+function t1.ShuffleTable(_: {[any]: any}, t69: {[any]: any}) -- line: 1425
+	for i = #t69, 1, -1 do
+		local v407 = math.random(i)
+		local v408 = t69[i]
+
+		t69[i] = t69[v407]
+		t69[v407] = v408
+	end
+
+	return t69
+end
+function t1.ToCommas(_: {[any]: any}, n23: number) -- line: 1437
+	return tostring(n23):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+end
+function t1.ConvertToAbbreviation(_, p71) -- line: 1447
+	local function formatNumber(p72) -- line: 1448
+		if p72 % 1 == 0 then
+			return string.format("%.0f", p72)
+		end
+
+		if p72 * 10 % 1 == 0 then
+			return string.format("%.1f", p72)
+		end
+
+		return string.format("%.2f", p72)
+	end
+
+	if p71 >= 1000000000000000 then
+		return formatNumber(p71 / 1000000000000000) .. "Q+"
+	end
+
+	if p71 >= 1000000000000 then
+		return formatNumber(p71 / 1000000000000) .. "T+"
+	end
+
+	if p71 >= 1000000000 then
+		return formatNumber(p71 / 1000000000) .. "B+"
+	end
+
+	if p71 >= 1000000 then
+		return formatNumber(p71 / 1000000) .. "M+"
+	end
+
+	if p71 >= 1000 then
+		return formatNumber(p71 / 1000) .. "K+"
+	end
+
+	return formatNumber(p71)
+end
+function t1.CalculateLevelFromEXP(_: {[any]: any}, n24: number) -- line: 1474
+	-- upvalues: sqrt (copy), floor (copy)
+	local v416 = floor((sqrt(n24 * 20 + 11225) + -95) / 10)
+
+	if v416 == 1 then
+		return v416, n24, 100
+	end
+
+	return v416, n24 - (v416 * 5 * v416 + v416 * 95 - 110), v416 * 10 + 100
+end
+function t1.FormatTime(_: {[any]: any}, n25: number, s24: string) -- line: 1490
+	-- upvalues: Initializer (copy)
+	if not n25 then
+		Initializer.Debug("can't format time due to seconds being nil!")
+
+		return ""
+	end
+
+	if not s24 then
+		Initializer.Debug("can't format time due to formatType being nil!")
+
+		return ""
+	end
+
+	local v420 = math.floor(n25 / 86400)
+	local v421 = math.floor(n25 % 86400 / 3600)
+	local v422 = math.floor(n25 % 3600 / 60)
+	local v423 = math.floor(n25 % 60)
+	local s25 = ""
+
+	if s24 == "Clock" then
+		if v420 > 0 then
+			return (string.format("%d:%02d:%02d:%02d", v420, v421, v422, v423))
+		end
+
+		if v421 > 0 then
+			return (string.format("%02d:%02d:%02d", v421, v422, v423))
+		end
+
+		return (string.format("%02d:%02d", v422, v423))
+	end
+
+	if s24 == "String" then
+		if v420 > 0 then
+			s25 = `{ s25 }{ v420 }{ v420 ~= 1 and " days" or " day" }`
+		end
+
+		if v421 > 0 then
+			if s25 ~= "" then
+				s25 = `{ s25 }{ not (v420 > 0 and v422 > 0) and not (v423 > 0) and " and " or ", " }`
+			end
+
+			s25 = `{ s25 }{ v421 }{ v421 ~= 1 and " hours" or " hour" }`
+		end
+
+		if v422 > 0 then
+			if s25 ~= "" then
+				s25 = `{ s25 }{ (not (v420 > 0) and not (v421 > 0) or not (v423 > 0)) and " and " or ", " }`
+			end
+
+			s25 = `{ s25 }{ v422 }{ v422 ~= 1 and " minutes" or " minute" }`
+		end
+
+		if v423 > 0 then
+			if s25 ~= "" then
+				s25 = `{ s25 }{ not (v420 > 0) and (not (v421 > 0) and not (v422 > 0)) and "" or " and " }`
+			end
+
+			s25 = `{ s25 }{ v423 }{ v423 ~= 1 and " seconds" or " second" }`
+		end
+	end
+
+	return s25
+end
+function t1.IntToRoman(_: {[any]: any}, n26: number) -- line: 1541
+	if not tonumber(n26) then
+		return "IDK"
+	end
+
+	local v427 = math.round((tonumber(n26)))
+	local s26 = ""
+
+	for _, v in pairs({
+		{
+			1000,
+			"M"
+		},
+		{
+			900,
+			"CM"
+		},
+		{
+			500,
+			"D"
+		},
+		{
+			400,
+			"CD"
+		},
+		{
+			100,
+			"C"
+		},
+		{
+			90,
+			"XC"
+		},
+		{
+			50,
+			"L"
+		},
+		{
+			40,
+			"XL"
+		},
+		{
+			10,
+			"X"
+		},
+		{
+			9,
+			"IX"
+		},
+		{
+			5,
+			"V"
+		},
+		{
+			4,
+			"IV"
+		},
+		{
+			1,
+			"I"
+		}
+	}) do
+		while v427 >= v[1] do
+			s26 ..= v[2]
+			v427 -= v[1]
+		end
+	end
+
+	return s26
+end
+function t1.ApplyCameraShake(_: {[any]: any}, n27: number, n28: number) -- line: 1574
+	-- upvalues: DataHandler (copy)
+	local _ = game.Players.LocalPlayer
+
+	if not DataHandler:Get().Settings.Customization.ScreenShakeEnabled.Value then
+		return
+	end
+
+	local timestamp = os.clock()
+	local u436 = nil
+
+	u436 = game:GetService("RunService").RenderStepped:Connect(function() -- line: 1584
+		-- upvalues: timestamp (copy), n28 (copy), n27 (copy), u436 (ref)
+		local v671 = math.clamp((os.clock() - timestamp) / n28, 0, 1)
+		local v672 = n27 * (1 - v671)
+		local vector3 = Vector3.new((math.random() - 0.5) * 2 * v672, (math.random() - 0.5) * 2 * v672, (math.random() - 0.5) * 2 * v672)
+		local CurrentCamera = workspace.CurrentCamera
+
+		CurrentCamera.CFrame = CurrentCamera.CFrame * CFrame.new(vector3)
+
+		if v671 >= 1 then
+			u436:Disconnect()
+			u436 = nil
+
+			return
+		end
+	end)
+end
+function t1.ApplyCameraShakeTo(_: {[any]: any}, p73, n29: number, n30: number) -- line: 1612
+	-- upvalues: v12 (copy), Network (copy)
+	if not v12 then
+		return
+	end
+
+	Network:FireClientConnection(p73, "ShakeCamera", "REMOTE_EVENT", n29, n30)
+end
+function t1.RemoveCyclicReferences(_, p75, p76) -- line: 1617
+	-- upvalues: t1 (copy)
+	local v444 = p76 or {}
+	local t76 = {}
+
+	for k in pairs(p75) do
+		if not table.find(v444, p75[k]) then
+			if typeof(p75[k]) ~= "table" then
+				t76[k] = p75[k]
+			else
+				table.insert(v444, p75[k])
+				t76[k] = p75[k]
+
+				local v447 = t1:RemoveCyclicReferences(p75[k], v444)
+
+				for k2 in pairs(t76[k]) do
+					if not v447[k2] then
+						t76[k][k2] = nil
+					end
+				end
+			end
+		end
+	end
+
+	return t76
+end
+function t1.IsOnScreen(_: {[any]: any}, p77, b9: boolean) -- line: 1641
+	-- upvalues: t2 (copy)
+	if typeof(p77) ~= "Instance" then
+		return
+	end
+
+	os.clock()
+
+	local Character = game.Players.LocalPlayer.Character
+	local v453 = false
+	local GetPlayerMousePosition = require(game.ReplicatedStorage.Systems.Player.Miscellaneous.GetPlayerMousePosition)
+	local t78 = {}
+
+	table.insert(t78, p77)
+	table.insert(t78, Character)
+	table.insert(t78, workspace.CurrentCamera)
+
+	for k, _ in pairs(GetPlayerMousePosition.TransparentParts) do
+		table.insert(t78, k)
+	end
+
+	local function checkForVisibility(p78) -- line: 1662
+		-- upvalues: t78 (copy)
+		local _, v677 = workspace.CurrentCamera:WorldToViewportPoint(p78.Position)
+
+		if v677 and #workspace.CurrentCamera:GetPartsObscuringTarget({
+			workspace.CurrentCamera.CFrame.Position,
+			p78.Position
+		}, t78) == 0 then
+			return true
+		end
+	end
+
+	if p77:IsA("Model") then
+		local Humanoid = p77:FindFirstChild("Humanoid")
+
+		for _, child in pairs(p77:GetChildren()) do
+			if child:IsA("BasePart") and (Humanoid and (p77 == child.Parent and t2[child.Name]) or child.Transparency ~= 1 or b9) then
+				v453 = checkForVisibility(child)
+
+				if v453 then
+					return v453
+				end
+			end
+		end
+
+		return v453
+	end
+
+	if p77:IsA("BasePart") and (p77.Transparency ~= 1 or b9) then
+		v453 = checkForVisibility(p77)
+	end
+
+	return v453
+end
+function t1.CreateProgressBar(_: {[any]: any}, s27: string, n31: number) -- line: 1693
+	local u465 = s27 or "Performing Action"
+	local u466 = tonumber(n31) or 5
+	local LocalPlayer = game.Players.LocalPlayer
+	local clone = game.ReplicatedStorage.Assets.UI.ProgressBar:Clone()
+
+	clone.Title.Text = `{ u465 }.`
+	clone.Parent = LocalPlayer.PlayerGui:FindFirstChild("TemporaryUI")
+	game.Debris:AddItem(clone, u466)
+	task.spawn(function() -- line: 1703
+		-- upvalues: clone (copy), u466 (ref), u465 (ref)
+		local n32 = 0
+		local n33 = 0
+		local n34 = 0
+
+		while clone.Parent do
+			local v681 = n32 / u466
+			local v682 = if v681 ~= 0 then 1 / v681 else 0
+
+			clone.Bar.Clipping.Size = UDim2.fromScale(v681, 1)
+			clone.Bar.Clipping.Top.Size = UDim2.fromScale(v682, 1)
+
+			if n33 >= 0.3 then
+				n33 = 0
+				n34 += 1
+				clone.Title.Text = `{ u465 }{ string.rep(".", n34 % 3 + 1) }`
+			end
+
+			local dt = game["Run Service"].Heartbeat:Wait()
+
+			n32 = math.clamp(n32 + dt, 0, u466)
+			n33 += dt
+		end
+	end)
+
+	return clone
+end
+
+local ScreenGui2 = nil
+local Frame = nil
+
+function t1.FadeIn(_: {[any]: any}, t81: {[any]: any}) -- line: 1736
+	-- upvalues: Frame (ref), Initializer (copy), ScreenGui2 (ref), TweenService (copy)
+	if not t81 then
+		t81 = {}
+	end
+
+	if Frame and Frame.Parent then
+		Initializer.Debug("FadeIn cancelled b/c there's already a fade that exists!")
+
+		return
+	end
+
+	if not ScreenGui2 then
+		ScreenGui2 = Instance.new("ScreenGui")
+		ScreenGui2.Name = "FadeUI"
+		ScreenGui2.IgnoreGuiInset = true
+		ScreenGui2.ResetOnSpawn = false
+		ScreenGui2.DisplayOrder = 10
+		ScreenGui2.Parent = Initializer.Player.PlayerGui
+	end
+
+	Frame = Instance.new("Frame")
+	Frame.Name = "Fade"
+	Frame.BackgroundTransparency = t81.StartTransparency or 1
+	Frame.BackgroundColor3 = t81.Color or Color3.new()
+	Frame.Size = UDim2.fromScale(1, 1)
+	Frame.Parent = ScreenGui2
+
+	if t81.InstantTween then
+		Frame.BackgroundTransparency = t81.EndTransparency or 0
+
+		return
+	end
+
+	local tween = TweenService:Create(Frame, t81.TweenInfo or TweenInfo.new(t81.Time or 0.325, Enum.EasingStyle.Linear), {
+		BackgroundTransparency = t81.EndTransparency or 0
+	})
+
+	tween:Play()
+
+	if t81.Yield then
+		tween.Completed:Wait()
+	end
+end
+function t1.FadeOut(_: {[any]: any}, t83: {[any]: any}) -- line: 1774
+	-- upvalues: Frame (ref), Initializer (copy), ScreenGui2 (ref), TweenService (copy), Debris (copy)
+	if not t83 then
+		t83 = {}
+	end
+
+	if not Frame then
+		Initializer.Debug("FadeOut cancelled b/c there's no fade that exists!")
+
+		return
+	end
+
+	if not ScreenGui2 then
+		Initializer.Debug("FadeOut called before ever calling FadeIn!")
+
+		return
+	end
+
+	local tween = TweenService:Create(Frame, t83.TweenInfo or TweenInfo.new(t83.Time or 0.325, Enum.EasingStyle.Linear), {
+		BackgroundTransparency = t83.Transparency or 1
+	})
+
+	tween:Play()
+	Debris:AddItem(Frame, tween.TweenInfo.Time)
+
+	if t83.Yield then
+		tween.Completed:Wait()
+	end
+
+	Frame = nil
+end
+function t1.CreateWarning(_: {[any]: any}, s28: string, s29: string, p79) -- line: 1796
+	local LocalPlayer = game.Players.LocalPlayer
+	local s28_2 = LocalPlayer.PlayerGui.TemporaryUI:FindFirstChild(s28)
+
+	if s28_2 then
+		s28_2:Destroy()
+	end
+
+	local clone = (p79 or game.ReplicatedStorage.Assets.UI.Warning):Clone()
+
+	clone.Name = s28
+	clone.Title.Text = tostring(s29)
+	clone.Parent = LocalPlayer.PlayerGui.TemporaryUI
+	task.delay(3, function() -- line: 1809
+		-- upvalues: clone (copy)
+		if clone.Parent then
+			if clone:GetAttribute("InstantDeletion") then
+				clone:Destroy()
+
+				return
+			end
+
+			game.Debris:AddItem(clone, 1)
+			game.TweenService:Create(clone, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				BackgroundTransparency = 1
+			}):Play()
+			game.TweenService:Create(clone.Title, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				TextTransparency = 1,
+				TextStrokeTransparency = 1,
+				BackgroundTransparency = 1
+			}):Play()
+		end
+	end)
+end
+function t1.DisplayBubble(_: {[any]: any}, p80, s30: string) -- line: 1823
+	-- upvalues: Network (copy)
+	if not p80 then
+		return
+	end
+
+	if game["Run Service"]:IsServer() then
+		Network:FireAllClientConnection("DisplayBubble", "REMOTE_EVENT", p80, s30)
+
+		return
+	end
+
+	game.TextChatService:DisplayBubble(p80, s30)
+end
+function t1.ToggleControls(_: {[any]: any}, b10: boolean) -- line: 1833
+	-- upvalues: Initializer (copy)
+	local Controls = require(Initializer.Player.PlayerScripts:WaitForChild("PlayerModule")):GetControls()
+
+	if not b10 then
+		Controls:Disable()
+
+		return
+	end
+
+	Controls:Enable()
+end
+function t1.ToggleResetButton(_, p82) -- line: 1845
+	task.spawn(function() -- line: 1846
+		-- upvalues: p82 (copy)
+		game:GetService("StarterGui"):SetCore("ResetButtonCallback", p82)
+	end)
+end
+function t1.ToggleSprinting(_, p84, p85, p86) -- line: 1853
+	-- upvalues: Network (copy)
+	Network:FireConnection("DisableSprinting", p84, not p85)
+
+	if p86 then
+		task.delay(p86, function() -- line: 1856
+			-- upvalues: Network (copy), p84 (copy), p85 (copy)
+			Network:FireConnection("DisableSprinting", p84, p85)
+		end)
+	end
+end
+function t1.CreateMoneyDisplay(_, p88) -- line: 1863
+	-- upvalues: t1 (copy), DataHandler (copy), Sounds (copy), Initializer (copy)
+	local NumberValue = Instance.new("NumberValue")
+
+	NumberValue:GetPropertyChangedSignal("Value"):Connect(function() -- line: 1866
+		-- upvalues: NumberValue (copy), t1 (copy), p88 (copy)
+		local v684 = math.round(NumberValue.Value)
+		local v685 = t1:ToCommas(v684)
+
+		p88.CurrentBalance.Text = `{ v685 }$ `
+	end)
+
+	local Money = DataHandler:Get():WaitForChild("Stats"):FindFirstChild("Money", true)
+
+	Money:GetPropertyChangedSignal("Value"):Connect(function() -- line: 1875
+		-- upvalues: NumberValue (copy), Money (copy), p88 (copy)
+		game.TweenService:Create(NumberValue, TweenInfo.new(1), {
+			Value = Money.Value
+		}):Play()
+		p88.CurrentBalance.TextSize = p88.CurrentBalance.AbsoluteSize.Y
+	end)
+	NumberValue.Value = Money.Value
+	p88.CurrentBalance.Text = `{ t1:ToCommas((math.round(NumberValue.Value))) }$ `
+	p88.CurrentBalance.TextSize = p88.CurrentBalance.AbsoluteSize.Y
+	p88.BuyMore.MouseEnter:Connect(function() -- line: 1886
+		-- upvalues: Sounds (copy)
+		Sounds:Play("hover")
+	end)
+	p88.BuyMore.MouseLeave:Connect(function() -- line: 1887
+		-- upvalues: Sounds (copy)
+		Sounds:Play("hoverEnd")
+	end)
+	p88.BuyMore.MouseButton1Click:Connect(function() -- line: 1888
+		-- upvalues: Initializer (copy)
+		local Shop = Initializer.PlayerSystems.Shop
+
+		Initializer.PlayerSystems.SidebarHandler.SidebarMenus.Shop:ToggleMenu(true)
+		Shop:SwitchTab("Robux")
+	end)
+end
+function t1.ApplyVelocity(_: {[any]: any}, p89, n35: number, b11: boolean, n36: number?) -- line: 1897
+	-- upvalues: Players (copy), Maid (copy), RunService (copy)
+	if p89 and p89:IsA("Model") then
+		p89 = p89.PrimaryPart
+	end
+
+	if not p89 then
+		return nil
+	end
+
+	local AssemblyMass = p89.AssemblyMass
+
+	for _, descendant in (p89.Parent:GetDescendants()) do
+		if descendant:IsA("BasePart") and not descendant.Massless and descendant ~= p89 then
+			AssemblyMass += descendant.AssemblyMass
+		end
+	end
+
+	local Actors = require(game.ReplicatedStorage.Modules.Actors)
+	local player = Players:GetPlayerFromCharacter(p89.Parent)
+	local v509 = player and Actors.CurrentActors[player]
+	local u510 = v509 and (not not v509.GetPivot and v509:GetPivot()) or p89.CFrame
+	local LinearVelocity = Instance.new("LinearVelocity")
+
+	LinearVelocity.MaxForce = AssemblyMass * 350
+	LinearVelocity.RelativeTo = Enum.ActuatorRelativeTo.World
+	LinearVelocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Line
+	LinearVelocity.LineDirection = Vector3.new(u510.LookVector.X, 0, u510.LookVector.Z)
+	LinearVelocity.LineVelocity = n35 or 0
+	LinearVelocity.Attachment0 = p89:FindFirstChild("RootAttachment") or p89:FindFirstChildOfClass("Attachment")
+	LinearVelocity.Parent = p89
+
+	local v512 = Janitor.new()
+
+	if b11 then
+		task.spawn(function() -- line: 1924
+			-- upvalues: v512 (copy), RunService (copy), LinearVelocity (copy), p89 (ref), u510 (ref), v509 (copy), n36 (copy)
+			v512:Add(RunService.Heartbeat:Connect(function(_: number) -- line: 1925
+				-- upvalues: LinearVelocity (copy), p89 (ref), v512 (copy), u510 (ref), v509 (copy), n36 (copy)
+				if not LinearVelocity.Active or not p89.Parent then
+					v512:Destroy()
+				end
+
+				u510 = v509 and (not not v509.GetPivot and v509:GetPivot()) or p89.CFrame
+				LinearVelocity.LineDirection = LinearVelocity.LineDirection:Lerp(Vector3.new(u510.LookVector.X, 0, u510.LookVector.Z), n36 or 0)
+			end))
+		end)
+	end
+
+	return LinearVelocity, v512
+end
+
+local tweenInfo = TweenInfo.new(0.25)
+local t88 = {}
+local t89 = {}
+
+function t1.RevealPlayerAura(_: {[any]: any}, p90, n38: number, color3: Color3, n39: number?, t91: {[any]: any}) -- line: 1944
+	-- upvalues: t1 (copy), t88 (copy), DataHandler (copy), Network (copy), Debris (copy), TweenService (copy), tweenInfo (copy), t89 (copy)
+	local v519 = n39 or -1
+	local v520 = nil
+	if typeof(p90) == "Instance" then
+		v520 = (p90:IsA("Player") and p90.Character or p90)
+	end
+	local v521 = v520 and game.Players:GetPlayerFromCharacter(v520)
+	local LocalPlayer = game.Players.LocalPlayer
+	local Character = LocalPlayer.Character
+
+	if v520 and Character and (not v520:GetAttribute("Undetectable") or tostring(v520.Parent) == tostring(Character.Parent) or #t1:GetAliveSurvivorCharacters() <= 1) then
+		local t92 = {
+			Killers = Color3.new(1, 0, 0),
+			Survivors = Color3.new(1, 0.75, 0),
+			Spectating = Color3.new(1, 1, 1)
+		}
+		local v525 = v520:FindFirstChild("PlayerAura") or t88[v520]
+
+		if v525 then
+			return
+		end
+
+		local v526 = color3 or (t92[tostring(v520.Parent)] or (t92[tostring(v520)] or t92.Spectating))
+		local AltHighlightsValue = DataHandler:Get().Settings.Game.AltHighlights.Value
+
+		if v521 then
+			Network:FireServerConnection("RevealedAura", "REMOTE_EVENT", v521, n38)
+		end
+
+		local clone
+
+		if AltHighlightsValue then
+			if v520:IsA("Model") and not v520.PrimaryPart then
+				return
+			end
+
+			clone = game.ReplicatedStorage.Assets.UI.Highlight:Clone()
+			clone.Name = "PlayerAura"
+			clone.Adornee = v520:FindFirstChild("Head") or (v520:IsA("Model") and v520.PrimaryPart or v520)
+			clone.Container.ImageColor3 = v526
+			clone.Parent = LocalPlayer.PlayerGui.TemporaryUI
+			t88[v520] = clone
+
+			local ViewportFrame = clone.Container.ViewportFrame
+			local v530 = if not v520:IsA("Model") then ViewportFrame.PartCenter.CFrame else ViewportFrame.ModelCenter.CFrame
+			local Archivable = v520.Archivable
+
+			v520.Archivable = true
+
+			local clone5 = v520:Clone()
+
+			v520.Archivable = Archivable
+
+			if not clone5 then
+				warn("i don't even know how this happens dude")
+
+				return
+			end
+
+			if v520:IsA("Model") then
+				clone5:SetPrimaryPartCFrame(v530)
+			else
+				clone5.CFrame = v530
+			end
+
+			clone5.Parent = ViewportFrame
+
+			local t93 = {
+				ViewportFrame,
+				ViewportFrame.Parent
+			}
+
+			Debris:AddItem(clone, tonumber(n38) or 10)
+
+			if not v525 then
+				for _, v in pairs(t93) do
+					TweenService:Create(v, TweenInfo.new(1), {
+						ImageTransparency = 0
+					}):Play()
+				end
+			else
+				for _, v in pairs(t93) do
+					v.ImageTransparency = 0
+				end
+			end
+
+			if n38 ~= "inf" then
+				local v538 = tonumber(n38) or 10
+
+				task.delay(v538 - 1, function() -- line: 2044
+					-- upvalues: clone (ref), t88 (copy), v520 (copy), t93 (copy), TweenService (copy)
+					if not clone or not clone.Parent then
+						return
+					end
+
+					clone.Name = "goodbai"
+
+					if t88[v520] == clone then
+						t88[v520] = nil
+					end
+
+					for _, v in pairs(t93) do
+						TweenService:Create(v, TweenInfo.new(1), {
+							ImageTransparency = 1
+						}):Play()
+					end
+				end)
+			end
+
+			local v539 = clone.Adornee and (clone.Adornee:IsA("Model") and clone.Adornee.PrimaryPart or clone.Adornee:IsA("BasePart") and clone.Adornee)
+
+			if v539 and v519 > 0 then
+				if v519 < (v539.Position - Character.PrimaryPart.Position).Magnitude then
+					for _, v in pairs(t93) do
+						v.ImageTransparency = 1
+					end
+				end
+
+				local v542 = nil
+
+				while task.wait(0.5) and clone and clone.Parent do
+					local v543 = v519 < (v539.Position - Character.PrimaryPart.Position).Magnitude
+
+					if v542 ~= v543 then
+						v542 = v543
+
+						for _, v in pairs(t93) do
+							game.TweenService:Create(v, tweenInfo, {
+								ImageTransparency = not v543 and 0 or 1
+							}):Play()
+						end
+					end
+				end
+			end
+		else
+			local t94 = {}
+
+			if v525 and t89[v525] then
+				t94 = t1:CopyTable(t89[v525])
+				table.clear(t89[v525])
+				t89[v525] = nil
+			end
+
+			for _, child in ipairs(v520:GetChildren()) do
+				if child:IsA("Highlight") and child.Name ~= "PlayerAura" then
+					child.Parent = nil
+					table.insert(t94, child)
+				end
+			end
+
+			clone = Instance.new("Highlight")
+			clone.Name = "PlayerAura"
+			clone.FillColor = v526
+			clone.OutlineColor = v526
+			clone.Parent = v520
+
+			for v549, v550 in t91 or {} do
+				clone[v549] = v550
+			end
+
+			if n38 ~= "inf" then
+				local num = tonumber(n38)
+
+				Debris:AddItem(clone, num or 10)
+			end
+
+			t89[clone] = t94
+
+			local connection = v520.ChildAdded:Connect(function(child) -- line: 2122
+				-- upvalues: clone (ref), t94 (ref)
+				if not clone or not clone.Parent then
+					return
+				end
+
+				if child.ClassName == "Highlight" and child.Name ~= "PlayerAura" then
+					table.insert(t94, child)
+				end
+			end)
+
+			if not v525 then
+				local FillTransparency = clone.FillTransparency
+				local OutlineTransparency = clone.OutlineTransparency
+
+				clone.FillTransparency = 1
+				clone.OutlineTransparency = 1
+				TweenService:Create(clone, TweenInfo.new(1), {
+					FillTransparency = FillTransparency,
+					OutlineTransparency = OutlineTransparency
+				}):Play()
+			end
+
+			if n38 ~= "inf" then
+				local v555 = tonumber(n38) or 10
+
+				task.delay(v555 - 1, function() -- line: 2143
+					-- upvalues: connection (copy), clone (ref), v520 (copy), t94 (ref), t89 (copy), TweenService (copy)
+					connection:Disconnect()
+
+					if clone and clone.Parent then
+						if v520 and v520.Parent then
+							for _, v in pairs(t94) do
+								if (v or v.Parent) and v.Name == "PlayerAura" then
+									v.Parent = v520
+								end
+							end
+						else
+							for _, v in pairs(t94) do
+								v:Destroy()
+							end
+						end
+
+						table.clear(t94)
+						t89[clone] = nil
+						clone.Name = "goodbai"
+						TweenService:Create(clone, TweenInfo.new(1), {
+							FillTransparency = 1,
+							OutlineTransparency = 1
+						}):Play()
+					end
+				end)
+			end
+
+			local v556 = clone.Parent and (clone.Parent:IsA("Model") and clone.Parent.PrimaryPart or clone.Parent:IsA("BasePart") and clone.Parent)
+
+			if v556 and v519 > 0 then
+				if v519 < (v556.Position - Character.PrimaryPart.Position).Magnitude then
+					clone.FillTransparency = 1
+					clone.OutlineTransparency = 1
+				end
+
+				local v557 = nil
+
+				while task.wait(0.5) and clone and clone.Parent do
+					local v558 = v519 < (v556.Position - Character.PrimaryPart.Position).Magnitude
+
+					if v557 ~= v558 then
+						v557 = v558
+						game.TweenService:Create(clone, tweenInfo, {
+							FillTransparency = not v558 and 0.5 or 1,
+							OutlineTransparency = not v558 and 0 or 1
+						}):Play()
+					end
+				end
+			end
+		end
+	end
+end
+function t1.BezierBoneTracking(_: {[any]: any}, rootPart, bones: {any}, startPoint: Vector3, controlPoint: Vector3, endPoint: Vector3, initialAlpha: number?, duration: number?)
+	local self = {}
+	self.StartPoint = startPoint
+	self.ControlPoint = controlPoint
+	self.EndPoint = endPoint
+	self.Alpha = initialAlpha or 0
+	self.Time = initialAlpha or 0
+	self.Duration = duration or 1
+	self._destroyed = false
+
+	local numBones = #bones
+
+	local function bezierPoint(t: number, p0: Vector3, p1: Vector3, p2: Vector3)
+		local a = p0:Lerp(p1, t)
+		local b = p1:Lerp(p2, t)
+		return a:Lerp(b, t)
+	end
+
+	self._connection = RunService.Heartbeat:Connect(function()
+		if self._destroyed then
+			return
+		end
+
+		local alpha = self.Alpha or self.Time or 0
+		if alpha <= 0 or numBones == 0 then
+			return
+		end
+
+		for i, bone in ipairs(bones) do
+			if bone and bone.Parent then
+				local t = (i / numBones) * alpha
+				local worldPos = bezierPoint(t, self.StartPoint, self.ControlPoint, self.EndPoint)
+
+				local parent = bone.Parent
+				local parentCFrame = (parent:IsA("Bone") and parent.TransformedWorldCFrame) or parent.CFrame
+				local localCFrame = parentCFrame:ToObjectSpace(CFrame.new(worldPos))
+
+				bone.Transform = localCFrame
+			end
+		end
+	end)
+
+	function self.Destroy(s)
+		s._destroyed = true
+		if s._connection then
+			s._connection:Disconnect()
+			s._connection = nil
+		end
+	end
+
+	return self
+end
+function t1.CreateCameraOffset(_: {[any]: any}, rig, offset: Vector3, tag: string?, weight: number?)
+	local value = Instance.new("Vector3Value")
+	value.Name = "CameraOffset_" .. tostring(tag or "Untagged")
+	value.Value = offset or Vector3.new()
+
+	local camFolder = workspace:FindFirstChild("CameraOffsets")
+	if not camFolder then
+		camFolder = Instance.new("Folder")
+		camFolder.Name = "CameraOffsets"
+		camFolder.Parent = workspace
+	end
+	value.Parent = camFolder
+
+	return value
+end
+function t1.ApplyUnsafeTouched(_: {[any]: any}, p91, b12: boolean?, p92: ((...any) -> ...any), n40: number) -- line: 2194
+	assert(typeof(p91) == "Instance", "Bad instance, must be BasePart.")
+	assert(type(p92) == "function", "Bad callback, must be function.")
+
+	local _ = b12 or false
+	local u565 = n40 or p91.Size.Magnitude * 2
+	local u566 = nil
+	local t96 = {
+		Disconnect = function() -- line: 2203
+			-- upvalues: u566 (ref)
+			if u566 then
+				u566:Disconnect()
+				u566 = nil
+			end
+		end
+	}
+
+	p91.CanTouch = true
+	u566 = p91.Touched:Connect(function(part) -- line: 2212
+		-- upvalues: p91 (copy), u565 (ref), p92 (copy), t96 (copy)
+		if (part.Position - p91.Position).Magnitude > u565 then
+			return
+		end
+
+		p92(t96, part)
+	end)
+
+	return t96
+end
+function t1.GetAliveSurvivorCharacters(_) -- line: 2227
+	-- upvalues: t1 (copy)
+	local t97 = {}
+
+	for _, child in workspace.Players.Survivors:GetChildren() do
+		if t1:IsAlive(child) then
+			table.insert(t97, child)
+		end
+	end
+
+	return t97
+end
+function t1.ApplyOnTouched(_: {[any]: any}, p94, b13: boolean?, p95: ((...any) -> ...any)) -- line: 2242
+	assert(typeof(p94) == "Instance", "Bad instance, must be BasePart.")
+	assert(type(p95) == "function", "Bad callback, must be function.")
+
+	local u576 = b13 or false
+	local connection = nil
+
+	connection = p94.Touched:Connect(function(part) -- line: 2248
+		-- upvalues: p94 (copy), connection (ref), p95 (copy), u576 (ref)
+		if not p94 or not p94.Parent then
+			connection:Disconnect()
+
+			return
+		end
+
+		p95(connection, part)
+
+		if u576 and connection then
+			connection:Disconnect()
+		end
+	end)
+
+	return connection
+end
+function t1.RevealPlayerAuraTo(_: {[any]: any}, p96, p97, n41: number, color3: Color3?, n42: number?) -- line: 2298
+	-- upvalues: Network (copy)
+	if p96 and p96:IsA("Model") then
+		p96 = game.Players:GetPlayerFromCharacter(p96)
+	end
+
+	Network:FireClientConnection(p96, "RevealPlayerAura", "REMOTE_EVENT", p97, n41, color3, n42)
+end
+function t1.RemovePlayerAuraFrom(_: {[any]: any}, p98, p99) -- line: 2309
+	-- upvalues: v12 (copy), Network (copy), v11 (copy), t89 (copy), Debris (copy), TweenService (copy), t88 (copy)
+	if not p98 then
+		return
+	end
+
+	if v12 then
+		if p99 then
+			Network:FireClientConnection(p99, "RemovePlayerAura", "REMOTE_EVENT", p98)
+
+			return
+		end
+
+		Network:FireAllClientConnection("RemovePlayerAura", "REMOTE_EVENT", p98)
+
+		return
+	end
+
+	if v11 then
+		local v587 = p98:IsA("Player") and p98.Character or p98
+		local Character = game.Players.LocalPlayer.Character
+
+		if v587 then
+			local PlayerAura = v587:FindFirstChild("PlayerAura")
+
+			if PlayerAura and tostring(Character.Parent) ~= tostring(v587.Parent) then
+				local t101 = {}
+
+				if t89[PlayerAura] then
+					if v587 and v587.Parent then
+						for _, v in pairs(t101) do
+							if v or v.Parent then
+								v.Parent = v587
+							end
+						end
+					else
+						for _, v in pairs(t101) do
+							v:Destroy()
+						end
+					end
+
+					table.clear(t89[PlayerAura])
+					t89[PlayerAura] = nil
+				end
+
+				PlayerAura.Name = "goodbai"
+				Debris:AddItem(PlayerAura, 1)
+				TweenService:Create(PlayerAura, TweenInfo.new(1), {
+					FillTransparency = 1,
+					OutlineTransparency = 1
+				}):Play()
+
+				return
+			end
+
+			if t88[v587] then
+				t88[v587]:Destroy()
+				t88[v587] = nil
+			end
+		end
+	end
+end
+function t1.GetClosestPlayerFromPosition(_: {[any]: any}, vector3: Vector3, t103: {[any]: any}) -- line: 2358
+	-- upvalues: t1 (copy)
+	local v598 = t103 or {}
+
+	v598.MaxDistance = v598.MaxDistance or 9999
+	v598.PlayerSelection = v598.PlayerSelection or "Survivors"
+	v598.VerticalMultiplier = v598.VerticalMultiplier or 1
+
+	local v599 = v598.IncludedSelection or {}
+
+	for _, child in pairs(workspace.Players:GetChildren()) do
+		if (v598.PlayerSelection == "All" or child.Name == v598.PlayerSelection) and child.Name ~= "Spectating" then
+			for _, child3 in pairs(child:GetChildren()) do
+				if not child3:GetAttribute("Undetectable") or v598.OverrideUndetectable or #t1:GetAliveSurvivorCharacters() <= 1 then
+					table.insert(v599, child3)
+				end
+			end
+		end
+	end
+
+	local t104 = {}
+
+	for _, v in pairs(v599) do
+		if t1:IsAlive(v) then
+			local Actor = t1:GetActor(v)
+			local Magnitude = (((Actor and (not not Actor.GetPivot and Actor:GetPivot()) or v.PrimaryPart.CFrame).Position - vector3) * Vector3.new(1, v598.VerticalMultiplier, 1)).Magnitude
+
+			if Magnitude and not (Magnitude > (tonumber(v598.MaxDistance) or 999)) then
+				table.insert(t104, {
+					Player = v,
+					Distance = Magnitude
+				})
+			end
+		end
+	end
+
+	table.sort(t104, function(p100, p101) -- line: 2390
+		return p100.Distance < p101.Distance
+	end)
+
+	if v598.ReturnTable then
+		return t104
+	end
+
+	local v609 = t104[1]
+
+	if v609 then
+		return v609.Player, v609.Distance
+	end
+end
+function t1.GetPlayerRootLookVector(_: {[any]: any}, p102) -- line: 2404
+	-- upvalues: v11 (copy), Network (copy)
+	if v11 or not p102 then
+		return
+	end
+
+	os.clock()
+
+	local t106 = {}
+	local v613 = Network:FireClientConnection(p102, "GetLocalPosData", "REMOTE_FUNCTION")
+
+	if v613 then
+		v613:gsub("[%d%.%-e]+", function(p103) -- line: 2412
+			-- upvalues: t106 (copy)
+			table.insert(t106, (tonumber(p103)))
+		end)
+		v613 = Vector3.new(t106[4], t106[5], t106[6])
+	end
+
+	return v613 or p102.Character and (p102.Character.PrimaryPart and p102.Character.PrimaryPart.CFrame.LookVector)
+end
+function t1.OnPlayingStateChanged(p104: ((...any) -> ...any)) -- line: 2422
+	local LocalPlayer = game.Players.LocalPlayer
+	local v616 = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+	task.spawn(p104, (tostring(v616.Parent)))
+	v616:GetPropertyChangedSignal("Parent"):Connect(function() -- line: 2426
+		-- upvalues: p104 (copy), v616 (copy)
+		p104((tostring(v616.Parent)))
+	end)
+end
+
+local t107 = {}
+
+function t1.OnPlayerAdded(p105: ((...any) -> ...any)) -- line: 2433
+	-- upvalues: Players (copy), spawn (copy), t107 (copy)
+	for _, player in (Players:GetPlayers()) do
+		spawn(p105, player)
+	end
+
+	table.insert(t107, p105)
+end
+
+Players.PlayerAdded:Connect(function(player) -- line: 2441
+	-- upvalues: t107 (copy), spawn (copy)
+	for _, v622 in t107 do
+		spawn(v622, player)
+	end
+end)
+
+function t1.OnCharacterAdded(p106: ((...any) -> ...any)) -- line: 2447
+	-- upvalues: t1 (copy)
+	t1.OnPlayerAdded(function(p107) -- line: 2448
+		-- upvalues: p106 (copy)
+		if p107.Character then
+			p106(p107.Character, p107)
+		end
+
+		p107.CharacterAdded:Connect(function() -- line: 2452
+			-- upvalues: p106 (copy), p107 (copy)
+			p106(p107.Character, p107)
+		end)
+	end)
+end
+function t1.ValueBaseToTable(_: {[any]: any}, p108) -- line: 2458
+	local t109 = {}
+
+	local function recurse(p109, p110) -- line: 2461
+		-- upvalues: recurse (copy)
+		for _, child in pairs(p109:GetChildren()) do
+			local childName = child.Name
+
+			if child:IsA("Folder") then
+				p110[childName] = {}
+				recurse(child, p110[childName])
+			else
+				p110[childName] = child.Value
+			end
+		end
+	end
+
+	recurse(p108, t109)
+
+	return t109
+end
+function t1.ValueTableToBase(_: {[any]: any}, t111: {[any]: any}, p111, b14: boolean?) -- line: 2477
+	local t112 = {
+		number = "IntValue",
+		boolean = "BoolValue",
+		string = "StringValue"
+	}
+	local n43 = 0
+
+	local function recurse(p112, p113) -- line: 2486
+		-- upvalues: recurse (copy), t112 (copy), b14 (copy), n43 (ref)
+		local t113 = {}
+
+		for _, child in (p113:GetChildren()) do
+			t113[child.Name] = child
+		end
+
+		for k, v in pairs(p112) do
+			if k == "NonInstanced" then
+				continue
+			end
+
+			if typeof(v) == "table" then
+				local v712 = t113[k]
+
+				if not v712 then
+					v712 = Instance.new("Folder")
+					v712.Name = k
+					v712.Parent = p113
+				end
+
+				recurse(v, v712)
+
+				continue
+			end
+
+			local v713 = t113[k]
+
+			if not v713 then
+				local v714 = t112[typeof(v)]
+
+				if not v714 then
+					warn(`[Util:ValueTableToBase | LOG]: { v714 } is not a valid datatype for { v }`)
+
+					continue
+				end
+
+				v713 = Instance.new(v714)
+				v713.Name = k
+			end
+
+			v713.Value = v
+			v713.Parent = p113
+
+			if b14 then
+				n43 += 1
+
+				if n43 >= 3 then
+					n43 = 0
+					task.wait()
+				end
+			end
+		end
+	end
+
+	recurse(t111, p111)
+end
+function t1.EmitParticles(_, p115) -- line: 2534
+	if typeof(p115) == "Instance" then
+		p115 = p115:GetDescendants()
+	end
+
+	for _, v in ipairs(p115) do
+		if v:IsA("ParticleEmitter") then
+			local EmitCount = v:GetAttribute("EmitCount")
+			local EmitDelay = v:GetAttribute("EmitDelay")
+			local v641 = v:GetAttribute("EmitDuration") or (v:GetAttribute("Toggle") or not EmitCount)
+
+			local function f() -- line: 2544
+				-- upvalues: v641 (copy), v (copy), EmitCount (copy)
+				if v641 then
+					v.Enabled = true
+
+					if typeof(v641) == "number" then
+						task.delay(v641, function() -- line: 2549
+							-- upvalues: v (copy)
+							if v then
+								v.Enabled = false
+							end
+						end)
+
+						return
+					end
+				else
+					v:Emit(EmitCount)
+				end
+			end
+
+			if EmitDelay then
+				task.delay(EmitDelay, f)
+			else
+				f()
+			end
+		end
+	end
+end
+
+function t1.RoundNumber(_, value, places)
+ local scale = 10 ^ (places or 0)
+ return math.round(value * scale) / scale
+end
+
+return table.freeze(t1)
+
+]====]},
+{path=[====[
+ServerStorage/Assets/Killers/1x1x1x1/Behavior]====],before="81232:1f5fa36c:f9bd3099",after="81113:2680e6af:920eec28",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local _ = require(game.ReplicatedStorage.GlobalTypes);
+local l_Debris_0 = game:GetService("Debris");
+local l_RunService_0 = game:GetService("RunService");
+local l_TweenService_0 = game:GetService("TweenService");
+local l_ReplicatedStorage_0 = game:GetService("ReplicatedStorage");
+local _ = game:GetService("UserInputService");
+local v6 = {};
+local v7 = require(l_ReplicatedStorage_0.Modules.Sounds);
+local v8 = require(l_ReplicatedStorage_0.Modules.Util);
+local v9 = require(l_ReplicatedStorage_0.Modules.Hitboxes);
+local v10 = require(l_ReplicatedStorage_0.Modules.Projectiles);
+local v11 = require(l_ReplicatedStorage_0.Modules.Statuses);
+local v12 = require(l_ReplicatedStorage_0.Modules.Network);
+local v13 = require(l_ReplicatedStorage_0.Modules.AchievementUtil);
+local v14 = require(l_ReplicatedStorage_0.Modules.Schematics.Lighting);
+local v15 = {
+    "Big",
+    "Flames",
+    "Shockwave",
+    "Small :D",
+    "SmokeBLACK",
+    "SmokeRed"
+};
+local function _(v16) --[[ Line: 29 ]] --[[ Name: hasGlitched ]]
+    -- upvalues: v11 (copy)
+    return v11:PlayerHasStatus(v16, "Glitched");
+end;
+local function _(v18, v19, v20, v21, v22) --[[ Line: 34 ]] --[[ Name: pull ]]
+    -- upvalues: v11 (copy), l_Debris_0 (copy)
+    local l_Humanoid_0 = v18:FindFirstChild("Humanoid");
+    if not l_Humanoid_0 or l_Humanoid_0.Health <= 0 or not v18.PrimaryPart then
+        return;
+    else
+        local l_v18_Pivot_0 = v18:GetPivot();
+        local l_v19_Pivot_0 = v19:GetPivot();
+        local l_Magnitude_0 = (l_v18_Pivot_0.Position - l_v19_Pivot_0.Position).Magnitude;
+        v21 = v21 or 2.5;
+        v22 = v22 or 10;
+        local v27 = nil;
+        if l_Magnitude_0 <= v22 then
+            v27 = l_v19_Pivot_0.Position + l_v19_Pivot_0.LookVector * v21;
+        else
+            local l_Unit_0 = (l_v19_Pivot_0.Position - l_v18_Pivot_0.Position).Unit;
+            v27 = l_v18_Pivot_0.Position + l_Unit_0 * v22;
+        end;
+        local l_Unit_1 = (v27 - l_v18_Pivot_0.Position).Unit;
+        local l_Magnitude_1 = (v27 - l_v18_Pivot_0.Position).Magnitude;
+        local v31 = (v20 or 50) * math.clamp(l_Magnitude_1 / 10, 0.5, 2);
+        if v11:PlayerHasStatus(v18, "Glitched") then
+            v31 = v31 * 1.3;
+        end;
+        local l_Attachment_0 = Instance.new("Attachment");
+        l_Attachment_0.Parent = v18.PrimaryPart;
+        local l_LinearVelocity_0 = Instance.new("LinearVelocity");
+        l_LinearVelocity_0.Parent = v18.PrimaryPart;
+        l_LinearVelocity_0.Attachment0 = l_Attachment_0;
+        l_LinearVelocity_0.MaxForce = 40000;
+        l_LinearVelocity_0.VectorVelocity = l_Unit_1 * v31;
+        l_LinearVelocity_0.RelativeTo = Enum.ActuatorRelativeTo.World;
+        l_Debris_0:AddItem(l_LinearVelocity_0, 0.35);
+        l_Debris_0:AddItem(l_Attachment_0, 0.35);
+        task.delay(0.35, function() --[[ Line: 77 ]]
+            -- upvalues: v18 (copy)
+            if v18.PrimaryPart then
+                v18.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+            end;
+        end);
+        return;
+    end;
+end;
+local function v42(v35, v36) --[[ Line: 84 ]] --[[ Name: toggleSwords ]]
+    if v35 and v35.Parent and v35:FindFirstChild("ExtraModels") then
+        for v37, v38 in pairs({
+            v35.ExtraModels.HaxxedSwordLeft,
+            v35.ExtraModels.HaxxedSwordRight
+        }) do
+            local v39 = v37 == 1 and "L" or "R";
+            v38.Parts[("HaxxedBlade%*2"):format(v39)].Transparency = v36 and 0 or 1;
+            for _, v41 in pairs(v38.Parts[("HaxxedBlade%*"):format(v39)]:GetChildren()) do
+                if v41:IsA("Beam") or v41:IsA("ParticleEmitter") then
+                    v41.Enabled = v36;
+                end;
+            end;
+        end;
+    end;
+end;
+local function v47(v43, v44) --[[ Line: 98 ]] --[[ Name: __getShockwaveDamage ]]
+    -- upvalues: v11 (copy)
+    if not v43.Rig then
+        return;
+    else
+        local l_MassInfectionShockwaveDamage_0 = v43.Config.MassInfectionShockwaveDamage;
+        local v46 = v44:FindFirstChild("Humanoid") ~= nil;
+        if v11:PlayerHasStatus(v44, "Glitched") and v46 then
+            l_MassInfectionShockwaveDamage_0 = l_MassInfectionShockwaveDamage_0 + v43.Config.MassInfectionShockwaveBonusDamage;
+        end;
+        return l_MassInfectionShockwaveDamage_0;
+    end;
+end;
+local function v53(v48, v49, v50, ...) --[[ Line: 124 ]] --[[ Name: pcallMethod ]]
+    local l_status_0, l_result_0 = pcall(function(...) --[[ Line: 125 ]]
+        -- upvalues: v50 (copy), v48 (copy)
+        if v50.Behavior[v48] then
+            return v50.Behavior[v48](v50, ...);
+        else
+            return;
+        end;
+    end, ...);
+    if not l_status_0 then
+        warn((("[%*]: Failed to call .%*() due to: %*"):format(v49, v48, l_result_0)));
+    end;
+    return l_result_0;
+end;
+local function v57(v54, v55) --[[ Line: 138 ]] --[[ Name: zombieCheck ]]
+    -- upvalues: v11 (copy)
+    if v55.Name == "1x1x1x1Zombie" then
+        local _ = v11:PlayerHasStatus(v54.Player, "Speed");
+        v11:ApplyStatus(v54.Rig, "Speed", {
+            Stackable = true,
+            MaxLevel = 1,
+            Level = v54.Config.ZombieKillSpeedLevel,
+            Duration = v54.Config.ZombieKillSpeedDuration
+        });
+        v54:PlayVoiceline("MinionSpeed", {
+            Priority = 3
+        });
+        return true;
+    else
+        return;
+    end;
+end;
+v6.Abilities = {
+    Slash = {
+        LayoutOrder = 1,
+        Icon = "rbxassetid://120590195585579",
+        KeybindType = "MainAbility",
+        Callback = function(v58) --[[ Line: 154 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v9 (copy), v57 (copy), v8 (copy), v11 (copy)
+            if game["Run Service"]:IsServer() then
+                v58.AbilitiesDisabled = true;
+                v7:Play(v58.Config.Sounds.Swing, {
+                    Parent = v58.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.25
+                });
+                task.delay(v58.Config.SlashWindup, function() --[[ Line: 161 ]]
+                    -- upvalues: v9 (ref), v58 (copy), v57 (ref), v8 (ref), v11 (ref), v7 (ref)
+                    local _ = v9:CreateHitbox(v58.Player, {
+                        Size = Vector3.new(4.5, 6, 7.5, 0),
+                        CFrameOffset = CFrame.new(0, 0, -1.75),
+                        Damage = function(v59) --[[ Line: 165 ]] --[[ Name: Damage ]]
+                            -- upvalues: v58 (ref)
+                            if v59.Name == "1x1x1x1Zombie" then
+                                local l_Humanoid_1 = v59:FindFirstChild("Humanoid");
+                                if l_Humanoid_1 then
+                                    return l_Humanoid_1.MaxHealth;
+                                end;
+                            end;
+                            return v58.Config.SlashDamage;
+                        end,
+                        Time = v58.Config.SlashLinger,
+                        Knockback = 2,
+                        HitMultiple = false,
+                        ExecuteOnKill = true,
+                        Connections = {
+                            Hit = function(v61, v62) --[[ Line: 182 ]] --[[ Name: Hit ]]
+                                -- upvalues: v57 (ref), v58 (ref), v8 (ref), v11 (ref), v7 (ref)
+                                if v61.Name == "1x1x1x1Zombie" then
+                                    v57(v58, v61);
+                                    return;
+                                else
+                                    v57(v58, v61);
+                                    v8:CreateSpeedMultiplier(v61, 1.5, "HitSpeedBonus", 1.25);
+                                    v11:ApplyStatus(v61, "Poisoned", {
+                                        Stackable = true,
+                                        Level = v58.Config.SlashPoisonLevel,
+                                        Duration = v58.Config.SlashPoisonDuration
+                                    });
+                                    v11:ApplyStatus(v61, "Glitched", {
+                                        Stackable = true,
+                                        Level = v58.Config.SlashGlitchLevel,
+                                        Duration = v58.Config.SlashGlitchDuration
+                                    });
+                                    if v62 then
+                                        v7:Play(v58.Config.Sounds.Hit, {
+                                            Parent = v58.Rig.PrimaryPart,
+                                            PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                            Volume = 0.25
+                                        });
+                                    end;
+                                    return;
+                                end;
+                            end
+                        }
+                    });
+                end);
+                task.delay(1, function() --[[ Line: 202 ]]
+                    -- upvalues: v58 (copy)
+                    v58.AbilitiesDisabled = false;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v58.Animations.Slash:Play(0.175);
+                end;
+                return;
+            end;
+        end
+    },
+    MassInfection = {
+        LayoutOrder = 2,
+        Icon = "rbxassetid://112065267803856",
+        KeybindType = "AltAbility1",
+        Callback = function(v64) --[[ Line: 218 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v8 (copy), v9 (copy), v57 (copy), v11 (copy), l_ReplicatedStorage_0 (copy), v47 (copy), v10 (copy), v15 (copy), l_TweenService_0 (copy), l_Debris_0 (copy), l_RunService_0 (copy)
+            if game["Run Service"]:IsServer() then
+                v64.AbilitiesDisabled = true;
+                v7:Play(v64.Config.Sounds.MassInfectionActivate, {
+                    Parent = v64.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.75,
+                    RollOffMaxDistance = 50
+                });
+                local l_MassInfection_0 = v64.Rig.HumanoidRootPart:FindFirstChild("MassInfection");
+                if l_MassInfection_0 then
+                    v8:EmitParticlesFromAttachment(l_MassInfection_0);
+                end;
+                task.delay(1.6, function() --[[ Line: 230 ]]
+                    -- upvalues: v9 (ref), v64 (copy), v57 (ref), v8 (ref), v7 (ref), v11 (ref), l_ReplicatedStorage_0 (ref)
+                    local v66 = {};
+                    v9:CreateHitbox(v64.Player, {
+                        Size = Vector3.new(9.5, 4, 10, 0),
+                        CFrame = v64.Rig:GetPivot(),
+                        CFrameOffset = CFrame.new(0, 0, -2),
+                        Damage = function(v67) --[[ Line: 237 ]] --[[ Name: Damage ]]
+                            -- upvalues: v64 (ref)
+                            if v67.Name == "1x1x1x1Zombie" then
+                                return 0;
+                            else
+                                return v64.Config.MassInfectionSlashDamage;
+                            end;
+                        end,
+                        Time = 0.125,
+                        Knockback = 5,
+                        HitMultiple = true,
+                        Connections = {
+                            Hit = function(v68, _) --[[ Line: 250 ]] --[[ Name: Hit ]]
+                                -- upvalues: v57 (ref), v64 (ref), v8 (ref), v7 (ref), v11 (ref), v66 (copy), l_ReplicatedStorage_0 (ref)
+                                if v68.Name == "1x1x1x1Zombie" then
+                                    return;
+                                else
+                                    v57(v64, v68);
+                                    v8:CreateSpeedMultiplier(v68, 1.5, "HitSpeedBonus", 2.5);
+                                    v7:Play(v64.Config.Sounds.Hit, {
+                                        Parent = v68.PrimaryPart,
+                                        PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                        Volume = 0.3
+                                    });
+                                    if v64.Config.MassInfectionShockwaveEffects then
+                                        for _, v71 in v64.Config.MassInfectionShockwaveEffects do
+                                            v11:ApplyStatus(v68, table.unpack(v71));
+                                        end;
+                                    end;
+                                    v66[v68] = true;
+                                    task.delay(1, function() --[[ Line: 267 ]]
+                                        -- upvalues: v66 (ref), v68 (copy)
+                                        v66[v68] = nil;
+                                    end);
+                                    if tostring(v68.Parent) == "Survivors" then
+                                        require(l_ReplicatedStorage_0.Modules.Actors):IncrementActorStats(v64.Player, {
+                                            Action = "Landed Mass Infection up close",
+                                            RewardType = "DifficultKillerAction"
+                                        });
+                                    end;
+                                    return;
+                                end;
+                            end
+                        }
+                    });
+                    v64._massInfectionCloseHits = v66;
+                end);
+                task.delay(1.7, function() --[[ Line: 288 ]]
+                    -- upvalues: v64 (copy), v7 (ref), v8 (ref), v47 (ref), v57 (ref), v11 (ref), l_ReplicatedStorage_0 (ref), v10 (ref)
+                    if v64.Rig:GetAttribute("Stunned") then
+                        return;
+                    else
+                        local v72 = v64.Config.ShockwaveTemplate:Clone();
+                        v7:Play(v64.Config.Sounds.MassInfectionProjectile, {
+                            Parent = v72.PrimaryPart,
+                            PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                            Volume = 0.3,
+                            Looped = true
+                        });
+                        local l_MassInfection1_0 = v64.Rig.HumanoidRootPart:FindFirstChild("MassInfection1");
+                        if l_MassInfection1_0 then
+                            v8:EmitParticlesFromAttachment(l_MassInfection1_0);
+                        end;
+                        local v78 = {
+                            Size = Vector3.new(8.800000190734863, 5.5, 6.599999904632568, 0),
+                            Damage = function(v74) --[[ Line: 301 ]] --[[ Name: Damage ]]
+                                -- upvalues: v47 (ref), v64 (ref)
+                                if v74.Name == "1x1x1x1Zombie" then
+                                    return 0;
+                                else
+                                    return v47(v64, v74);
+                                end;
+                            end,
+                            Time = v64.Config.MassInfectionShockwaveLifetime,
+                            Knockback = 0.5,
+                            HitMultiple = true,
+                            PredictVelocity = false,
+                            Connections = {
+                                Hit = function(v75) --[[ Line: 315 ]] --[[ Name: Hit ]]
+                                    -- upvalues: v57 (ref), v64 (ref), v8 (ref), v11 (ref), v7 (ref), l_ReplicatedStorage_0 (ref)
+                                    if v75.Name == "1x1x1x1Zombie" then
+                                        return;
+                                    else
+                                        v57(v64, v75);
+                                        v8:RevealPlayerAuraTo(v64.Player, v75, v64.Config.MassInfectionShockwaveAuraDuration);
+                                        if not (v64._massInfectionCloseHits and v64._massInfectionCloseHits[v75]) and v64.Config.MassInfectionSlashEffects then
+                                            for _, v77 in v64.Config.MassInfectionSlashEffects do
+                                                v11:ApplyStatus(v75, table.unpack(v77));
+                                            end;
+                                        end;
+                                        v7:Play(v64.Config.Sounds.EntanglementHit, {
+                                            Parent = v75.PrimaryPart,
+                                            PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                            Volume = 0.25
+                                        });
+                                        if tostring(v75.Parent) == "Survivors" then
+                                            require(l_ReplicatedStorage_0.Modules.Actors):IncrementActorStats(v64.Player, {
+                                                Action = "Landed Mass Infection hit",
+                                                RewardType = "EasyKillerAction"
+                                            });
+                                        end;
+                                        return;
+                                    end;
+                                end
+                            }
+                        };
+                        local v79 = {
+                            Owner = v64.Player,
+                            HitboxConfig = v78,
+                            Lifetime = v64.Config.MassInfectionShockwaveLifetime,
+                            InitialCFrame = v64:GetPivot() * CFrame.Angles(0, 0, 0) * CFrame.new(-0.25, -0.25, -6),
+                            InitialVelocity = v64:GetPivot().LookVector * v64.Config.MassInfectionShockwaveSpeed,
+                            Model = v72
+                        };
+                        v10.new(v79):Launch();
+                        return;
+                    end;
+                end);
+                task.delay(2.75, function() --[[ Line: 364 ]]
+                    -- upvalues: v64 (copy)
+                    v64.AbilitiesDisabled = false;
+                end);
+                task.delay(0.2, function() --[[ Line: 369 ]]
+                    -- upvalues: v64 (copy), v7 (ref)
+                    for v80 = 1, 6 do
+                        v64.Rig.HumanoidRootPart["Chain" .. v80]["Chain" .. v80].Enabled = true;
+                        v64.Rig.HumanoidRootPart["Chain" .. v80]["Orb" .. v80].Enabled = true;
+                        v7:Play(v64.Config.Sounds.Chains, {
+                            Parent = v64.Rig.PrimaryPart,
+                            PlaybackSpeed = 1,
+                            Volume = 0.1,
+                            RollOffMaxDistance = 400
+                        });
+                    end;
+                end);
+                task.delay(1.65, function() --[[ Line: 376 ]]
+                    -- upvalues: v15 (ref), v64 (copy)
+                    for _, v82 in v15 do
+                        local l_FirstChild_0 = v64.Rig.Head.EyesFlare:FindFirstChild(v82);
+                        if l_FirstChild_0 then
+                            l_FirstChild_0.Enabled = true;
+                        end;
+                    end;
+                end);
+                task.delay(1.8, function() --[[ Line: 386 ]]
+                    -- upvalues: v15 (ref), v64 (copy)
+                    for _, v85 in v15 do
+                        local l_FirstChild_1 = v64.Rig.Head.EyesFlare:FindFirstChild(v85);
+                        if l_FirstChild_1 then
+                            l_FirstChild_1.Enabled = false;
+                        end;
+                    end;
+                    for v87 = 1, 6 do
+                        v64.Rig.HumanoidRootPart["Chain" .. v87]["Chain" .. v87].Enabled = false;
+                        v64.Rig.HumanoidRootPart["Chain" .. v87]["Orb" .. v87].Enabled = false;
+                    end;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v64.Animations.MassInfection:Play(0.175, 0.9, nil);
+                    v64.Player.Character:SetAttribute("AbilityStaminaOverride", true);
+                    local l_MassInfectionShockwaveVignette_0 = v64.Config.MassInfectionShockwaveVignette;
+                    local v89 = l_MassInfectionShockwaveVignette_0 and l_MassInfectionShockwaveVignette_0:Clone();
+                    local l_ImageLabel_0 = v89:FindFirstChildOfClass("ImageLabel");
+                    if l_MassInfectionShockwaveVignette_0 then
+                        l_ImageLabel_0.ImageTransparency = 1;
+                        l_TweenService_0:Create(l_ImageLabel_0, TweenInfo.new(1.42, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {
+                            ImageTransparency = 0.81
+                        }):Play();
+                        l_Debris_0:AddItem(v89, 2.4);
+                        v89.Parent = v64.Player.PlayerGui;
+                    end;
+                    local v91 = require(l_ReplicatedStorage_0.Systems.Character.Game.Sprinting);
+                    local l_v8_SpeedMultiplier_0 = v8:CreateSpeedMultiplier(v64.Player, 1, "MassInfection", 2.4, true);
+                    game.TweenService:Create(l_v8_SpeedMultiplier_0, TweenInfo.new(0.35), {
+                        Value = 0.025
+                    }):Play();
+                    task.spawn(function() --[[ Line: 429 ]]
+                        -- upvalues: v64 (copy), l_v8_SpeedMultiplier_0 (copy), l_RunService_0 (ref), v91 (copy)
+                        local v93 = v64.Config.StaminaGain * 1;
+                        task.wait(0.2);
+                        while l_v8_SpeedMultiplier_0 and l_v8_SpeedMultiplier_0.Parent do
+                            if v64.Player.Character and v64.Player.Character:GetAttribute("StaminaPenaltyActive") then
+                                l_RunService_0.Heartbeat:Wait();
+                            else
+                                v91.Stamina = math.clamp(v91.Stamina + v93 * l_RunService_0.Heartbeat:Wait(), v91.MinStamina, v91.StaminaCap or v91.MaxStamina);
+                                v91.__staminaChangedEvent:Fire(v91.Stamina);
+                            end;
+                        end;
+                        if v64.Player.Character then
+                            v64.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                        end;
+                    end);
+                    local l_v8_FOVMultiplier_0 = v8:CreateFOVMultiplier(v64.Player, 1, "MassInfection");
+                    l_Debris_0:AddItem(l_v8_FOVMultiplier_0, 2.4);
+                    l_TweenService_0:Create(l_v8_FOVMultiplier_0, TweenInfo.new(1.7, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0), {
+                        Value = 0.75
+                    }):Play();
+                    task.delay(1.7, function() --[[ Line: 471 ]]
+                        -- upvalues: l_TweenService_0 (ref), l_v8_FOVMultiplier_0 (copy), l_MassInfectionShockwaveVignette_0 (copy), l_ImageLabel_0 (copy), l_v8_SpeedMultiplier_0 (copy), v64 (copy), v8 (ref), l_Debris_0 (ref)
+                        l_TweenService_0:Create(l_v8_FOVMultiplier_0, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out, 0), {
+                            Value = 1
+                        }):Play();
+                        if l_MassInfectionShockwaveVignette_0 then
+                            l_TweenService_0:Create(l_ImageLabel_0, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                                ImageTransparency = 1
+                            }):Play();
+                        end;
+                        l_v8_SpeedMultiplier_0:Destroy();
+                        local l_MassInfectionSpeedMultDist_0 = v64.Config.MassInfectionSpeedMultDist;
+                        local l_MassInfectionSpeedMult_0 = v64.Config.MassInfectionSpeedMult;
+                        local l_Max_0 = l_MassInfectionSpeedMultDist_0.Max;
+                        for _, v99 in ipairs(workspace.Players.Survivors:GetChildren()) do
+                            if v8:IsAlive(v99) then
+                                local l_Magnitude_2 = (v64.Rig.PrimaryPart.Position - v99.PrimaryPart.Position).Magnitude;
+                                if l_Magnitude_2 < l_Max_0 then
+                                    l_Max_0 = l_Magnitude_2;
+                                end;
+                            end;
+                        end;
+                        local v101 = l_MassInfectionSpeedMultDist_0.Max - l_MassInfectionSpeedMultDist_0.Min;
+                        local v102 = math.clamp((l_Max_0 - l_MassInfectionSpeedMultDist_0.Min) / v101, 0, 1);
+                        local v103 = l_MassInfectionSpeedMult_0.Min + math.lerp(0, l_MassInfectionSpeedMult_0.Max - l_MassInfectionSpeedMult_0.Min, v102);
+                        local l_v8_SpeedMultiplier_1 = v8:CreateSpeedMultiplier(v64.Player, v103, "MassInfectionBoost", 1, true);
+                        l_Debris_0:AddItem(l_v8_SpeedMultiplier_1, 1);
+                    end);
+                end;
+                return;
+            end;
+        end
+    },
+    Entanglement = {
+        LayoutOrder = 3,
+        Icon = "rbxassetid://119069138923680",
+        KeybindType = "AltAbility2",
+        Callback = function(v105) --[[ Line: 509 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v53 (copy), v42 (copy), v57 (copy), v11 (copy), l_Debris_0 (copy), v8 (copy), v12 (copy), l_ReplicatedStorage_0 (copy), v10 (copy), l_RunService_0 (copy)
+            if game["Run Service"]:IsServer() then
+                v105.AbilitiesDisabled = true;
+                v7:Play(v105.Config.Sounds.EntanglementActivate, {
+                    Parent = v105.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.5
+                });
+                v53("EntangleStart", ("%*/EntangleStart"):format(script.Parent), v105);
+                task.delay(0.75, function() --[[ Line: 516 ]]
+                    -- upvalues: v42 (ref), v105 (copy), v57 (ref), v7 (ref), v11 (ref), l_Debris_0 (ref), v8 (ref), v12 (ref), l_ReplicatedStorage_0 (ref), v10 (ref)
+                    v42(v105.Rig, false);
+                    local function v124(v106) --[[ Line: 520 ]] --[[ Name: onEntangledHit ]]
+                        -- upvalues: v57 (ref), v105 (ref), v7 (ref), v11 (ref), l_Debris_0 (ref), v8 (ref), v12 (ref), l_ReplicatedStorage_0 (ref)
+                        if v106.Name == "1x1x1x1Zombie" then
+                            local l_Humanoid_2 = v106:FindFirstChild("Humanoid");
+                            if l_Humanoid_2 then
+                                l_Humanoid_2.Health = 0;
+                            end;
+                            v57(v105, v106);
+                            return;
+                        else
+                            v57(v105, v106);
+                            v7:Play(v105.Config.Sounds.Hit, {
+                                Parent = v106.PrimaryPart,
+                                PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                Volume = 0.25
+                            });
+                            if not v106 or not v106:IsA("Model") or not v106:IsDescendantOf(workspace.Players.Survivors) then
+                                return;
+                            else
+                                local l_Humanoid_3 = v106:FindFirstChild("Humanoid");
+                                if l_Humanoid_3 and l_Humanoid_3.Health > 0 and v106.PrimaryPart then
+                                    local l_v106_Pivot_0 = v106:GetPivot();
+                                    local l_Pivot_0 = v105.Player.Character:GetPivot();
+                                    local l_Magnitude_3 = (l_v106_Pivot_0.Position - l_Pivot_0.Position).Magnitude;
+                                    local v112 = v105.Config.EntangelmentInFrontOffset or 2.5;
+                                    local v113 = v105.Config.EntanglementMaxPullDistance or 10;
+                                    local v114 = v105.Config.EntanglementPullFactor or 50;
+                                    local v115 = l_Pivot_0.Position + l_Pivot_0.LookVector * v112;
+                                    local v116 = nil;
+                                    if l_Magnitude_3 <= v113 then
+                                        v116 = v115;
+                                    else
+                                        local l_Unit_2 = (l_Pivot_0.Position - l_v106_Pivot_0.Position).Unit;
+                                        v116 = l_v106_Pivot_0.Position + l_Unit_2 * v113;
+                                    end;
+                                    if (l_Pivot_0.Position - l_v106_Pivot_0.Position).Magnitude < (v116 - l_v106_Pivot_0.Position).Magnitude then
+                                        v116 = v115;
+                                    end;
+                                    local l_Unit_3 = (v116 - l_v106_Pivot_0.Position).Unit;
+                                    local v119 = v114 * math.clamp((v116 - l_v106_Pivot_0.Position).Magnitude / 10, 0.5, 2);
+                                    if v11:PlayerHasStatus(v106, "Glitched") then
+                                        v119 = v119 * 1.3;
+                                    end;
+                                    local l_Attachment_1 = Instance.new("Attachment");
+                                    l_Attachment_1.Parent = v106.PrimaryPart;
+                                    local l_LinearVelocity_1 = Instance.new("LinearVelocity");
+                                    l_LinearVelocity_1.Parent = v106.PrimaryPart;
+                                    l_LinearVelocity_1.Attachment0 = l_Attachment_1;
+                                    l_LinearVelocity_1.MaxForce = 40000;
+                                    l_LinearVelocity_1.VectorVelocity = l_Unit_3 * v119;
+                                    l_LinearVelocity_1.RelativeTo = Enum.ActuatorRelativeTo.World;
+                                    l_Debris_0:AddItem(l_LinearVelocity_1, 0.35);
+                                    l_Debris_0:AddItem(l_Attachment_1, 0.35);
+                                    task.delay(0.35, function() --[[ Line: 592 ]]
+                                        -- upvalues: v106 (copy)
+                                        if v106.PrimaryPart then
+                                            v106.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+                                        end;
+                                    end);
+                                end;
+                                v8:RevealPlayerAuraTo(v105.Player, v106, v105.Config.EntanglementAuraDuration);
+                                for _, v123 in v105.Config.EntanglementEffects do
+                                    v11:ApplyStatus(v106, table.unpack(v123));
+                                end;
+                                v106:SetAttribute("Entangled", true);
+                                v11:ApplyStatus(v106, "Helpless", {
+                                    Level = 1,
+                                    Duration = v105.Config.EntanglementHelplessDuration
+                                });
+                                v11:ApplyStatus(v106, "Slowness", {
+                                    Level = 10,
+                                    Duration = 1
+                                });
+                                v12:FireClientConnection(game.Players:GetPlayerFromCharacter(v106), "Entangled", "REMOTE_EVENT");
+                                if tostring(v106.Parent) == "Survivors" then
+                                    require(l_ReplicatedStorage_0.Modules.Actors):IncrementActorStats(v105.Player, {
+                                        Action = "Landed Entanglement hit",
+                                        RewardType = "RegularKillerAction"
+                                    });
+                                end;
+                                return;
+                            end;
+                        end;
+                    end;
+                    local v125 = {
+                        Size = Vector3.new(4.5, 1.75, 5, 0),
+                        Damage = v105.Config.EntanglementDamage,
+                        Time = v105.Config.EntanglementLifetime,
+                        Knockback = 0.5,
+                        HitMultiple = true,
+                        PredictVelocity = false,
+                        Connections = {
+                            Hit = v124
+                        }
+                    };
+                    local v126 = v105.Config.SwordsTemplate:Clone();
+                    v7:Play(v105.Config.Sounds.EntanglementProjectile, {
+                        Parent = v126.PrimaryPart,
+                        PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                        Volume = 0.25,
+                        Looped = true,
+                        RollOffMaxDistance = 40
+                    });
+                    local v127 = {
+                        Owner = v105.Player,
+                        HitboxConfig = v125,
+                        Lifetime = v105.Config.EntanglementLifetime,
+                        InitialCFrame = v105:GetPivot() * CFrame.Angles(0, 3.141592653589793, 0) * CFrame.new(-0.25, -0.25, 6),
+                        InitialVelocity = v105:GetPivot().LookVector * v105.Config.EntanglementSpeed,
+                        Model = v126
+                    };
+                    v10.new(v127):Launch();
+                end);
+                task.delay(1.5, function() --[[ Line: 653 ]]
+                    -- upvalues: v105 (copy), v42 (ref)
+                    v105.AbilitiesDisabled = false;
+                    v42(v105.Rig, true);
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v105.Animations.Entanglement:Play(0.175, 0.9, nil);
+                    v105.Player.Character:SetAttribute("AbilityStaminaOverride", true);
+                    local v128 = require(l_ReplicatedStorage_0.Systems.Character.Game.Sprinting);
+                    local l_v8_SpeedMultiplier_2 = v8:CreateSpeedMultiplier(v105.Player, 1, "Entanglement", 1.3, true);
+                    game.TweenService:Create(l_v8_SpeedMultiplier_2, TweenInfo.new(0.45), {
+                        Value = 0.1
+                    }):Play();
+                    task.spawn(function() --[[ Line: 674 ]]
+                        -- upvalues: v105 (copy), l_v8_SpeedMultiplier_2 (copy), l_RunService_0 (ref), v128 (copy)
+                        local v130 = os.clock();
+                        local l_StaminaGain_0 = v105.Config.StaminaGain;
+                        task.wait(0.2);
+                        while l_v8_SpeedMultiplier_2 and l_v8_SpeedMultiplier_2.Parent and os.clock() - v130 < 1.1 do
+                            if v105.Player.Character and v105.Player.Character:GetAttribute("StaminaPenaltyActive") then
+                                l_RunService_0.Heartbeat:Wait();
+                            else
+                                v128.Stamina = math.clamp(v128.Stamina + l_StaminaGain_0 * l_RunService_0.Heartbeat:Wait(), v128.MinStamina, v128.StaminaCap or v128.MaxStamina);
+                                v128.__staminaChangedEvent:Fire(v128.Stamina);
+                            end;
+                        end;
+                        if v105.Player.Character then
+                            v105.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                        end;
+                    end);
+                end;
+                return;
+            end;
+        end
+    },
+    UnstableEye = {
+        LayoutOrder = 4,
+        Icon = "rbxassetid://135373963092918",
+        KeybindType = "AltAbility3",
+        Callback = function(v132) --[[ Line: 721 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v8 (copy), v11 (copy), v15 (copy), l_ReplicatedStorage_0 (copy), l_RunService_0 (copy), l_TweenService_0 (copy), l_Debris_0 (copy)
+            if game["Run Service"]:IsServer() then
+                v132.AbilitiesDisabled = true;
+                v7:Play(v132.Config.Sounds.UnstableEyeActivate, {
+                    Parent = v132.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.6,
+                    RollOffMaxDistance = 400
+                });
+                v7:Play(v132.Config.Sounds.UnstableEyeMode, {
+                    Parent = v132.Rig.PrimaryPart,
+                    PlaybackSpeed = 1.25,
+                    Volume = 0.25
+                });
+                task.delay(0.9, function() --[[ Line: 729 ]]
+                    -- upvalues: v132 (copy), v8 (ref), v11 (ref)
+                    local l_Unstable_0 = v132.Rig.HumanoidRootPart:FindFirstChild("Unstable");
+                    if l_Unstable_0 then
+                        v8:EmitParticlesFromAttachment(l_Unstable_0);
+                    end;
+                    for _, v135 in v132.Config.UnstableEyeEffects do
+                        v11:ApplyStatus(v132.Player, table.unpack(v135));
+                    end;
+                end);
+                task.delay(1.5, function() --[[ Line: 741 ]]
+                    -- upvalues: v132 (copy)
+                    v132.AbilitiesDisabled = false;
+                end);
+                task.delay(0.9, function() --[[ Line: 746 ]]
+                    -- upvalues: v15 (ref), v132 (copy)
+                    for _, v137 in v15 do
+                        local l_FirstChild_2 = v132.Rig.Head.EyesFlare:FindFirstChild(v137);
+                        if l_FirstChild_2 then
+                            l_FirstChild_2.Enabled = true;
+                        end;
+                    end;
+                end);
+                task.delay(1.1, function() --[[ Line: 756 ]]
+                    -- upvalues: v15 (ref), v132 (copy)
+                    for _, v140 in v15 do
+                        local l_FirstChild_3 = v132.Rig.Head.EyesFlare:FindFirstChild(v140);
+                        if l_FirstChild_3 then
+                            l_FirstChild_3.Enabled = false;
+                        end;
+                    end;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v132.Animations.UnstableEye:Play(0.175);
+                    v132.Player.Character:SetAttribute("AbilityStaminaOverride", true);
+                    local v142 = require(l_ReplicatedStorage_0.Systems.Character.Game.Sprinting);
+                    if v132.__currentMultiplier then
+                        v132.__currentMultiplier:Destroy();
+                        v132.__currentMultiplier = nil;
+                    end;
+                    local l_v8_SpeedMultiplier_3 = v8:CreateSpeedMultiplier(v132.Player, 1, "UnstableEye", 1, true);
+                    v132.__currentMultiplier = l_v8_SpeedMultiplier_3;
+                    local v144 = nil;
+                    do
+                        local l_v144_0 = v144;
+                        l_v144_0 = l_RunService_0.Heartbeat:Connect(function() --[[ Line: 790 ]]
+                            -- upvalues: l_v8_SpeedMultiplier_3 (copy), l_v144_0 (ref), v132 (copy), v142 (copy), l_TweenService_0 (ref)
+                            if not l_v8_SpeedMultiplier_3 or not l_v8_SpeedMultiplier_3.Parent then
+                                if l_v144_0 then
+                                    l_v144_0:Disconnect();
+                                    l_v144_0 = nil;
+                                end;
+                                if v132.Player.Character then
+                                    v132.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                                end;
+                                return;
+                            elseif v142.IsSprinting then
+                                local v146 = v132.Config.Speed / v132.Config.SprintSpeed;
+                                l_TweenService_0:Create(l_v8_SpeedMultiplier_3, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                                    Value = v146
+                                }):Play();
+                                return;
+                            else
+                                l_v8_SpeedMultiplier_3.Value = 1;
+                                return;
+                            end;
+                        end);
+                        task.delay(1, function() --[[ Line: 814 ]]
+                            -- upvalues: l_v144_0 (ref), v132 (copy)
+                            if l_v144_0 then
+                                l_v144_0:Disconnect();
+                                l_v144_0 = nil;
+                            end;
+                            if v132.Player.Character then
+                                v132.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                            end;
+                        end);
+                        task.spawn(function() --[[ Line: 827 ]]
+                            -- upvalues: v132 (copy), l_v8_SpeedMultiplier_3 (copy), l_RunService_0 (ref), v142 (copy)
+                            local v147 = v132.Config.StaminaGain * 1.05;
+                            task.wait(0.2);
+                            while l_v8_SpeedMultiplier_3 and l_v8_SpeedMultiplier_3.Parent do
+                                if v132.Player.Character and v132.Player.Character:GetAttribute("StaminaPenaltyActive") then
+                                    l_RunService_0.Heartbeat:Wait();
+                                else
+                                    v142.Stamina = math.clamp(v142.Stamina + v147 * l_RunService_0.Heartbeat:Wait(), v142.MinStamina, v142.StaminaCap or v142.MaxStamina);
+                                    v142.__staminaChangedEvent:Fire(v142.Stamina);
+                                end;
+                            end;
+                            if v132.Player.Character then
+                                v132.Player.Character:SetAttribute("AbilityStaminaOverride", nil);
+                            end;
+                        end);
+                        local l_UnstableEyeVignette_0 = v132.Config.UnstableEyeVignette;
+                        local v149 = l_UnstableEyeVignette_0 and l_UnstableEyeVignette_0:Clone();
+                        local v150 = v149 and v149:FindFirstChildOfClass("ImageLabel");
+                        if l_UnstableEyeVignette_0 and v149 and v150 then
+                            v150.ImageTransparency = 1;
+                            l_Debris_0:AddItem(v149, 3);
+                            v149.Parent = v132.Player.PlayerGui;
+                        end;
+                        local l_v8_FOVMultiplier_1 = v8:CreateFOVMultiplier(v132.Player, 1, "UnstableEye");
+                        l_Debris_0:AddItem(l_v8_FOVMultiplier_1, 1.5);
+                        l_TweenService_0:Create(l_v8_FOVMultiplier_1, TweenInfo.new(0.85, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                            Value = 0.9
+                        }):Play();
+                        task.delay(0.85, function() --[[ Line: 883 ]]
+                            -- upvalues: l_v8_FOVMultiplier_1 (copy), v150 (copy), l_TweenService_0 (ref)
+                            l_v8_FOVMultiplier_1.Value = 0.86;
+                            if v150 then
+                                v150.ImageTransparency = 0.3;
+                                l_TweenService_0:Create(v150, TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                                    ImageTransparency = 1
+                                }):Play();
+                            end;
+                            l_TweenService_0:Create(l_v8_FOVMultiplier_1, TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                                Value = 1
+                            }):Play();
+                        end);
+                        task.delay(0.9, function() --[[ Line: 914 ]]
+                            -- upvalues: v8 (ref), v132 (copy)
+                            for _, v153 in pairs(workspace.Players.Survivors:GetChildren()) do
+                                local l_Humanoid_4 = v153:FindFirstChild("Humanoid");
+                                if l_Humanoid_4 then
+                                    for _, v156 in pairs(v153:GetDescendants()) do
+                                        if v156:IsA("Highlight") and v156.Name == "PlayerAura" then
+                                            v156:Destroy();
+                                        end;
+                                    end;
+                                    local v157 = l_Humanoid_4.Health / l_Humanoid_4.MaxHealth;
+                                    local v158 = Color3.fromHSV(v157 / 3, 0.6, 1);
+                                    v8:RevealPlayerAura(v153, v132.Config.UnstableEyeAuraDuration, v158);
+                                else
+                                    for _, v160 in pairs(v153:GetDescendants()) do
+                                        if v160:IsA("Highlight") and v160.Name == "PlayerAura" then
+                                            v160:Destroy();
+                                        end;
+                                    end;
+                                    v8:RevealPlayerAura(v153, v132.Config.UnstableEyeAuraDuration);
+                                end;
+                            end;
+                        end);
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    RejuvenateTheRotten = {
+        LayoutOrder = 5,
+        Icon = "rbxassetid://102037518703784",
+        KeybindType = "AltAbility4",
+        Charges = 0,
+        Callback = function(v161) --[[ Line: 951 ]] --[[ Name: Callback ]]
+            -- upvalues: v7 (copy), v53 (copy), v8 (copy), l_ReplicatedStorage_0 (copy), v11 (copy), v15 (copy)
+            if game["Run Service"]:IsServer() then
+                v161.AbilitiesDisabled = true;
+                v7:Play(v161.Config.Sounds.RejuvenateTheRottenActivate, {
+                    Parent = v161.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.75
+                });
+                task.delay(1, function() --[[ Line: 960 ]]
+                    -- upvalues: v161 (copy), v53 (ref), v7 (ref), v8 (ref), l_ReplicatedStorage_0 (ref), v11 (ref)
+                    local l_PrimaryPart_0 = v161.Rig.PrimaryPart;
+                    local l_pairs_0 = pairs;
+                    local v164 = v161.KilledLocations or {};
+                    for v165, v166 in l_pairs_0(v164) do
+                        v161.KilledLocations[v165] = nil;
+                        task.spawn(function() --[[ Line: 965 ]]
+                            -- upvalues: v161 (ref), v53 (ref), v7 (ref), v8 (ref), v166 (copy), l_PrimaryPart_0 (copy), l_ReplicatedStorage_0 (ref), v11 (ref)
+                            local v167 = nil;
+                            if v161.Behavior.GetZombie then
+                                v167 = v53("GetZombie", ("%*/Abilities/RejuvenateTheRotten"):format(script.Parent), v161);
+                            end;
+                            if not v167 or not v161.Behavior.GetZombie then
+                                v167 = v161.Config.ZombieTemplate:IsA("Model") and v161.Config.ZombieTemplate:Clone() or v161.Config.ZombieTemplate:GetChildren()[math.random(1, #v161.Config.ZombieTemplate:GetChildren())]:Clone();
+                            end;
+                            v167:SetAttribute("ExecutionsDisabled", true);
+                            v167:SetAttribute("OverrideRagdollValidation", true);
+                            v167.Name = "1x1x1x1Zombie";
+                            v167:SetAttribute("HitboxPriority", 0);
+                            v167.PrimaryPart.Anchored = true;
+                            v167.Humanoid.Health = v161.Config.ZombieHealth;
+                            v167.Humanoid.EvaluateStateMachine = false;
+                            v167.Parent = workspace.Map.Ingame;
+                            v53("SummonZombie", ("%*/Abilities/RejuvenateTheRotten"):format(script.Parent), v161, v167);
+                            local l_Highlight_0 = Instance.new("Highlight");
+                            l_Highlight_0.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop;
+                            l_Highlight_0.FillColor = Color3.fromRGB(0, 100, 0);
+                            l_Highlight_0.OutlineColor = Color3.fromRGB(0, 150, 0);
+                            l_Highlight_0.FillTransparency = 0.5;
+                            l_Highlight_0.OutlineTransparency = 0;
+                            l_Highlight_0.Adornee = v167;
+                            local l_PlayerGui_0 = v161.Player:FindFirstChild("PlayerGui");
+                            if l_PlayerGui_0 then
+                                local l_ZombieHighlights_0 = l_PlayerGui_0:FindFirstChild("ZombieHighlights");
+                                if not l_ZombieHighlights_0 then
+                                    l_ZombieHighlights_0 = Instance.new("Folder");
+                                    l_ZombieHighlights_0.Name = "ZombieHighlights";
+                                    l_ZombieHighlights_0.Parent = l_PlayerGui_0;
+                                end;
+                                l_Highlight_0.Parent = l_ZombieHighlights_0;
+                            else
+                                l_Highlight_0.Parent = v167;
+                            end;
+                            v167.AncestryChanged:Connect(function() --[[ Line: 1012 ]]
+                                -- upvalues: v167 (ref), l_Highlight_0 (copy)
+                                if not v167.Parent then
+                                    l_Highlight_0:Destroy();
+                                end;
+                            end);
+                            local v171 = v7:Play(v161.Config.Sounds.RejuvenateTheRottenMinionIdle, {
+                                Parent = v167.PrimaryPart,
+                                Looped = true,
+                                Volume = 0
+                            });
+                            game.TweenService:Create(v171, TweenInfo.new(2.5), {
+                                Volume = 0.5
+                            }):Play();
+                            v8:FixCharacter(v167, "Killers");
+                            v8:AddHitboxes(v167, "Killers");
+                            local v172 = {};
+                            for v173, v174 in pairs(v161.Config.ZombieAnimations) do
+                                v172[v173] = v8:LoadAnimationFromID(v167, v174);
+                            end;
+                            v172.Summon:Play(0);
+                            v172.Idle:Play(0);
+                            local l_lookAt_0 = CFrame.lookAt;
+                            local l_v166_0 = v166;
+                            local v177 = Vector3.new(l_PrimaryPart_0.Position.X, v166.Y, l_PrimaryPart_0.Position.Z);
+                            v167:SetPrimaryPartCFrame(l_lookAt_0(l_v166_0, v177));
+                            v7:Play(v161.Config.Sounds.RejuvenateTheRottenRevive, {
+                                Parent = v167.PrimaryPart,
+                                PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                Volume = 0.5
+                            });
+                            local v178 = false;
+                            v172.Summon.Stopped:Connect(function() --[[ Line: 1041 ]]
+                                -- upvalues: v178 (ref)
+                                v178 = true;
+                            end);
+                            local v179 = 0;
+                            while not v178 and v167.Parent and v167.Humanoid.Health > 0 do
+                                v179 = v179 + task.wait();
+                            end;
+                            if not v167.Parent or v167.Humanoid.Health <= 0 then
+                                return;
+                            else
+                                l_lookAt_0 = "";
+                                v167.Humanoid.Running:Connect(function(v180) --[[ Line: 1059 ]]
+                                    -- upvalues: v167 (ref), v161 (ref), l_lookAt_0 (ref), v172 (copy)
+                                    if v180 > 0.01 then
+                                        if v167.Humanoid.WalkSpeed == v161.Config.ZombieWalkSpeed and l_lookAt_0 ~= "Walk" then
+                                            v172.Walk:Play();
+                                            v172.Run:Stop();
+                                            return;
+                                        elseif v167.Humanoid.WalkSpeed == v161.Config.ZombieSprintSpeed and l_lookAt_0 ~= "Run" then
+                                            v172.Walk:Stop();
+                                            v172.Run:Play();
+                                            return;
+                                        end;
+                                    else
+                                        l_lookAt_0 = "";
+                                        v172.Walk:Stop();
+                                        v172.Run:Stop();
+                                    end;
+                                end);
+                                task.spawn(function() --[[ Line: 1078 ]]
+                                    -- upvalues: v161 (ref), v167 (ref), v7 (ref)
+                                    local l_ZombieSounds_0 = v161.Config.ZombieSounds;
+                                    if l_ZombieSounds_0 then
+                                        local v182 = #l_ZombieSounds_0;
+                                        while v167.Parent and v167.PrimaryPart do
+                                            v7:Play(l_ZombieSounds_0[math.random(1, v182)], {
+                                                Parent = v167.PrimaryPart,
+                                                Volume = 0.4,
+                                                PlaybackSpeed = Random.new():NextNumber(0.8, 2)
+                                            });
+                                            task.wait(math.random(10, 25));
+                                        end;
+                                    end;
+                                end);
+                                v167.PrimaryPart.Anchored = false;
+                                v167.Humanoid.EvaluateStateMachine = true;
+                                task.spawn(function() --[[ Line: 1094 ]]
+                                    -- upvalues: l_ReplicatedStorage_0 (ref), v167 (ref), v161 (ref), v172 (copy), v7 (ref), v11 (ref), v8 (ref), v171 (copy)
+                                    local v183 = require(l_ReplicatedStorage_0.Modules.Actors);
+                                    local v184 = 0;
+                                    local v185 = math.random(6, 12);
+                                    local v186 = nil;
+                                    local v187 = nil;
+                                    local v188 = require(l_ReplicatedStorage_0.Modules.SimplePath).new(v167);
+                                    v167:AddTag("Ragdoll");
+                                    while v167.Parent and v167.PrimaryPart and v167.Humanoid.Health > 0 do
+                                        if v186 and v186.PrimaryPart and v186.Humanoid.Health > 0 and not v186:GetAttribute("Undetectable") then
+                                            local l_Magnitude_4 = (v186.PrimaryPart.Position - v167.PrimaryPart.Position).Magnitude;
+                                            if l_Magnitude_4 <= v161.Config.ZombieAttackRange then
+                                                v172.Attack:Play();
+                                                v7:Play(v161.Config.Sounds.Swing, {
+                                                    Parent = v167.PrimaryPart,
+                                                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                                    Volume = 0.25
+                                                });
+                                                local l_Humanoid_5 = v186:FindFirstChild("Humanoid");
+                                                if l_Humanoid_5 then
+                                                    v7:Play(v161.Config.Sounds.RejuvenateTheRottenMinionHit, {
+                                                        Parent = v167.PrimaryPart
+                                                    });
+                                                    local l_Parent_0 = l_Humanoid_5.Parent;
+                                                    local v192 = v11:PlayerHasStatus(l_Parent_0, "Glitched");
+                                                    for _, v194 in v161.Config.ZombieAttackEffects do
+                                                        v11:ApplyStatus(l_Parent_0, table.unpack(v194));
+                                                    end;
+                                                    if v192 then
+                                                        v8:ApplyDamage(l_Parent_0, v161.Config.ZombieAttackDamage, nil, v161.Rig);
+                                                    else
+                                                        l_Humanoid_5.Health = math.max(1, l_Humanoid_5.Health - v161.Config.ZombieAttackDamage);
+                                                    end;
+                                                    v8:RevealPlayerAuraTo(v161.Player, l_Parent_0, v161.Config.ZombieRevealTime);
+                                                end;
+                                                if v187 and v187.Behavior then
+                                                    v187.Behavior.AILastSeen = nil;
+                                                end;
+                                                task.wait(v161.Config.ZombieAttackCooldown);
+                                                continue;
+                                            elseif v161.Config.ZombieLoseFocusRange <= l_Magnitude_4 then
+                                                v186 = nil;
+                                                v187 = nil;
+                                                v188:Stop();
+                                            else
+                                                if v187 and v187.Behavior then
+                                                    v187.Behavior.AILastSeen = os.clock();
+                                                end;
+                                                v167.Humanoid.WalkSpeed = v161.Config.ZombieSprintSpeed;
+                                                v188:Run(v186.PrimaryPart.Position);
+                                            end;
+                                        else
+                                            v186 = nil;
+                                            v187 = nil;
+                                            v167.Humanoid.WalkSpeed = v161.Config.ZombieWalkSpeed;
+                                        end;
+                                        local l_v8_ClosestPlayerFromPosition_0 = v8:GetClosestPlayerFromPosition(v167.PrimaryPart.Position, {
+                                            PlayerSelection = "Survivors",
+                                            MaxDistance = v161.Config.ZombieTargetRange
+                                        });
+                                        if l_v8_ClosestPlayerFromPosition_0 then
+                                            v186 = l_v8_ClosestPlayerFromPosition_0;
+                                            local l_PlayerFromCharacter_0 = game.Players:GetPlayerFromCharacter(l_v8_ClosestPlayerFromPosition_0);
+                                            v187 = l_PlayerFromCharacter_0 and v183.CurrentActors[l_PlayerFromCharacter_0];
+                                        end;
+                                        if v185 <= v184 then
+                                            v184 = 0;
+                                            v185 = math.random(6, 12);
+                                            v167.Humanoid:MoveTo(v167.PrimaryPart.Position + Vector3.new(math.random(-80, 80), 0, math.random(-80, 80)));
+                                        end;
+                                        v167.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true);
+                                        v167.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false);
+                                        v167.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false);
+                                        v184 = v184 + game["Run Service"].Heartbeat:Wait();
+                                    end;
+                                    if v171 and v171.Parent then
+                                        game.TweenService:Create(v171, TweenInfo.new(0.8), {
+                                            PlaybackSpeed = 0
+                                        }):Play();
+                                    end;
+                                    if v188 then
+                                        v188:Destroy();
+                                    end;
+                                end);
+                                return;
+                            end;
+                        end);
+                    end;
+                end);
+                task.delay(v161.Config.RejuvenateEndlag, function() --[[ Line: 1214 ]]
+                    -- upvalues: v161 (copy)
+                    v161.AbilitiesDisabled = false;
+                end);
+                task.delay(0.98, function() --[[ Line: 1219 ]]
+                    -- upvalues: v15 (ref), v161 (copy), v7 (ref)
+                    for _, v198 in v15 do
+                        local l_FirstChild_4 = v161.Rig.Head.EyesFlare:FindFirstChild(v198);
+                        if l_FirstChild_4 then
+                            l_FirstChild_4.Enabled = true;
+                        end;
+                    end;
+                    for v200 = 1, 6 do
+                        v161.Rig.HumanoidRootPart["Chain" .. v200]["Chain" .. v200].Enabled = true;
+                        v7:Play(v161.Config.Sounds.Chains, {
+                            Parent = v161.Rig.PrimaryPart,
+                            PlaybackSpeed = 0.75,
+                            Volume = 0.1
+                        });
+                    end;
+                end);
+                task.delay(1.35, function() --[[ Line: 1234 ]]
+                    -- upvalues: v15 (ref), v161 (copy)
+                    for _, v202 in v15 do
+                        local l_FirstChild_5 = v161.Rig.Head.EyesFlare:FindFirstChild(v202);
+                        if l_FirstChild_5 then
+                            l_FirstChild_5.Enabled = false;
+                        end;
+                    end;
+                end);
+                task.delay(1.98, function() --[[ Line: 1245 ]]
+                    -- upvalues: v161 (copy)
+                    v161.Rig.HumanoidRootPart["Chain" .. 1]["Chain" .. 1].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 2]["Chain" .. 2].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 3]["Chain" .. 3].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 4]["Chain" .. 4].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 5]["Chain" .. 5].Enabled = false;
+                    v161.Rig.HumanoidRootPart["Chain" .. 6]["Chain" .. 6].Enabled = false;
+                end);
+                task.delay(2.1, function() --[[ Line: 1251 ]]
+
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v161.Animations.RejuvenateTheRotten:Play(0.175);
+                    v8:CreateSpeedMultiplier(v161.Player, 0.01, "RejuvenateTheRotten", v161.Config.RejuvenateEndlag, true);
+                end;
+                return;
+            end;
+        end
+    }
+};
+v6.Created = function(_, v205) --[[ Line: 1267 ]] --[[ Name: Created ]]
+    -- upvalues: v12 (copy), v53 (copy)
+    if game["Run Service"]:IsServer() then
+        v205.KilledLocations = {};
+        local function v209(v206) --[[ Line: 1282 ]] --[[ Name: setDeathConnection ]]
+            -- upvalues: v205 (copy)
+            local l_Humanoid_6 = v206:FindFirstChild("Humanoid");
+            local l_PrimaryPart_1 = v206.PrimaryPart;
+            if l_Humanoid_6 and l_PrimaryPart_1 then
+                l_Humanoid_6.Died:Once(function() --[[ Line: 1286 ]]
+                    -- upvalues: v205 (ref), l_PrimaryPart_1 (copy)
+                    v205:IncrementCharges("RejuvenateTheRotten", 1, 1);
+                    table.insert(v205.KilledLocations, l_PrimaryPart_1.Position);
+                end);
+            end;
+        end;
+        for _, v211 in pairs(workspace.Players.Survivors:GetChildren()) do
+            local l_Humanoid_7 = v211:FindFirstChild("Humanoid");
+            local l_PrimaryPart_2 = v211.PrimaryPart;
+            if l_Humanoid_7 and l_PrimaryPart_2 then
+                l_Humanoid_7.Died:Once(function() --[[ Line: 1286 ]]
+                    -- upvalues: v205 (copy), l_PrimaryPart_2 (copy)
+                    v205:IncrementCharges("RejuvenateTheRotten", 1, 1);
+                    table.insert(v205.KilledLocations, l_PrimaryPart_2.Position);
+                end);
+            end;
+        end;
+        local v214 = nil;
+        v214 = workspace.Players.Survivors.ChildAdded:Connect(v209);
+        v205.Rig.AncestryChanged:Connect(function(_, v216) --[[ Line: 1300 ]]
+            -- upvalues: v214 (ref)
+            if not v216 then
+                v214:Disconnect();
+                v214 = nil;
+            end;
+        end);
+        if not v205.Config.HighlightDisabled then
+            local l_Highlight_1 = Instance.new("Highlight");
+            l_Highlight_1.DepthMode = Enum.HighlightDepthMode.Occluded;
+            l_Highlight_1.Parent = v205.Rig;
+            for v218, v219 in pairs(v205.Config.HighlightProperties) do
+                l_Highlight_1[v218] = v219;
+            end;
+        end;
+        v205:SetCooldownOf("UnstableEye", v205.Config.UnstableEyeCooldown / 2);
+        return;
+    else
+        if game["Run Service"]:IsClient() then
+            v12:SetConnection("Entangled", "REMOTE_EVENT", function() --[[ Line: 1319 ]]
+                -- upvalues: v53 (ref), v205 (copy)
+                v53("cl_Entangled", "feel my entanglement", v205);
+            end);
+        end;
+        return;
+    end;
+end;
+v6.OnIntroduction = function(_, v221, v222, v223) --[[ Line: 1332 ]] --[[ Name: OnIntroduction ]]
+    -- upvalues: v14 (copy), l_Debris_0 (copy), v15 (copy), v8 (copy)
+    v14:SetCustomLighting(v221.Config.IntroLighting);
+    local v224 = v221.Config.IntroHeadTemplate:Clone();
+    v224:SetPrimaryPartCFrame(v222:WaitForChild("Right Arm").CFrame * CFrame.Angles(0, 0, 3.141592653589793) * CFrame.new(0, 0.9, 0.1));
+    v224.ArmWeld.Part0 = v222:WaitForChild("Right Arm");
+    v224.Parent = workspace;
+    l_Debris_0:AddItem(v224, 5);
+    task.delay(0.92, function() --[[ Line: 1342 ]]
+        -- upvalues: v224 (copy)
+        local l_Root_0 = v224:FindFirstChild("Root");
+        local v226 = l_Root_0 and l_Root_0:FindFirstChild("Blood");
+        if v226 then
+            v226:Emit(30);
+        end;
+    end);
+    task.delay(0.94, function() --[[ Line: 1350 ]]
+        -- upvalues: v15 (ref), v221 (copy)
+        for _, v228 in v15 do
+            local l_FirstChild_6 = v221.Rig.Head.EyesFlare:FindFirstChild(v228);
+            if l_FirstChild_6 then
+                l_FirstChild_6.Enabled = true;
+            end;
+        end;
+    end);
+    task.delay(0.966, function() --[[ Line: 1362 ]]
+        -- upvalues: v224 (copy)
+        v224.Head:Destroy();
+        v224.Hair:Destroy();
+    end);
+    task.delay(1.2, function() --[[ Line: 1368 ]]
+        -- upvalues: v15 (ref), v221 (copy)
+        for _, v231 in v15 do
+            local l_FirstChild_7 = v221.Rig.Head.EyesFlare:FindFirstChild(v231);
+            if l_FirstChild_7 then
+                l_FirstChild_7.Enabled = false;
+            end;
+        end;
+    end);
+    v8:CreateFOVMultiplier(game.Players.LocalPlayer, 0.6, "1x1x1x1IntroScene", v223);
+    task.delay(v223, function() --[[ Line: 1383 ]]
+        -- upvalues: v14 (ref)
+        v14:SetAsCurrentLighting();
+    end);
+end;
+v6.OnKill = function(v233, v234) --[[ Line: 1388 ]] --[[ Name: OnKill ]]
+    -- upvalues: v13 (copy)
+    if v234.Name == "Shedletsky" then
+        v13:IncrementAchievementProgress(v233.Player, "1x1x1x1Hunt");
+    end;
+end;
+v6.OnExecution = function(_, v236, v237) --[[ Line: 1394 ]] --[[ Name: OnExecution ]]
+    local l_Sword_0 = v237:FindFirstChild("Sword");
+    local l_Humanoid_8 = v237:FindFirstChild("Humanoid");
+    local l_Head_0 = v237:FindFirstChild("Head");
+    local v241 = require(game.ReplicatedStorage.Modules.Ragdolls);
+    if v237.Name == "Shedletsky" then
+        l_Sword_0.Transparency = 0;
+        local _ = workspace:GetServerTimeNow() + 3.23;
+        task.delay(3.23, function() --[[ Line: 1404 ]]
+            -- upvalues: l_Humanoid_8 (copy), v241 (copy), v237 (copy), l_Head_0 (copy)
+            if l_Humanoid_8 then
+                v241.AddProfile(v237, {
+                    Velocity = Vector3.new(0, 50, 0, 0),
+                    KillEffects = {
+                        HeadSquash = true
+                    }
+                });
+                l_Humanoid_8.Health = 0;
+                local l_ipairs_0 = ipairs;
+                local v244 = v237 and v237:GetChildren() or {};
+                for _, v246 in l_ipairs_0(v244) do
+                    if v246:IsA("Accessory") then
+                        v246:Destroy();
+                    end;
+                end;
+                if l_Head_0 then
+                    l_Head_0:Destroy();
+                end;
+            end;
+        end);
+        return;
+    else
+        local _ = workspace:GetServerTimeNow() + 2;
+        task.delay(2, function() --[[ Line: 1423 ]]
+            -- upvalues: v236 (copy), l_Humanoid_8 (copy), v241 (copy), v237 (copy)
+            local l_FirstChild_8 = v236.Rig["Left Arm"]:FindFirstChild("Blood", true);
+            if l_FirstChild_8 then
+                l_FirstChild_8.Enabled = true;
+                task.delay(0.2, function() --[[ Line: 1427 ]]
+                    -- upvalues: l_FirstChild_8 (copy)
+                    l_FirstChild_8.Enabled = false;
+                end);
+            end;
+            if l_Humanoid_8 then
+                v241.AddProfile(v237, {
+                    Velocity = v236.Rig.PrimaryPart.CFrame.LookVector.Unit * 35,
+                    KillEffects = {
+                        HeadSquash = true
+                    }
+                });
+                l_Humanoid_8.Health = 0;
+            end;
+        end);
+        return;
+    end;
+end;
+v6.OnVictory = function(_, v250, v251, v252, v253) --[[ Line: 1441 ]] --[[ Name: OnVictory ]]
+    -- upvalues: v14 (copy), v8 (copy), l_TweenService_0 (copy), l_RunService_0 (copy)
+    local l_LocalPlayer_0 = game.Players.LocalPlayer;
+    if v250 == "Start" then
+        v14:SetCustomLighting(v251.Config.OutroLighting);
+        local v255 = os.clock();
+        local l_OutroVFXFolder_0 = v251.Config.OutroVFXFolder;
+        local _ = v251.Cache.VictoryKillerTrack;
+        local l_VictoryCameraTrack_0 = v251.Cache.VictoryCameraTrack;
+        local v259 = {};
+        task.spawn(function() --[[ Line: 1454 ]]
+            -- upvalues: l_OutroVFXFolder_0 (copy), v252 (copy), v259 (copy), l_VictoryCameraTrack_0 (copy), v8 (ref), v255 (copy), l_TweenService_0 (ref)
+            local v260 = workspace.Misc:WaitForChild("KillerCutsceneBackground", 5);
+            local l_Dummies_0 = v260:FindFirstChild("Dummies");
+            if v260 and l_Dummies_0 then
+                for _, v263 in ipairs(l_OutroVFXFolder_0:GetChildren()) do
+                    if v263:IsA("Attachment") then
+                        local l_v263_Attribute_0 = v263:GetAttribute("adornee");
+                        local l_v263_Attribute_1 = v263:GetAttribute("dummyName");
+                        local v266 = l_v263_Attribute_1 and v260.Dummies[l_v263_Attribute_1] or v252;
+                        local v267 = v263:Clone();
+                        v267.Parent = v266[l_v263_Attribute_0];
+                        v259[v263.Name] = v267;
+                    end;
+                end;
+                l_VictoryCameraTrack_0:GetMarkerReachedSignal("emit"):Connect(function(v268) --[[ Line: 1473 ]]
+                    -- upvalues: v259 (ref), v8 (ref)
+                    assert(v259[v268], (("No attachment called %* in VFX folder."):format(v268)));
+                    v8:EmitParticles(v259[v268]);
+                end);
+                local v269 = os.clock() - v255;
+                local l_Shockwave_0 = v260.Shockwave;
+                task.delay(math.max(0.1, 1.1 - v269), function() --[[ Line: 1482 ]]
+                    -- upvalues: l_TweenService_0 (ref), l_Shockwave_0 (copy), v260 (copy)
+                    local v271 = l_TweenService_0:Create(l_Shockwave_0.Root, TweenInfo.new(0.4), {
+                        CFrame = v260.ShockwaveHitPoint.CFrame
+                    });
+                    v271:Play();
+                    v271.Completed:Wait();
+                    local v272 = 0.02;
+                    while l_Shockwave_0 and l_Shockwave_0.Parent do
+                        l_Shockwave_0:PivotTo(l_Shockwave_0:GetPivot() * CFrame.new(0, 0, v272 * -70));
+                        v272 = task.wait();
+                    end;
+                end);
+            end;
+        end);
+        task.spawn(function() --[[ Line: 1498 ]]
+            -- upvalues: l_TweenService_0 (ref)
+            local v273 = game.Lighting:WaitForChild("1xCC", 5);
+            if v273 then
+                l_TweenService_0:Create(v273, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    Saturation = 0.125
+                }):Play();
+                task.wait(2.8);
+                l_TweenService_0:Create(v273, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    Contrast = 0.2,
+                    Brightness = 0.04,
+                    TintColor = Color3.new(0.666667, 1, 0.717647)
+                }):Play();
+                task.wait(0.2);
+                l_TweenService_0:Create(v273, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Contrast = 0,
+                    Brightness = 0.04,
+                    Saturation = 0.4,
+                    TintColor = Color3.new(1, 0.309804, 0.309804)
+                }):Play();
+                task.wait(0.2);
+                l_TweenService_0:Create(v273, TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Contrast = 0,
+                    Brightness = 0,
+                    Saturation = 0,
+                    TintColor = Color3.new(1, 1, 1)
+                }):Play();
+                task.wait(1.3);
+                l_TweenService_0:Create(v273, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                    Contrast = 0.1,
+                    Brightness = -0.1
+                }):Play();
+                task.wait(0.3);
+                l_TweenService_0:Create(v273, TweenInfo.new(1.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                    Contrast = 0.3,
+                    Brightness = 0.2,
+                    Saturation = 0.3,
+                    TintColor = Color3.new(0.721569, 1, 0.752941)
+                }):Play();
+            end;
+        end);
+        local l_CurrentCamera_0 = workspace.CurrentCamera;
+        l_LocalPlayer_0:SetAttribute("FOVMultipliersDisabled", true);
+        l_RunService_0:BindToRenderStep("1x1x1x1Outro", 1, function() --[[ Line: 1543 ]]
+            -- upvalues: l_CurrentCamera_0 (copy)
+            l_CurrentCamera_0.FieldOfView = 50;
+        end);
+        v8:PlayDummyCutsceneAnimations(v251, v253, "Victory");
+        return;
+    else
+        l_RunService_0:UnbindFromRenderStep("1x1x1x1Outro");
+        l_LocalPlayer_0:SetAttribute("FOVMultipliersDisabled", nil);
+        v14:SetAsCurrentLighting();
+        return;
+    end;
+end;
+v6.cl_Entangled = function(v275) --[[ Line: 1556 ]] --[[ Name: cl_Entangled ]]
+    -- upvalues: v8 (copy), l_Debris_0 (copy), l_TweenService_0 (copy), l_RunService_0 (copy)
+    local l_v8_SettingValue_0 = v8:GetSettingValue("EpilepsyMode", game.Players.LocalPlayer);
+    local function v283(v277) --[[ Line: 1559 ]] --[[ Name: generate ]]
+        -- upvalues: l_v8_SettingValue_0 (copy)
+        local v278 = {};
+        for _ = 1, 18 do
+            local v280 = Random.new();
+            local v281 = v280:NextInteger(0, 1);
+            local v282 = Instance.new("Frame", v277);
+            v282.Size = UDim2.fromScale(v280:NextNumber() / 2 + 0.2 + (l_v8_SettingValue_0 and 0.1 or 0), v280:NextNumber() / 3 + 0.15 + (l_v8_SettingValue_0 and 0.05 or 0));
+            v282.BackgroundColor3 = l_v8_SettingValue_0 and Color3.new(0, 0, 0) or Color3.new(v281 / 8, math.clamp(v281 - v280:NextNumber(0, 0.1), 0, 1), v281 / 8);
+            v282.Position = UDim2.fromScale(v280:NextNumber(), v280:NextNumber());
+            v282.AnchorPoint = Vector2.new(0.5, 0.5);
+            v282.BorderSizePixel = 0;
+            v282.ZIndex = 3;
+            table.insert(v278, v282);
+        end;
+        return v278;
+    end;
+    local l_PopupsFolder_0 = v275.Config.PopupsFolder;
+    local v285 = {};
+    for _ = 1, v275.Config.EntanglementPopupCount do
+        local l_l_PopupsFolder_0_Children_0 = l_PopupsFolder_0:GetChildren();
+        local v288 = l_l_PopupsFolder_0_Children_0[math.random(1, #l_l_PopupsFolder_0_Children_0)];
+        local l_ImageLabel_1 = Instance.new("ImageLabel");
+        for _, v291 in ipairs({
+            "Image",
+            "Size",
+            "BackgroundTransparency",
+            "AnchorPoint",
+            "ImageColor3"
+        }) do
+            l_ImageLabel_1[v291] = v288[v291];
+        end;
+        table.insert(v285, l_ImageLabel_1);
+    end;
+    local l_TemporaryUI_0 = game.Players.LocalPlayer.PlayerGui:FindFirstChild("TemporaryUI");
+    for _, v294 in pairs(v285) do
+        local v295 = {};
+        local v296 = math.random(120, 260) / 100;
+        local v297 = TweenInfo.new(v296 - 0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In);
+        local v298 = math.random(90, 130) / 100;
+        local v299 = UDim2.fromOffset(v294.Size.X.Offset * v298, v294.Size.Y.Offset * v298);
+        v294.Name = "1x1x1x1Popup";
+        v294.ImageTransparency = 1;
+        v294.Selectable = false;
+        v294.Size = v299;
+        v294.Position = UDim2.fromScale(0.5, 0.5) + UDim2.fromScale(math.random(-100, 100) / 300, math.random(-100, 100) / 300);
+        v294:SetAttribute("OGPos", v294.Position);
+        v294.Parent = l_TemporaryUI_0;
+        l_Debris_0:AddItem(v294, v296);
+        do
+            local l_v295_0 = v295;
+            task.spawn(function() --[[ Line: 1612 ]]
+                -- upvalues: v294 (copy), l_TemporaryUI_0 (copy), l_v295_0 (ref), v283 (copy), l_TweenService_0 (ref), v297 (copy)
+                local v301 = os.clock();
+                while v294 and v294.Parent == l_TemporaryUI_0 and os.clock() - v301 < 0.15 do
+                    for _, v303 in ipairs(l_v295_0) do
+                        v303:Destroy();
+                    end;
+                    table.clear(l_v295_0);
+                    l_v295_0 = v283(v294);
+                    task.wait();
+                end;
+                v294.ImageTransparency = 0;
+                l_TweenService_0:Create(v294, v297, {
+                    ImageTransparency = 1
+                }):Play();
+                for _, v305 in ipairs(l_v295_0) do
+                    v305:Destroy();
+                end;
+            end);
+        end;
+    end;
+    local v306 = os.clock();
+    local v312 = l_RunService_0.RenderStepped:Connect(function(_) --[[ Line: 1632 ]]
+        -- upvalues: v285 (copy), v306 (copy)
+        for _, v309 in pairs(v285) do
+            if v309 and v309.Parent then
+                local l_v309_Attribute_0 = v309:GetAttribute("OGPos");
+                local v311 = os.clock() - v306;
+                v309.Position = l_v309_Attribute_0 + UDim2.fromScale(math.random(-100, 100) / (10000 + v311 * 12000), math.random(-100, 100) / (10000 + v311 * 12000));
+            end;
+        end;
+    end);
+    task.delay(3, function() --[[ Line: 1642 ]]
+        -- upvalues: v312 (copy)
+        v312:Disconnect();
+    end);
+end;
+return v6;
+]====]},
+{path=[====[
+ServerStorage/Assets/Killers/Noli/Behavior]====],before="107912:8481ded0:0a75661b",after="107807:9346bde3:63931708",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local _ = game:GetService("ServerStorage");
+local l_ServerScriptService_0 = game:GetService("ServerScriptService");
+local l_ReplicatedStorage_0 = game:GetService("ReplicatedStorage");
+local _ = game:GetService("UserInputService");
+local l_TweenService_0 = game:GetService("TweenService");
+local l_RunService_0 = game:GetService("RunService");
+local l_Players_0 = game:GetService("Players");
+local l_Debris_0 = game:GetService("Debris");
+local l_CollectionService_0 = game:GetService("CollectionService");
+local v9 = require(game.ReplicatedStorage.Modules.AchievementUtil);
+local v10 = require(script.Classes.VoidRushUI);
+local v11 = {};
+local v12 = require(l_ReplicatedStorage_0.Modules.Schematics.Lighting);
+local v13 = require(game.ReplicatedStorage.Modules.Hitboxes);
+local v14 = require(game.ReplicatedStorage.Modules.Statuses);
+local v15 = require(game.ReplicatedStorage.Modules.Sounds);
+local v16 = require(l_ReplicatedStorage_0.Modules.Ragdolls);
+local v17 = require(l_ReplicatedStorage_0.Modules.Projectiles);
+local v18 = require(l_ReplicatedStorage_0.Modules.Network);
+local v19 = require(game.ReplicatedStorage.Modules.Util);
+local _ = require(l_ReplicatedStorage_0.Modules.Device);
+local _ = require(l_ReplicatedStorage_0.Modules.Items);
+local _ = require(l_ReplicatedStorage_0.Modules.Misc.RadialImage);
+local v23 = require(game.ReplicatedStorage.Modules.Actors);
+local _ = l_RunService_0:IsClient();
+local _ = l_RunService_0:IsServer();
+local v26 = l_RunService_0:IsStudio();
+if l_RunService_0:IsServer() then
+    local _ = require(l_ServerScriptService_0.Server.Systems.Core.ActorHandler);
+end;
+local l_StunProtectionVFX_0 = l_ReplicatedStorage_0.Assets.UI.StunProtectionVFX;
+local function _(v29, v30, v31) --[[ Line: 36 ]] --[[ Name: reward ]]
+    -- upvalues: v23 (copy)
+    v23:IncrementActorStats(v29.Player, {
+        Action = v31,
+        RewardType = v30 .. "KillerAction"
+    });
+end;
+local function _(v33) --[[ Line: 43 ]] --[[ Name: __displayWarn ]]
+    -- upvalues: v26 (copy)
+    if v26 then
+        warn((("[Noli]: %*"):format(v33)));
+    end;
+end;
+local function v40(v35, v36, ...) --[[ Line: 57 ]] --[[ Name: __pcallMethod ]]
+    -- upvalues: v26 (copy)
+    assert(v35, "bad moduleInfo, must be a table");
+    local l_status_0, l_result_0 = pcall(function(...) --[[ Line: 60 ]]
+        -- upvalues: v35 (copy), v36 (copy)
+        if v35[v36] then
+            return v35[v36](...);
+        else
+            return;
+        end;
+    end, ...);
+    if not l_status_0 then
+        local v39 = ("Failed to call :%*() due to: %*"):format(v36, l_result_0);
+        if v26 then
+            warn((("[Noli]: %*"):format(v39)));
+        end;
+    end;
+    return l_status_0, l_result_0;
+end;
+v11.OnKill = function(v41, v42) --[[ Line: 70 ]] --[[ Name: OnKill ]]
+    -- upvalues: v9 (copy)
+    if v42.Name == "Shedletsky" or v42.Name == "Builderman" or v42.Name == "Dusekkar" then
+        v9:IncrementAchievementProgress(v41.Player, "NoliAdmin");
+    end;
+end;
+v11.Created = function(_, v44) --[[ Line: 76 ]] --[[ Name: Created ]]
+    -- upvalues: l_RunService_0 (copy), v19 (copy), v18 (copy), l_ReplicatedStorage_0 (copy), v14 (copy), v9 (copy), l_Players_0 (copy), l_CollectionService_0 (copy), v10 (copy)
+    if l_RunService_0:IsServer() then
+        v44.Behavior.VoidstarEnabled = true;
+        v44.Behavior.VoidRushCombo = 0;
+        if not v44.Cache then
+            v44.Cache = {};
+        end;
+        v44.Cache.Animations = {
+            VoidRush = {}
+        };
+        for v45, v46 in pairs(v44.Config.Animations.VoidRush) do
+            v44.Cache.Animations.VoidRush[v45] = v19:LoadAnimationFromID(v44.Rig, v46);
+        end;
+        v44.Cache.Animations.Observant = v19:LoadAnimationFromID(v44.Rig, v44.Config.Animations.ObservantTeleport);
+        v44.Cache.Trails = {};
+        for _, v48 in ipairs(v44.Rig:GetDescendants()) do
+            if v48:IsA("Trail") then
+                table.insert(v44.Cache.Trails, v48);
+            end;
+        end;
+        v18:SetConnection(("%*ObservantTeleport"):format(v44.Player.Name), "REMOTE_EVENT", function(v49, v50) --[[ Line: 98 ]]
+            -- upvalues: v44 (copy)
+            local l_Map_0 = workspace.Map.Ingame:FindFirstChild("Map");
+            if not l_Map_0 then
+                return;
+            elseif v49 ~= v44.Player or not v50:IsDescendantOf(l_Map_0) or not v50:IsA("Model") or not v50.Name:find("Generator") then
+                v49:Kick("\n\nForsakenCheatKiller 100:\nInvalid Connection Arguments [ObservantTeleport]\n");
+                return;
+            elseif (v50:GetPivot().Position - v44.Rig.PrimaryPart.Position).Magnitude < v44.Config.ObservantMinDistance then
+                return;
+            else
+                if v44.Behavior.Observing and v44:CanUseAbility("Observant") then
+                    v44.Behavior.ObservantUse(v44, v50);
+                end;
+                return;
+            end;
+        end);
+        local v52 = {
+            TOOKDAMAGE = {},
+            KILLED = {}
+        };
+        v18:SetConnection(("%*CloneEvent"):format(v44.Player.Name), "REMOTE_EVENT", function(v53, v54) --[[ Line: 120 ]]
+            -- upvalues: l_ReplicatedStorage_0 (ref), v52 (copy), v14 (ref), v44 (copy), v19 (ref), v9 (ref)
+            local v55 = require(l_ReplicatedStorage_0.Modules.StatusEffects.KillerExclusive.Hallucination.HallucinationClass.FakeNoli);
+            if not v52[v54] then
+                v53:Kick("\n\nForsakenCheatKiller 150:\nInvalid Connection Arguments [CloneEvent]\n");
+            end;
+            local v56 = v52[v54] or {};
+            local l_Character_0 = v53.Character;
+            local v58 = l_Character_0 and l_Character_0.PrimaryPart;
+            local v59 = v14:PlayerHasStatus(v53, "Hallucination");
+            local v60 = v59 and v59.Level >= v55.ApplyAt;
+            local v61 = v56[v53] and os.clock() - v56[v53] < v44.Config.StabCooldown - 0.2;
+            if l_Character_0 and v58 and v60 and not v61 then
+                v56[v53] = os.clock();
+                if v54 == "TOOKDAMAGE" then
+                    if v44.Config.HallucinationCloneDamage > 0 then
+                        v19:ApplyDamage(v53.Character, v44.Config.HallucinationCloneDamage, nil, v44.Rig);
+                        local v62 = math.clamp(v59.Data.Duration - v59.TimePast + v44.Config.HallucinationCloneExtension, 0, 20);
+                        v14:ApplyStatus(v53, "Hallucination", {
+                            Level = v59.Level,
+                            Duration = v62,
+                            Killer = v44
+                        });
+                        return;
+                    end;
+                elseif v54 == "KILLED" then
+                    local _ = workspace.Hitboxes:FindFirstChild(v53.Name .. "Hitbox");
+                    v14:RemoveStatus(v53, "Hallucination");
+                    v9:IncrementAchievementProgress(v44.Player, "NoliPranked");
+                end;
+            end;
+        end);
+        if not l_RunService_0:IsStudio() then
+            v44:SetCooldownOf("Observant", v44.Config.ObservantC00ldown);
+            v44:SetCooldownOf("VoidRush", 10);
+        end;
+        task.spawn(function() --[[ Line: 164 ]]
+            -- upvalues: v44 (copy)
+            local v64 = nil;
+            local v65 = nil;
+            v44.Behavior.FakeGenerators = {};
+            repeat
+                task.wait(1);
+                v65 = workspace.Map.Ingame:FindFirstChild("Map");
+                v64 = v65 and v65:FindFirstChild("GeneratorPositions");
+            until v64 and v64:FindFirstChildOfClass("CFrameValue") or not v44 or not v44.Behavior.FakeGenerators;
+            local v66 = v44 and v44.Behavior.FakeGenerators;
+            if not v65 or not v66 then
+                return;
+            else
+                local v67 = {};
+                for _, v69 in ipairs(v64:GetChildren()) do
+                    if v69:IsA("CFrameValue") then
+                        table.insert(v67, v69);
+                    end;
+                end;
+                if #v67 < 1 then
+                    return;
+                else
+                    for _ = 1, math.min(#v67, 2) do
+                        local v71 = math.random(1, #v67);
+                        local v72 = v67[v71];
+                        local v73 = script.FakeGenerator:Clone();
+                        v73:SetPrimaryPartCFrame(v72.Value);
+                        v73.Parent = v65;
+                        v73.Remotes.BE.Event:Connect(function(v74, v75) --[[ Line: 199 ]]
+                            -- upvalues: v44 (ref)
+                            local v76 = require(game.ReplicatedStorage.Modules.Statuses);
+                            local v77 = v76:PlayerHasStatus(v74, "Hallucination");
+                            v76:ApplyStatus(v74, "Hallucination", {
+                                Level = math.clamp((v77 and v77.Level or 0) + (v75 >= 100 and 3 or 1), 1, 3),
+                                Duration = 15,
+                                Killer = v44
+                            });
+                        end);
+                        for _, v79 in ipairs(v73.Scripts:GetChildren()) do
+                            if v79:IsA("BaseScript") then
+                                v79.Enabled = true;
+                            end;
+                        end;
+                        table.insert(v66, v73);
+                        table.remove(v67, v71);
+                        v72:Destroy();
+                    end;
+                    return;
+                end;
+            end;
+        end);
+        return;
+    else
+        if l_RunService_0:IsClient() and l_Players_0.LocalPlayer == v44.Player then
+            local function _(v80) --[[ Line: 224 ]] --[[ Name: getFailMsg ]]
+                -- upvalues: v44 (copy)
+                return v44.Config.VoidRushStopMessages[v80];
+            end;
+            local v82 = v44.Player.Name .. "GenHighlight";
+            v44.GeneratorHighlights = {};
+            v44.GenConnection = l_CollectionService_0:GetInstanceAddedSignal(v82):Connect(function(v83) --[[ Line: 231 ]]
+                -- upvalues: v44 (copy)
+                if v83.ClassName ~= "Highlight" then
+                    return;
+                else
+                    for v84, v85 in pairs(v44.Config.ObservantKillerProperties) do
+                        v83[v84] = v85;
+                    end;
+                    return;
+                end;
+            end);
+            v18:SetConnection(("%*VoidRushUpdateUI"):format(v44.Player.Name), "REMOTE_EVENT", function(v86) --[[ Line: 240 ]]
+                -- upvalues: v10 (ref), v44 (copy)
+                local v87 = v86 == "Create" and v10.new(v44) or v44.Behavior.VoidRushUI;
+                if not v87 then
+                    warn("Noli client had no UI");
+                    return;
+                else
+                    v87.Counter = (v87.Counter or 0) + 1;
+                    local v88 = nil;
+                    if v86 == "Create" then
+                        v44.Behavior.VoidRushUI = v87;
+                        v87.Blinking = false;
+                        v87:TweenRadial(v44.Config.VoidRushChargeLength, 0, 1);
+                        v87:SetText("Charge Void Rush by holding down");
+                        return;
+                    elseif v86 == "ChargeFail" then
+                        v87.Blinking = false;
+                        v87:SetText(v44.Config.VoidRushStopMessages.FailedToCharge);
+                        v87:FadeOut(2, false);
+                        return;
+                    elseif v86 == "Dash" then
+                        v87.BlinkSpeed = 0.25;
+                        v87.Blinking = true;
+                        v87:TweenRadial(v44.Config.VoidRushDashLength, 1, 0);
+                        v87:SetText("Release the Void Rush button to cancel");
+                        return;
+                    elseif v86 == "Hit" then
+                        v87.Blinking = false;
+                        local l_Counter_0 = v87.Counter;
+                        v87:SetText(v44.Config.VoidRushStopMessages.Hit);
+                        v87:TweenRadial(v44.Config.VoidRushHitEndlag, 0, 1);
+                        task.delay(v44.Config.VoidRushHitEndlag, function() --[[ Line: 271 ]]
+                            -- upvalues: v87 (copy), l_Counter_0 (copy), v44 (ref)
+                            if v87 and l_Counter_0 == v87.Counter then
+                                v87:TweenRadial(v44.Config.VoidRushComboWindow, 1, 0);
+                            end;
+                        end);
+                        return;
+                    elseif v86 == "WindowMiss" then
+                        v87.Blinking = false;
+                        v87:SetText(v44.Config.VoidRushStopMessages.WindowMissed);
+                        v87:FadeOut(2, false);
+                        return;
+                    elseif v86:match("Miss_") then
+                        v87.Blinking = false;
+                        v88 = v86:sub(6, v86:len());
+                        v86 = "Miss";
+                        v87:SetText(v44.Config.VoidRushStopMessages[v88]);
+                        v87:FadeOut(2, v88 == "HitLarge");
+                        return;
+                    else
+                        warn("Invalid server subroutine string", v86);
+                        return;
+                    end;
+                end;
+            end);
+            v18:SetConnection(("%*ObservantTeleport"):format(v44.Player.Name), "REMOTE_EVENT", function() --[[ Line: 294 ]]
+                -- upvalues: v44 (copy)
+                v44.Behavior.RevertObservance(v44);
+            end);
+        end;
+        return;
+    end;
+end;
+v11.Destroyed = function(_, v91) --[[ Line: 301 ]] --[[ Name: Destroyed ]]
+    -- upvalues: l_RunService_0 (copy), v18 (copy), l_Players_0 (copy)
+    if l_RunService_0:IsServer() then
+        v91.Behavior.RevertObservance(v91, false);
+        v91.Behavior.ToggleGeneratorAura(v91, false);
+        v18:RemoveConnection(("%*ObservantTeleport"):format(v91.Player.Name), "REMOTE_EVENT");
+        v18:RemoveConnection(("%*CloneEvent"):format(v91.Player.Name), "REMOTE_EVENT");
+        local l_ipairs_0 = ipairs;
+        local v93 = v91.Behavior.FakeGenerators or {};
+        for _, v95 in l_ipairs_0(v93) do
+            v95:Destroy();
+        end;
+        v91.Behavior.FakeGenerators = nil;
+        return;
+    else
+        if l_RunService_0:IsClient() and l_Players_0.LocalPlayer == v91.Player then
+            v18:RemoveConnection(("%*VoidRushUpdateUI"):format(v91.Player.Name), "REMOTE_EVENT");
+            v18:RemoveConnection(("%*ObservantTeleport"):format(v91.Player.Name), "REMOTE_EVENT");
+            if v91.Behavior.VoidRushUI then
+                v91.Behavior.VoidRushUI:Destroy();
+            end;
+            if v91.GenConnection then
+                v91.GenConnection:Disconnect();
+            end;
+            v91.Behavior.RevertObservance(v91);
+        end;
+        return;
+    end;
+end;
+v11.OnIntroduction = function(_, v97, v98, v99) --[[ Line: 330 ]] --[[ Name: OnIntroduction ]]
+    -- upvalues: v12 (copy), v19 (copy), l_Players_0 (copy)
+    v12:SetCustomLighting(v97.Config.IntroLighting);
+    local v100 = {};
+    if v98:FindFirstChild("Right Arm") and v98["Right Arm"]:FindFirstChild("TentacleBase") then
+        for _, v102 in ipairs(v98["Right Arm"].TentacleBase:GetDescendants()) do
+            if (v102:IsA("ParticleEmitter") or v102:IsA("Beam")) and v102.Enabled then
+                table.insert(v100, v102);
+                v102.Enabled = false;
+            end;
+        end;
+    end;
+    if v98:FindFirstChild("Voidstar") then
+        v98.Voidstar:Destroy();
+    end;
+    if v98:FindFirstChild("FakeCrown") then
+        v98.FakeCrown.Transparency = 0;
+        if v98:FindFirstChild("VoidstarCrown") then
+            v98.VoidstarCrown:Destroy();
+        end;
+    else
+        local l_VoidstarCrown_0 = v98:FindFirstChild("VoidstarCrown");
+        if l_VoidstarCrown_0 then
+            local v104 = v98.VoidstarCrown:Clone();
+            v104.Name = "FakeCrown";
+            v104.Parent = v98;
+            local v105 = Instance.new("Motor6D", v104);
+            v105.C0 = v97.Config.IntroCrownOffset or CFrame.new(0, 0.75, 0);
+            v105.Part0 = v98.Head;
+            v105.Part1 = v104;
+            l_VoidstarCrown_0:Destroy();
+        end;
+    end;
+    local l_KillerCutsceneBackground_0 = workspace.Misc:FindFirstChild("KillerCutsceneBackground");
+    local v107 = true;
+    task.spawn(function() --[[ Line: 379 ]]
+        -- upvalues: v107 (ref), l_KillerCutsceneBackground_0 (copy)
+        while v107 do
+            for v108, v109 in pairs(l_KillerCutsceneBackground_0.Voidstars:GetChildren()) do
+                v109.CFrame = v109.CFrame * CFrame.Angles(0, v108 % 2 == 0 and 0.0225 or -0.0225, 0);
+            end;
+            task.wait();
+        end;
+    end);
+    task.spawn(function() --[[ Line: 389 ]]
+        -- upvalues: v107 (ref), l_KillerCutsceneBackground_0 (copy)
+        while v107 do
+            local l_Skybox_0 = l_KillerCutsceneBackground_0.Skybox;
+            l_Skybox_0.CFrame = l_Skybox_0.CFrame * CFrame.Angles(0, 0.004363323129985824, 0);
+            task.wait();
+        end;
+    end);
+    local l_v19_FOVMultiplier_0 = v19:CreateFOVMultiplier(l_Players_0.LocalPlayer, 0.375, "NoliIntroScene", v99);
+    task.delay(1.98, function() --[[ Line: 398 ]]
+        -- upvalues: l_v19_FOVMultiplier_0 (copy)
+        l_v19_FOVMultiplier_0.Value = 0.275;
+    end);
+    task.delay(v99, function() --[[ Line: 402 ]]
+        -- upvalues: v107 (ref), v100 (copy), v98 (copy), v12 (ref)
+        v107 = false;
+        for _, v113 in ipairs(v100) do
+            v113.Enabled = true;
+        end;
+        v98:Destroy();
+        v12:SetAsCurrentLighting();
+    end);
+end;
+v11.OnVictory = function(_, v115, v116, v117, v118) --[[ Line: 416 ]] --[[ Name: OnVictory ]]
+    -- upvalues: v12 (copy), l_RunService_0 (copy), v19 (copy), l_TweenService_0 (copy), l_Players_0 (copy)
+    if v115 == "Start" then
+        v12:SetCustomLighting(v116.Config.OutroLighting);
+        local l_OutroFrameData_0 = v116.Config.OutroFrameData;
+        local l_VictoryKillerTrack_0 = v116.Cache.VictoryKillerTrack;
+        local l_VictoryCameraTrack_0 = v116.Cache.VictoryCameraTrack;
+        local v122 = {};
+        local function v126(v123) --[[ Line: 427 ]] --[[ Name: cacheParticles ]]
+            -- upvalues: v122 (copy)
+            for _, v125 in ipairs(v123:GetDescendants()) do
+                if v125:IsA("ParticleEmitter") then
+                    v122[v125.Name] = v125;
+                end;
+            end;
+        end;
+        local l_ScreenGui_0 = Instance.new("ScreenGui");
+        l_ScreenGui_0.Name = "NoliOutroOverlay";
+        l_ScreenGui_0.ResetOnSpawn = false;
+        l_ScreenGui_0.IgnoreGuiInset = true;
+        l_ScreenGui_0.Parent = game.Players.LocalPlayer.PlayerGui;
+        l_VictoryKillerTrack_0.Stopped:Once(function() --[[ Line: 444 ]]
+            -- upvalues: v117 (copy)
+            if v117 then
+                v117:PivotTo(v117:GetPivot() + Vector3.new(0, -20, 0, 0));
+            end;
+        end);
+        for _, v129 in ipairs(v117:GetDescendants()) do
+            if v129:IsA("Sound") then
+                v129:Destroy();
+            end;
+        end;
+        game.Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", true);
+        local v131 = l_RunService_0.RenderStepped:Connect(function() --[[ Line: 460 ]]
+            -- upvalues: l_VictoryCameraTrack_0 (copy), l_OutroFrameData_0 (copy)
+            local v130 = math.ceil((l_VictoryCameraTrack_0.TimePosition + 0.001) * 60);
+            if l_OutroFrameData_0.CameraFOV and l_OutroFrameData_0.CameraFOV[v130] then
+                workspace.CurrentCamera.FieldOfView = l_OutroFrameData_0.CameraFOV[v130] or l_OutroFrameData_0.CameraFOV[#l_OutroFrameData_0.CameraFOV];
+            end;
+        end);
+        if not v19:GetSettingValue("EpilepsyMode") then
+            local v135 = l_VictoryKillerTrack_0:GetMarkerReachedSignal("EmitParticle"):Connect(function(v132) --[[ Line: 470 ]]
+                -- upvalues: v122 (copy)
+                local v133 = v122[v132];
+                local l_v133_Attribute_0 = v133:GetAttribute("EmitCount");
+                if not l_v133_Attribute_0 then
+                    v133.Enabled = not v133.Enabled;
+                    return;
+                else
+                    v133:Emit(l_v133_Attribute_0);
+                    return;
+                end;
+            end);
+            task.delay(v118, function() --[[ Line: 481 ]]
+                -- upvalues: v135 (copy)
+                v135:Disconnect();
+            end);
+        end;
+        task.spawn(function() --[[ Line: 488 ]]
+            -- upvalues: v126 (copy)
+            local v136 = workspace.Misc:WaitForChild("KillerCutsceneBackground", 3);
+            if v136 then
+                v126(v136.Map.ExplosionGround);
+            end;
+        end);
+        task.spawn(function() --[[ Line: 495 ]]
+            -- upvalues: v116 (copy), v126 (copy)
+            local v137 = workspace.Misc:WaitForChild(v116.Player.Name .. "CameraRig", 3);
+            if v137 then
+                v126(v137);
+            end;
+        end);
+        task.delay(3.22, function() --[[ Line: 503 ]]
+            -- upvalues: v19 (ref), l_ScreenGui_0 (copy), v117 (copy), l_TweenService_0 (ref)
+            if not v19:GetSettingValue("EpilepsyMode") then
+                local v138 = Instance.new("Frame", l_ScreenGui_0);
+                v138.Size = UDim2.new(10, 0, 10, 0);
+                v138.AnchorPoint = Vector2.new(0.5, 0.5);
+                v138.Position = UDim2.new(0.5, 0, 0.5, 0);
+                v138.BackgroundTransparency = 1;
+                v138.BackgroundColor3 = Color3.new(0, 0, 0);
+                local l_Highlight_0 = Instance.new("Highlight");
+                l_Highlight_0.FillTransparency = 1;
+                l_Highlight_0.OutlineTransparency = 1;
+                l_Highlight_0.OutlineColor = Color3.new(0.4, 0, 1);
+                l_Highlight_0.Parent = v117;
+                game.Debris:AddItem(l_Highlight_0, 3);
+                local l_ColorCorrectionEffect_0 = Instance.new("ColorCorrectionEffect");
+                l_ColorCorrectionEffect_0.Parent = game.Lighting;
+                l_ColorCorrectionEffect_0.Name = "NoliBoomCC";
+                game.Debris:AddItem(l_ColorCorrectionEffect_0, 3);
+                local v141 = l_TweenService_0:Create(l_ColorCorrectionEffect_0, TweenInfo.new(0.65, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+                    TintColor = Color3.fromRGB(125, 66, 155),
+                    Brightness = -0.1,
+                    Contrast = 0.5
+                });
+                v141:Play();
+                l_TweenService_0:Create(l_Highlight_0, TweenInfo.new(0.65, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, true, 0), {
+                    OutlineTransparency = 0.1
+                }):Play();
+                task.wait(0.65);
+                v19:ApplyCameraShake(0.2, 1.2);
+                v141:Pause();
+                l_ColorCorrectionEffect_0.Contrast = 1;
+                l_ColorCorrectionEffect_0.Brightness = 2.8;
+                l_ColorCorrectionEffect_0.TintColor = Color3.fromRGB(70, 0, 155);
+                l_TweenService_0:Create(l_ColorCorrectionEffect_0, TweenInfo.new(1.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                    Brightness = -0.6,
+                    TintColor = Color3.new(0.623529, 0.623529, 0.623529),
+                    Contrast = -0.5
+                }):Play();
+                task.wait(1.1);
+                if not v138 then
+                    return;
+                else
+                    l_TweenService_0:Create(v138, TweenInfo.new(0.2), {
+                        BackgroundTransparency = 0,
+                        BackgroundColor3 = Color3.new(0, 0, 0)
+                    }):Play();
+                end;
+            end;
+        end);
+        task.delay(v118, function() --[[ Line: 553 ]]
+            -- upvalues: v131 (copy)
+            v131:Disconnect();
+        end);
+        return;
+    else
+        if v115 == "End" then
+            l_Players_0.LocalPlayer:SetAttribute("FOVMultipliersDisabled", nil);
+            v12:SetAsCurrentLighting();
+            if l_Players_0.LocalPlayer.PlayerGui:FindFirstChild("NoliOutroOverlay") then
+                l_Players_0.LocalPlayer.PlayerGui.NoliOutroOverlay:Destroy();
+            end;
+            local v142 = game.Lighting:WaitForChild("NoliBoomCC", 9);
+            if v142 then
+                v142:Destroy();
+            end;
+        end;
+        return;
+    end;
+end;
+v11.OnExecution = function(_, v144, v145) --[[ Line: 572 ]] --[[ Name: OnExecution ]]
+    -- upvalues: v16 (copy)
+    local l_Rig_0 = v144.Rig;
+    v144.Behavior.DisableVoidstar(v144);
+    v144.Behavior.ToggleTendril(v144, true);
+    task.delay(4.2, function() --[[ Line: 578 ]]
+        -- upvalues: v144 (copy)
+        v144.Behavior.EnableVoidstar(v144);
+        v144.Behavior.ToggleTendril(v144, false);
+    end);
+    if v144.VoidstarVisibleThread then
+        task.cancel(v144.VoidstarVisibleThread);
+        v144.VoidstarVisibleThread = nil;
+    end;
+    task.delay(2.4, function() --[[ Line: 590 ]]
+        -- upvalues: v16 (ref), v145 (copy), l_Rig_0 (copy)
+        v16.AddProfile(v145, {
+            Velocity = Vector3.new(0, 50, 0, 0),
+            KillEffects = {
+                HeadSquash = true
+            }
+        });
+        local l_Head_0 = v145:FindFirstChild("Head");
+        local l_Humanoid_0 = v145:FindFirstChild("Humanoid");
+        if l_Humanoid_0 then
+            l_Humanoid_0.BreakJointsOnDeath = false;
+            l_Humanoid_0.Health = 0;
+            if l_Head_0 then
+                l_Head_0:Destroy();
+            end;
+            for _, v150 in ipairs(l_Rig_0.Voidstar.Crush:GetChildren()) do
+                if v150:IsA("ParticleEmitter") then
+                    v150.Enabled = true;
+                end;
+            end;
+            task.delay(0.125, function() --[[ Line: 611 ]]
+                -- upvalues: l_Rig_0 (ref)
+                for _, v152 in ipairs(l_Rig_0.Voidstar.Crush:GetChildren()) do
+                    if v152:IsA("ParticleEmitter") then
+                        v152.Enabled = false;
+                    end;
+                end;
+            end);
+        end;
+    end);
+end;
+v11.Abilities = {
+    Stab = {
+        LayoutOrder = 1,
+        Icon = "rbxassetid://130161235577806",
+        KeybindType = "MainAbility",
+        Callback = function(v153, _) --[[ Line: 628 ]] --[[ Name: Callback ]]
+            -- upvalues: l_RunService_0 (copy), v40 (copy), v15 (copy), v13 (copy), v19 (copy), v14 (copy)
+            if l_RunService_0:IsServer() then
+                v153:PlayVoiceline("Stab", {
+                    Priority = 1
+                });
+                v153.AbilitiesDisabled = true;
+                task.delay(v153.Config.StabEndlag, function() --[[ Line: 637 ]]
+                    -- upvalues: v153 (copy)
+                    v153.AbilitiesDisabled = false;
+                end);
+                v40(v153.Behavior, "Stab", v153.Behavior, v153);
+                v15:Play(v153.Config.Sounds.Swing, {
+                    Parent = v153.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.25,
+                    RollOffMaxDistance = 25
+                });
+                if v153.Config.VoidstarDisappearCases.Stab then
+                    v153.Behavior.DisableVoidstar(v153);
+                    v153.Behavior.ToggleTendril(v153, true);
+                    v153.VoidstarVisibleThread = task.delay(v153.Config.StabEndlag, function() --[[ Line: 647 ]]
+                        -- upvalues: v153 (copy)
+                        v153.Behavior.EnableVoidstar(v153);
+                        v153.Behavior.ToggleTendril(v153, false);
+                    end);
+                end;
+                task.delay(v153.Config.StabWindup, function() --[[ Line: 654 ]]
+                    -- upvalues: v13 (ref), v153 (copy), v19 (ref), v15 (ref), v14 (ref)
+                    local _ = v13:CreateHitbox(v153.Player, {
+                        Size = Vector3.new(4.5, 6, 7.5, 0),
+                        CFrameOffset = CFrame.new(0, 0, -2.25),
+                        Damage = v153.Config.StabDamage,
+                        Time = v153.Config.StabLinger,
+                        Knockback = 2,
+                        HitMultiple = false,
+                        ExecuteOnKill = true,
+                        Connections = {
+                            Hit = function(v155, v156) --[[ Line: 666 ]] --[[ Name: Hit ]]
+                                -- upvalues: v19 (ref), v153 (ref), v15 (ref), v14 (ref)
+                                v19:CreateSpeedMultiplier(v155, 1.5, "HitSpeedBonus", 1.25);
+                                if v156 then
+                                    v153:PlayVoiceline("StabHit", {
+                                        Priority = 2
+                                    });
+                                    v15:Play(v153.Config.Sounds.Hit, {
+                                        Parent = v153.Rig.PrimaryPart,
+                                        PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                        Volume = 0.3,
+                                        RollOffMaxDistance = 25
+                                    });
+                                end;
+                                v14:RemoveStatus(v155, "Hallucination");
+                            end
+                        }
+                    });
+                end);
+                return;
+            else
+                if l_RunService_0:IsClient() then
+                    v153.Animations.Stab:Play(0.175);
+                end;
+                return;
+            end;
+        end
+    },
+    VoidRush = {
+        LayoutOrder = 2,
+        Icon = "rbxassetid://110747688363796",
+        KeybindType = "AltAbility1",
+        FlavorText = "[Hold]",
+        Toggle = true,
+        Callback = function(v158, v159) --[[ Line: 695 ]] --[[ Name: Callback ]]
+            -- upvalues: v15 (copy), l_RunService_0 (copy), v19 (copy), v18 (copy), v40 (copy), v9 (copy), v13 (copy), l_TweenService_0 (copy), v14 (copy), v23 (copy), v16 (copy), l_ReplicatedStorage_0 (copy)
+            local l_Behavior_0 = v158.Behavior;
+            local v161 = ("%*VoidRushCollision"):format(v158.Player.Name);
+            local v162 = ("%*VoidRushCancel"):format(v158.Player.Name);
+            local v163 = ("%*VoidRushUpdateUI"):format(v158.Player.Name);
+            local function v168(v164) --[[ Line: 703 ]] --[[ Name: playSound ]]
+                -- upvalues: v158 (copy), v15 (ref)
+                local l_Sounds_0 = v158.Config.Sounds;
+                local v166 = l_Sounds_0[("VoidRush%*"):format(v164)] or l_Sounds_0[v164];
+                if v166 then
+                    local v167 = {
+                        Parent = v158.Rig.PrimaryPart,
+                        PlaybackSpeed = Random.new():NextNumber() / 20 + 0.975,
+                        Volume = 0.7,
+                        RollOffMaxDistance = 50
+                    };
+                    if typeof(v166) == "table" then
+                        v167 = {
+                            Parent = v158.Rig.PrimaryPart,
+                            PlaybackSpeed = 1,
+                            RollOffMaxDistance = 80,
+                            Volume = 0.77
+                        };
+                    end;
+                    return v15:Play(v166, v167);
+                else
+                    return;
+                end;
+            end;
+            if l_RunService_0:IsServer() then
+                local function _(v169, v170) --[[ Line: 720 ]] --[[ Name: giveEndlag ]]
+                    -- upvalues: v158 (copy), v19 (ref)
+                    v158.AbilitiesDisabled = true;
+                    v19:CreateSpeedMultiplier(v158.Rig, 0.6, "VoidRushEndlag", v169 + (v170 and v158.Config.VoidRushComboWindow or 0), true);
+                    if not v170 then
+                        task.delay(v169, function() --[[ Line: 725 ]]
+                            -- upvalues: v158 (ref)
+                            v158.AbilitiesDisabled = false;
+                        end);
+                    end;
+                end;
+                local function _(v172) --[[ Line: 731 ]] --[[ Name: updateLocalUI ]]
+                    -- upvalues: v18 (ref), v158 (copy), v163 (copy)
+                    v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", v172);
+                end;
+                local l_VoidRush_0 = v158.Cache.Animations.VoidRush;
+                v158.AbilitiesDisabled = true;
+                v158.Behavior.DisableVoidstar(v158);
+                v158.Behavior.ToggleTendril(v158, true);
+                task.spawn(function() --[[ Line: 742 ]]
+                    -- upvalues: l_Behavior_0 (copy), v18 (ref), v158 (copy), v163 (copy), l_VoidRush_0 (copy), v168 (copy), v19 (ref), v162 (copy), l_RunService_0 (ref), v40 (ref), v15 (ref), v9 (ref), v13 (ref), v161 (copy), l_TweenService_0 (ref), v14 (ref), v23 (ref), v16 (ref)
+                    if not l_Behavior_0.Endlag then
+                        l_Behavior_0.Endlag = nil;
+                        v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "Create");
+                        local v175 = 0;
+                        local v176 = false;
+                        l_VoidRush_0.StartCharge:Play(0.15);
+                        l_VoidRush_0.LoopCharge:Play(0.2);
+                        v158.StartSound = v168("Start");
+                        v168("Loop");
+                        v158:PlayVoiceline("VoidRushStart", {
+                            Priority = 2
+                        });
+                        local l_v19_SpeedMultiplier_0 = v19:CreateSpeedMultiplier(v158.Rig, v158.Config.VoidRushChargingSpeed, "VoidRushCharging", v158.Config.VoidRushChargeLength);
+                        v158.Rig:SetAttribute("VoidRushState", "Charging");
+                        v18:SetConnection(v162, "REMOTE_EVENT", function() --[[ Line: 764 ]]
+                            -- upvalues: v176 (ref)
+                            v176 = true;
+                        end);
+                        v158.Behavior.VoidRushCombo = 0;
+                        repeat
+                            v175 = v175 + l_RunService_0.Heartbeat:Wait();
+                            if v158.Rig:GetAttribute("Stunned") then
+                                v176 = true;
+                            end;
+                        until v158.Config.VoidRushChargeLength <= v175 or v176;
+                        v18:RemoveConnection(v162);
+                        l_VoidRush_0.StartCharge:Stop();
+                        l_VoidRush_0.LoopCharge:Stop();
+                        l_v19_SpeedMultiplier_0:Destroy();
+                        if v176 then
+                            v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown / 16);
+                            v158.Rig:SetAttribute("VoidRushState", "ChargingCancelled");
+                            l_VoidRush_0.CancelCharge:Play(0.15);
+                            v158:PlayVoiceline("VoidRushCancel", {
+                                Priority = 3
+                            });
+                            v168("Cancel");
+                            v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "ChargeFail");
+                            task.delay(0.2, function() --[[ Line: 794 ]]
+                                -- upvalues: v158 (ref)
+                                v158.Behavior.EnableVoidstar(v158);
+                                v158.Behavior.ToggleTendril(v158, false);
+                                v158.AbilitiesDisabled = false;
+                                v158.DisabledAbilities = nil;
+                                v158.Rig:SetAttribute("VoidRushState", nil);
+                            end);
+                            if v158.StartSound then
+                                v158.StartSound:Destroy();
+                            end;
+                            return;
+                        else
+                            --[[ close >= 1 ]]
+                        end;
+                    end;
+                    if not v19:IsAlive(v158 and v158.Rig) then
+                        return;
+                    else
+                        if v158.StartSound then
+                            v158.StartSound:Destroy();
+                        end;
+                        if v158.WindowSound then
+                            v158.WindowSound:Destroy();
+                        end;
+                        v40(v158.Behavior, "OnVoidRushDash", v158);
+                        v158.VoidRushChargingSound = v15:Play(v158.Config.Sounds.VoidRushDashLoop, {
+                            Parent = v158.Rig.PrimaryPart,
+                            RollOffMaxDistance = 50,
+                            Volume = 0.75
+                        });
+                        v158:PlayVoiceline("VoidRushDash", {
+                            Priority = 3
+                        });
+                        local l_VoidRushDashSpeed_0 = v158.Config.VoidRushDashSpeed;
+                        local v179 = l_Behavior_0.Endlag and "Combo" or "Init";
+                        local l_VoidRushDashLength_0 = v158.Config.VoidRushDashLength;
+                        local l_VoidRushHallucinationLevel_0 = v158.Config.VoidRushHallucinationLevel;
+                        local l_v19_SpeedMultiplier_1 = v19:CreateSpeedMultiplier(v158.Rig, l_VoidRushDashSpeed_0 / v158.Config.Speed, "VoidRushDash");
+                        local function v185() --[[ Line: 827 ]] --[[ Name: stopDashAnimations ]]
+                            -- upvalues: l_VoidRush_0 (ref)
+                            for _, v184 in ipairs({
+                                "StartDashInit",
+                                "LoopDashCombo",
+                                "LoopDashInit",
+                                "StartDashCombo"
+                            }) do
+                                if l_VoidRush_0[v184] then
+                                    l_VoidRush_0[v184]:Stop();
+                                end;
+                            end;
+                        end;
+                        v185();
+                        local _ = l_VoidRush_0[("StartDash%*"):format(v179)];
+                        local _ = l_VoidRush_0[("LoopDash%*"):format(v179)];
+                        l_VoidRush_0[("StartDash%*"):format(v179)]:Play(0.05);
+                        l_VoidRush_0[("LoopDash%*"):format(v179)]:Play(0.05);
+                        v168("Dash" .. tostring(l_Behavior_0.Endlag and 2 or 1));
+                        if l_Behavior_0.EndlagComboThread then
+                            task.cancel(l_Behavior_0.EndlagComboThread);
+                            l_Behavior_0.EndlagComboThread = nil;
+                        end;
+                        local l_Behavior_1 = v158.Behavior;
+                        l_Behavior_1.VoidRushCombo = l_Behavior_1.VoidRushCombo + 1;
+                        l_Behavior_0.Endlag = nil;
+                        if v158.Behavior.VoidRushCombo == 5 then
+                            v9:IncrementAchievementProgress(v158.Player, "NoliCombo");
+                        end;
+                        l_Behavior_1 = false;
+                        local v189 = nil;
+                        local v190 = nil;
+                        local v191 = nil;
+                        local v192 = nil;
+                        local v193 = nil;
+                        local v194 = nil;
+                        local v195 = nil;
+                        v195 = v158.Rig:GetAttributeChangedSignal("Stunned"):Once(function() --[[ Line: 857 ]]
+                            -- upvalues: v192 (ref)
+                            v192 = true;
+                        end);
+                        local v196 = nil;
+                        v196 = v13:CreateHitbox(v158.Player, {
+                            Size = Vector3.new(6, 6, 4, 0),
+                            Damage = v158.Config.VoidRushBaseDamage,
+                            CFrameOffset = CFrame.new(0, 0, -2),
+                            Time = l_VoidRushDashLength_0,
+                            Knockback = 6,
+                            HitMultiple = true,
+                            ExecuteOnKill = false,
+                            Connections = {
+                                Hit = function(v197) --[[ Line: 868 ]] --[[ Name: Hit ]]
+                                    -- upvalues: l_Behavior_1 (ref), v19 (ref), v189 (ref), v9 (ref), v158 (ref), v196 (ref), v194 (ref)
+                                    if l_Behavior_1 then
+                                        return;
+                                    else
+                                        local l_v19_EntityType_0, v199 = v19:GetEntityType(v197);
+                                        if l_v19_EntityType_0 then
+                                            l_Behavior_1 = true;
+                                            v189 = v197;
+                                            if v189:GetAttribute("GuestCharging") then
+                                                v9:IncrementAchievementProgress(v158.Player, "NoliCar");
+                                                v9:IncrementAchievementProgress(game.Players:GetPlayerFromCharacter(v189), "NoliCar");
+                                            end;
+                                            if v196 then
+                                                v196:Cancel();
+                                                return;
+                                            end;
+                                        elseif v199 == "Building" then
+                                            l_Behavior_1 = true;
+                                            v194 = v197;
+                                            if v196 then
+                                                v196:Cancel();
+                                            end;
+                                        end;
+                                        return;
+                                    end;
+                                end,
+                                Ended = function() --[[ Line: 900 ]] --[[ Name: Ended ]]
+                                    -- upvalues: v190 (ref)
+                                    v190 = true;
+                                end
+                            }
+                        });
+                        local v200 = require(game.ReplicatedStorage.Modules.Network);
+                        local _ = v200:SetConnection(v161, "REMOTE_EVENT", function(v201, v202) --[[ Line: 908 ]]
+                            -- upvalues: v158 (ref), v191 (ref), v193 (ref)
+                            if v201 ~= v158.Player then
+                                v201:Kick("not slick at all");
+                                return;
+                            else
+                                v191 = v202;
+                                v193 = true;
+                                return;
+                            end;
+                        end);
+                        v19:CreateSpeedMultiplier(v158.Rig, 1, "VoidRushEndlag", 0);
+                        v19:CreateSpeedMultiplier(v158.Rig, 1, "VoidRushCharging", 0);
+                        v158.Rig:SetAttribute("VoidRushState", "Dashing");
+                        v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "Dash");
+                        task.spawn(function() --[[ Line: 929 ]]
+                            -- upvalues: v189 (ref), v190 (ref), v192 (ref), v191 (ref), v193 (ref), v194 (ref), v158 (ref), l_v19_SpeedMultiplier_1 (copy), v200 (copy), v161 (ref), v196 (ref), l_TweenService_0 (ref), v14 (ref), l_VoidRushHallucinationLevel_0 (copy), v40 (ref), v23 (ref), v19 (ref), v168 (ref), l_VoidRush_0 (ref), v18 (ref), v163 (ref), v16 (ref), v13 (ref), l_Behavior_0 (ref), v185 (copy)
+                            repeat
+                                task.wait();
+                            until v189 or v190 or v192 or v191 or v193 or v194 or not v158.Rig.PrimaryPart;
+                            local v204 = v190 and "Timeout" or v192 and "Stunned" or v191 and "Crashed" or v194 and "NonChar" or "Cancelled";
+                            l_v19_SpeedMultiplier_1:Destroy();
+                            v200:RemoveConnection(v161, "REMOTE_EVENT");
+                            v196:Cancel();
+                            if v158.VoidRushChargingSound then
+                                local l_VoidRushChargingSound_0 = v158.VoidRushChargingSound;
+                                v158.VoidRushChargingSound = nil;
+                                l_TweenService_0:Create(l_VoidRushChargingSound_0, TweenInfo.new(0.4), {
+                                    PlaybackSpeed = 0,
+                                    Volume = l_VoidRushChargingSound_0.Volume / 5
+                                }):Play();
+                                game.Debris:AddItem(l_VoidRushChargingSound_0, 0.5);
+                            end;
+                            if v189 then
+                                local v206 = v14:PlayerHasStatus(v189, "Hallucination");
+                                if v206 and v206.Data and v206.Data.Level >= l_VoidRushHallucinationLevel_0 then
+                                    v14:RemoveStatus(v189, "Hallucination");
+                                    v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown);
+                                    v40(v158.Behavior, "OnVoidRushSlam", v158);
+                                    v23:IncrementActorStats(v158.Player, {
+                                        Action = "Slammed Survivor with Void Rush",
+                                        RewardType = "RegularKillerAction"
+                                    });
+                                    v19:SetUpCutscene(v158.Rig, v189, CFrame.new(0, 0.01, 0) * (v158.Config.VoidRushCutsceneOffset or CFrame.identity), "Noli");
+                                    v168("Cutscene");
+                                    v19:GiveInvincible(v158.Rig, "Slam");
+                                    local l_CutsceneKillerRig_0 = l_VoidRush_0.CutsceneKillerRig;
+                                    l_CutsceneKillerRig_0:Play(0);
+                                    l_CutsceneKillerRig_0.TimePosition = 0;
+                                    local v208 = v19:LoadAnimationFromID(v189, v158.Config.Animations.VoidRushVictimRig, true);
+                                    v208:Play(0.05);
+                                    v208.TimePosition = l_CutsceneKillerRig_0.TimePosition;
+                                    v158.Rig:SetAttribute("VoidRushState", "HitLarge");
+                                    v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "Miss_HitLarge");
+                                    task.spawn(function() --[[ Line: 987 ]]
+                                        -- upvalues: v189 (ref), v158 (ref), v16 (ref), v13 (ref), v19 (ref)
+                                        v189.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+                                        task.wait(0.5);
+                                        v158:PlayVoiceline("Slam", {
+                                            Priority = 4
+                                        });
+                                        if v189 then
+                                            v16.AddProfile(v189, {
+                                                Velocity = Vector3.new(0, -5, 0, 0)
+                                            });
+                                            local _ = v13:CreateHitbox(v158.Player, {
+                                                Size = Vector3.new(4, 4, 4, 0),
+                                                CFrame = v189.PrimaryPart.CFrame,
+                                                Damage = v158.Config.VoidRushSlamDamage + (v158.Behavior.VoidRushCombo or 0) * v158.Config.VoidRushComboDamage,
+                                                Time = 0.1,
+                                                Knockback = 0,
+                                                HitMultiple = true,
+                                                PredictVelocity = false,
+                                                ExecuteOnKill = false,
+                                                Connections = {}
+                                            });
+                                            local v210 = RaycastParams.new();
+                                            v210.FilterDescendantsInstances = workspace.Players:GetDescendants();
+                                            v210.FilterType = Enum.RaycastFilterType.Exclude;
+                                            local l_Position_0 = v158.Rig.PrimaryPart.Position;
+                                            local v212 = v158.Rig.PrimaryPart.CFrame.LookVector * 2;
+                                            local v213 = workspace:Raycast(l_Position_0, v212, v210);
+                                            v189:SetPrimaryPartCFrame(v189.PrimaryPart.CFrame + v212 * (v213 and v213.Distance or v212.Magnitude) / 2);
+                                            v189.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+                                            v19:ToggleAnchored(v189, "Noli", false);
+                                            v16.EnableRagdoll(v189, 1.75);
+                                        end;
+                                        v158.Behavior.EnableVoidstar(v158);
+                                        v158.Behavior.ToggleTendril(v158, false);
+                                    end);
+                                    task.delay(0.5 + v158.Config.VoidRushCutsceneLength, function() --[[ Line: 1030 ]]
+                                        -- upvalues: v158 (ref), v19 (ref)
+                                        v158.Rig:SetAttribute("VoidRushState", nil);
+                                        v158.Rig.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0, 0);
+                                        v19:ToggleAnchored(v158.Rig, "Noli", false);
+                                        task.wait(0.5);
+                                        v19:RemoveInvincible(v158.Rig, "Slam");
+                                        v158.AbilitiesDisabled = false;
+                                        v158.DisabledAbilities = nil;
+                                    end);
+                                    if l_Behavior_0.Endlag then
+                                        v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown);
+                                    end;
+                                else
+                                    local l_VoidRushHitEndlag_0 = v158.Config.VoidRushHitEndlag;
+                                    local l_VoidRushComboWindow_0 = v158.Config.VoidRushComboWindow;
+                                    v40(v158.Behavior, "OnVoidRushHit", v158);
+                                    v23:IncrementActorStats(v158.Player, {
+                                        Action = "Hit player with Void Rush",
+                                        RewardType = "EasyKillerAction"
+                                    });
+                                    v158.Rig:SetAttribute("VoidRushState", "Hit");
+                                    v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "Hit");
+                                    v158:SetCooldownOf("VoidRush", l_VoidRushHitEndlag_0);
+                                    v14:ApplyStatus(v189, "Hallucination", {
+                                        Duration = v158.Config.VoidRushHallucinationDuration,
+                                        Level = l_VoidRushHallucinationLevel_0,
+                                        Killer = v158
+                                    });
+                                    v19:CreateSpeedMultiplier(v189, 1.5, "HitSpeedBonus", 1.25);
+                                    v158.AbilitiesDisabled = true;
+                                    v19:CreateSpeedMultiplier(v158.Rig, 0.6, "VoidRushEndlag", l_VoidRushHitEndlag_0 + (v158.Config.VoidRushComboWindow or 0), true);
+                                    l_Behavior_0.Endlag = true;
+                                    v158.WindowSound = v168("Window");
+                                    l_VoidRush_0.WeakHit:Play(0);
+                                    v158:PlayVoiceline("VoidRushWeakHit", {
+                                        Priority = 4
+                                    });
+                                    v168("WeakHit" .. tostring((math.clamp(v158.Behavior.VoidRushCombo, 1, 5))));
+                                    v158.AbilitiesDisabled = false;
+                                    v158.DisabledAbilities = {
+                                        Stab = true,
+                                        Nova = true,
+                                        Observant = true
+                                    };
+                                    l_Behavior_0.EndlagComboThread = task.delay(l_VoidRushHitEndlag_0 + l_VoidRushComboWindow_0, function() --[[ Line: 1085 ]]
+                                        -- upvalues: l_Behavior_0 (ref), v158 (ref), v18 (ref), v163 (ref)
+                                        l_Behavior_0.Endlag = nil;
+                                        v158.AbilitiesDisabled = false;
+                                        v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown);
+                                        v158.Behavior.EnableVoidstar(v158);
+                                        v158.Behavior.ToggleTendril(v158, false);
+                                        v158.DisabledAbilities = nil;
+                                        v158.Rig:SetAttribute("VoidRushState", nil);
+                                        v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", "WindowMiss");
+                                    end);
+                                end;
+                            elseif v190 or v192 or v191 or v193 or v194 then
+                                local l_VoidRushMissEndlag_0 = v158.Config.VoidRushMissEndlag;
+                                v158.AbilitiesDisabled = true;
+                                v19:CreateSpeedMultiplier(v158.Rig, 0.6, "VoidRushEndlag", l_VoidRushMissEndlag_0 + 0, true);
+                                task.delay(l_VoidRushMissEndlag_0, function() --[[ Line: 725 ]]
+                                    -- upvalues: v158 (ref)
+                                    v158.AbilitiesDisabled = false;
+                                end);
+                                v40(v158.Behavior, "OnVoidRushMiss", v158);
+                                task.delay(v158.Config.VoidRushMissEndlag, function() --[[ Line: 1104 ]]
+                                    -- upvalues: v158 (ref)
+                                    v158.Behavior.EnableVoidstar(v158);
+                                    v158.Behavior.ToggleTendril(v158, false);
+                                end);
+                                v158:SetCooldownOf("VoidRush", v158.Config.VoidRushC00ldown);
+                                v158.DisabledAbilities = nil;
+                                v158.Rig:SetAttribute("VoidRushState", v204);
+                                l_VoidRushMissEndlag_0 = "Miss_" .. v204;
+                                v18:FireClientConnection(v158.Player, v163, "REMOTE_EVENT", l_VoidRushMissEndlag_0);
+                                if l_VoidRush_0["EndDash" .. v204] then
+                                    l_VoidRush_0["EndDash" .. v204]:Play();
+                                else
+                                    l_VoidRush_0.EndDash:Play();
+                                end;
+                                v168("Miss" .. v204);
+                                v158:PlayVoiceline("VoidRushMiss" .. v204, {
+                                    Priority = 3
+                                });
+                            end;
+                            v185();
+                        end);
+                        return;
+                    end;
+                end);
+                return {
+                    SentTick = not l_Behavior_0.Endlag and os.clock()
+                };
+            else
+                if l_RunService_0:IsClient() then
+                    local v217 = require(l_ReplicatedStorage_0.Systems.Character.Game.Sprinting);
+                    local v218 = v159 and v159.SentTick;
+                    local function _() --[[ Line: 1138 ]] --[[ Name: getState ]]
+                        -- upvalues: v158 (copy)
+                        return v158.Rig:GetAttribute("VoidRushState");
+                    end;
+                    v18:FireConnection("DisableSprinting", "VoidRushCharging", true);
+                    if v218 then
+                        local v220 = false;
+                        v217.StaminaCap = v217.Stamina + 1;
+                        while l_RunService_0.Heartbeat:Wait() do
+                            if not v158.HeldAbilities.VoidRush and not v220 then
+                                v220 = true;
+                                v18:FireServerConnection(v162, "REMOTE_EVENT");
+                            elseif v158.Rig:GetAttribute("VoidRushState") ~= "Charging" then
+                                break;
+                            end;
+                        end;
+                    end;
+                    if v158.Rig:GetAttribute("VoidRushState") == "ChargingCancelled" then
+                        v18:FireConnection("DisableSprinting", "VoidRushCharging", false);
+                        v217.StaminaCap = nil;
+                        v158.HeldAbilities.VoidRush = nil;
+                        return;
+                    else
+                        local v221 = 0;
+                        local v222 = false;
+                        local l_LookVector_0 = workspace.CurrentCamera.CFrame.LookVector;
+                        local l_Unit_0 = Vector3.new(l_LookVector_0.X, 0, l_LookVector_0.Z).Unit;
+                        local v225 = Vector3.new(0, 0, 0, 0);
+                        v18:FireConnection("DisableSprinting", "VoidRushCharging", true);
+                        v217.StaminaCap = v217.Stamina + 1;
+                        do
+                            local l_v221_0, l_v222_0, l_l_Unit_0_0, l_v225_0 = v221, v222, l_Unit_0, v225;
+                            l_RunService_0:BindToRenderStep("VoidRushCharging", Enum.RenderPriority.Character.Value + 1, function(v230) --[[ Line: 1190 ]]
+                                -- upvalues: l_v221_0 (ref), v158 (copy), l_v222_0 (ref), v18 (ref), v161 (copy), l_v225_0 (ref), l_l_Unit_0_0 (ref), l_TweenService_0 (ref)
+                                l_v221_0 = l_v221_0 + v230;
+                                if l_v221_0 >= 0.3 and v158.Rig.PrimaryPart.Velocity.Magnitude <= v158.Config.VoidRushDashSpeed / 3.5 then
+                                    if not l_v222_0 then
+                                        l_v222_0 = true;
+                                        v18:FireServerConnection(v161, "REMOTE_EVENT", v158.HeldAbilities.VoidRush);
+                                    end;
+                                    return;
+                                else
+                                    local l_SpeedMultipliers_0 = v158.Rig:FindFirstChild("SpeedMultipliers");
+                                    local v232 = l_SpeedMultipliers_0 and l_SpeedMultipliers_0:FindFirstChild("VoidRushDash");
+                                    if v232 then
+                                        local v233 = v158.Config.VoidRushDashSpeed / v158.Config.Speed;
+                                        local v234 = v230 * (v158.HeldAbilities.VoidRush and 1 or -3) * 2 * v233;
+                                        v232.Value = math.clamp(v232.Value + v234, 0, v233);
+                                    end;
+                                    local l_LookVector_1 = workspace.CurrentCamera.CFrame.LookVector;
+                                    l_v225_0 = Vector3.new(l_LookVector_1.X, 0, l_LookVector_1.Z).Unit;
+                                    local v236 = l_v225_0 - l_l_Unit_0_0;
+                                    local l_Magnitude_0 = v236.Magnitude;
+                                    if l_Magnitude_0 > 0 then
+                                        local l_VoidRushInitialTurnDuration_0 = v158.Config.VoidRushInitialTurnDuration;
+                                        local v239 = v158.Config.VoidRushInitialTurnMult * l_TweenService_0:GetValue((l_VoidRushInitialTurnDuration_0 - l_v221_0) / l_VoidRushInitialTurnDuration_0, Enum.EasingStyle.Sine, Enum.EasingDirection.In) + 1;
+                                        local v240 = v158.Config.VoidRushTurnSpeed * v230 * v239;
+                                        if l_Magnitude_0 <= v240 then
+                                            l_l_Unit_0_0 = l_v225_0;
+                                        else
+                                            l_l_Unit_0_0 = l_l_Unit_0_0 + v236.Unit * v240;
+                                        end;
+                                        l_l_Unit_0_0 = l_l_Unit_0_0.Unit;
+                                    end;
+                                    v158.Rig.Humanoid:Move(l_l_Unit_0_0);
+                                    return;
+                                end;
+                            end);
+                            while v158 and v158.Rig and v158.Rig:GetAttribute("VoidRushState") == "Dashing" do
+                                l_RunService_0.Heartbeat:Wait();
+                            end;
+                            v158.HeldAbilities.VoidRush = nil;
+                            v217.StaminaCap = nil;
+                            v18:FireConnection("DisableSprinting", "VoidRushCharging", false);
+                            l_RunService_0:UnbindFromRenderStep("VoidRushCharging");
+                        end;
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    Nova = {
+        LayoutOrder = 3,
+        Icon = "rbxassetid://70669903126039",
+        KeybindType = "AltAbility2",
+        Callback = function(v241, v242) --[[ Line: 1256 ]] --[[ Name: Callback ]]
+            -- upvalues: l_RunService_0 (copy), v19 (copy), v15 (copy), v17 (copy), v18 (copy)
+            local _ = v241.Behavior;
+            if l_RunService_0:IsServer() then
+                if v241.Behavior.Voidstar then
+                    v241.AbilitiesDisabled = true;
+                    task.delay(0.2, function() --[[ Line: 1263 ]]
+                        -- upvalues: v241 (copy)
+                        v241.AbilitiesDisabled = false;
+                    end);
+                    v241:SetCooldownOf("Nova", v241.Config.NovaCooldown);
+                    v241.Behavior.DetonateVoidstar(v241, v241.Behavior.Voidstar, true);
+                    v241.Behavior.Voidstar = nil;
+                    v241:PlayVoiceline("NovaDetonate", {
+                        Priority = 4
+                    });
+                    return "Detonate";
+                else
+                    local l_NovaWindup_0 = v241.Config.NovaWindup;
+                    local _ = v19:CreateSpeedMultiplier(v241.Rig, v241.Config.NovaWindupSpeed, "NovaWindupSlowness", l_NovaWindup_0 + 0.3, true);
+                    v241.AbilitiesDisabled = true;
+                    v241:SetCooldownOf("Nova", l_NovaWindup_0 + 0.2);
+                    v15:Play(v241.Config.Sounds.Nova, {
+                        Parent = v241.Rig.PrimaryPart,
+                        RollOffMaxDistance = 50
+                    });
+                    v241:PlayVoiceline("Nova", {
+                        Priority = 3
+                    });
+                    task.delay(l_NovaWindup_0, function() --[[ Line: 1287 ]]
+                        -- upvalues: v241 (copy), v19 (ref), v17 (ref), l_RunService_0 (ref)
+                        if v241.Rig:GetAttribute("Stunned") then
+                            v241.AbilitiesDisabled = false;
+                            return;
+                        else
+                            v241.Behavior.DisableVoidstar(v241);
+                            local l_PrimaryPart_0 = v241.Rig.PrimaryPart;
+                            if not l_PrimaryPart_0 then
+                                return;
+                            else
+                                local l_NovaProjectileSpeed_0 = v241.Config.NovaProjectileSpeed;
+                                local v248 = l_PrimaryPart_0.CFrame + Vector3.new(0, (v241.Rig.Humanoid.HipHeight + l_PrimaryPart_0.Size.Y / 2) / 2, 0);
+                                local _ = (v241.Rig.PrimaryPart.CFrame * CFrame.new(0, 0, -20)).Position;
+                                local l_Unit_1 = ((if v241.Player:GetAttribute("Device") == "Mobile" then v19:GetPlayerMousePosition(v241.Player, true) else v19:GetPlayerMousePosition(v241.Player)) - v241.Rig.PrimaryPart.Position).Unit;
+                                local l_NovaProjectile_0 = v241.Config.NovaProjectile;
+                                local v252 = (l_NovaProjectile_0:IsA("Folder") and l_NovaProjectile_0:GetChildren()[math.random(#l_NovaProjectile_0:GetChildren())] or l_NovaProjectile_0):Clone();
+                                v252.RootPriority = -2;
+                                local v253 = RaycastParams.new();
+                                v253.RespectCanCollide = true;
+                                v253.CollisionGroup = "Killers";
+                                v253.FilterType = Enum.RaycastFilterType.Exclude;
+                                v253.FilterDescendantsInstances = {
+                                    workspace.Players,
+                                    v252
+                                };
+                                local v254 = {
+                                    Size = Vector3.new(3.5, 3.5, 3.5, 0),
+                                    Damage = 0
+                                };
+                                local v255 = vector.create(math.random(-15, 15), math.random(-15, 15), math.random(-15, 15));
+                                local v264 = {
+                                    Owner = v241.Player,
+                                    HitboxConfig = v254,
+                                    Lifetime = 4,
+                                    InitialCFrame = v248,
+                                    InitialVelocity = l_Unit_1 * l_NovaProjectileSpeed_0,
+                                    Model = v252,
+                                    CastParams = v253,
+                                    Callbacks = {
+                                        HitHuman = function(v256, _) --[[ Line: 1350 ]] --[[ Name: HitHuman ]]
+                                            -- upvalues: v241 (ref)
+                                            v241.Behavior.DetonateVoidstar(v241, v256, false, true);
+                                        end,
+                                        HitOther = function(v258, v259) --[[ Line: 1353 ]] --[[ Name: HitOther ]]
+                                            -- upvalues: v241 (ref)
+                                            local v260 = math.deg((math.acos((Vector3.new(0, 1, 0, 0):Dot(v259.Normal))))) < v241.Config.NovaFloorAngle;
+                                            v241.Behavior.DetonateVoidstar(v241, v258, v260);
+                                        end,
+                                        Validate = function(_, v262) --[[ Line: 1358 ]] --[[ Name: Validate ]]
+                                            local v263 = v262 and v262.Instance;
+                                            if v263 and v263.Transparency > 0.9 then
+                                                return false;
+                                            else
+                                                return true;
+                                            end;
+                                        end
+                                    },
+                                    ClientCallbackData = {
+                                        OnHeartbeat = {
+                                            Rotation = {
+                                                rotation = v255
+                                            }
+                                        }
+                                    }
+                                };
+                                local v265 = v17.new(v264);
+                                v265:Launch();
+                                v241.Behavior.Voidstar = v265;
+                                task.delay(0.2, function() --[[ Line: 1380 ]]
+                                    -- upvalues: v241 (ref)
+                                    v241.AbilitiesDisabled = false;
+                                end);
+                                local v266 = nil;
+                                local _ = nil;
+                                v266 = l_RunService_0.Heartbeat:Connect(function(_) --[[ Line: 1388 ]]
+                                    -- upvalues: v265 (copy), v241 (ref), v266 (ref)
+                                    if not v265 or v265.State ~= "Running" then
+                                        if v265 then
+                                            v265:Destroy();
+                                        end;
+                                        v241:SetCooldownOf("Nova", v241.Config.NovaCooldown);
+                                        v241.Behavior.Voidstar = nil;
+                                        v266:Disconnect();
+                                        v241.Behavior.EnableVoidstar(v241);
+                                        v241.Behavior.ToggleTendril(v241, false);
+                                        return;
+                                    else
+                                        return;
+                                    end;
+                                end);
+                                return;
+                            end;
+                        end;
+                    end);
+                    return "Throw";
+                end;
+            else
+                if l_RunService_0:IsClient() then
+                    if v242 == "Detonate" then
+                        v241.Animations.NovaDet:Play(0.175);
+                        return;
+                    else
+                        v241.Animations.NovaThrow:Play(0.175);
+                        v18:FireConnection("DisableSprinting", "Nova", true);
+                        task.delay(v241.Config.NovaWindup, function() --[[ Line: 1419 ]]
+                            -- upvalues: v18 (ref)
+                            v18:FireConnection("DisableSprinting", "Nova", false);
+                        end);
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    Observant = {
+        LayoutOrder = 4,
+        Icon = "rbxassetid://86665948552323",
+        KeybindType = "AltAbility3",
+        Callback = function(v269, v270) --[[ Line: 1431 ]] --[[ Name: Callback ]]
+            -- upvalues: l_RunService_0 (copy), v15 (copy), v18 (copy), v19 (copy), l_TweenService_0 (copy)
+            if l_RunService_0:IsServer() then
+                if v269.Behavior.Observing then
+                    v269:PlayVoiceline("ObservantOff", {
+                        Priority = 4
+                    });
+                    v15:Play(v269.Config.Sounds.ObservantOff, {
+                        Parent = v269.Rig.PrimaryPart
+                    });
+                    v269.Behavior.RevertObservance(v269, false);
+                    v269.Behavior.ToggleGeneratorAura(v269, false);
+                    return {
+                        Result = false
+                    };
+                else
+                    v269:PlayVoiceline("ObservantOn", {
+                        Priority = 4
+                    });
+                    if not workspace:FindFirstChild("Map") or not workspace.Map:FindFirstChild("Ingame") or not workspace.Map.Ingame:FindFirstChild("Map") then
+                        return;
+                    else
+                        v269.Behavior.ToggleObservantVFX(v269, true);
+                        v269.Behavior.ToggleGeneratorAura(v269, true);
+                        v15:Play(v269.Config.Sounds.ObservantOn, {
+                            Parent = v269.Rig.PrimaryPart
+                        });
+                        v269.Behavior.Observing = true;
+                        v269.DisabledAbilities = {
+                            VoidRush = true,
+                            Nova = true,
+                            Stab = true
+                        };
+                        v269.AbilitiesDisabled = true;
+                        if v269.ObservantConnection then
+                            v269.ObservantConnection:Disconnect();
+                            v269.ObservantConnection = nil;
+                        end;
+                        v269.ObservantConnection = v269.Rig:GetAttributeChangedSignal("Stunned"):Connect(function() --[[ Line: 1465 ]]
+                            -- upvalues: v269 (copy), v18 (ref)
+                            if v269.Rig:GetAttribute("Stunned") then
+                                v269.Behavior.RevertObservance(v269, false);
+                                v269.Behavior.ToggleGeneratorAura(v269, false);
+                                v18:FireClientConnection(v269.Player, ("%*ObservantTeleport"):format(v269.Player.Name), "REMOTE_EVENT");
+                            end;
+                        end);
+                        v19:CreateSpeedMultiplier(v269.Rig, v269.Config.ObservantSpeed, "NoliObserving");
+                        task.delay(0.5, function() --[[ Line: 1475 ]]
+                            -- upvalues: v269 (copy)
+                            v269.AbilitiesDisabled = false;
+                        end);
+                        return {
+                            Result = true
+                        };
+                    end;
+                end;
+            else
+                if l_RunService_0:IsClient() then
+                    if not v270 then
+                        return;
+                    else
+                        v269.Behavior.Observing = v270.Result;
+                        if v269.Behavior.Observing then
+                            v18:FireConnection("DisableSprinting", "NoliObserving", true);
+                            v269.Animations.ObservantStart:Play(0.15);
+                            v269.Animations.ObservantLoop:Play();
+                            local v271 = RaycastParams.new();
+                            v271.FilterDescendantsInstances = {};
+                            v271.FilterType = Enum.RaycastFilterType.Include;
+                            local v272 = {};
+                            v272.__index = v272;
+                            v272.new = function(v273, v274) --[[ Line: 1501 ]] --[[ Name: new ]]
+                                -- upvalues: v272 (copy), l_TweenService_0 (ref), v19 (ref), v269 (copy)
+                                local v275 = setmetatable({}, v272);
+                                local l_Size_0 = v274.Size;
+                                v275.GarbageConnections = {};
+                                v275.IsHovering = false;
+                                v275.Generator = v273;
+                                v275.Billboard = v274;
+                                v275.Button = v274.ImageButton;
+                                v275.EnterTween = l_TweenService_0:Create(v274, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                                    Size = UDim2.new(l_Size_0.X.Scale * 1.2, l_Size_0.X.Offset * 1.2, l_Size_0.Y.Scale * 1.2, l_Size_0.Y.Offset * 1.2)
+                                });
+                                v275.LeaveTween = l_TweenService_0:Create(v274, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                                    Size = l_Size_0
+                                });
+                                if not v19:GetSettingValue("EpilepsyMode", game.Players.LocalPlayer) or not v269.Config.isScreamerSensitive then
+                                    v275.Button:SetAttribute("Spritesheet", v269.Config.ScreamerSpritesheet or "NoliLaugh");
+                                    v275.Button:SetAttribute("TimeScale", 0.35);
+                                    v275.Button:AddTag("Spritesheet");
+                                elseif v19:GetSettingValue("EpilepsyMode", game.Players.LocalPlayer) and v269.Config.isScreamerSensitive then
+                                    v275.Button.Image = v269.Config.SensitiveScreamerImage or "rbxassetid://89949595020859";
+                                end;
+                                v275.Button.MouseEnter:Connect(function() --[[ Line: 1521 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:OnMouseEntered();
+                                end);
+                                v275.Button.MouseLeave:Connect(function() --[[ Line: 1524 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:OnMouseLeft();
+                                end);
+                                v275.Button.MouseButton1Down:Connect(function() --[[ Line: 1527 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:OnClicked();
+                                end);
+                                table.insert(v275.GarbageConnections, v274.AncestryChanged:Connect(function() --[[ Line: 1531 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:Destroy();
+                                end));
+                                table.insert(v275.GarbageConnections, v273.AncestryChanged:Connect(function() --[[ Line: 1534 ]]
+                                    -- upvalues: v275 (copy)
+                                    v275:Destroy();
+                                end));
+                                return v275;
+                            end;
+                            v272.OnMouseEntered = function(v277) --[[ Line: 1540 ]] --[[ Name: OnMouseEntered ]]
+                                if v277.IsHovering then
+                                    return;
+                                else
+                                    v277.IsHovering = true;
+                                    v277.EnterTween:Play();
+                                    v277.Button:SetAttribute("TimeScale", 1);
+                                    return;
+                                end;
+                            end;
+                            v272.OnMouseLeft = function(v278) --[[ Line: 1546 ]] --[[ Name: OnMouseLeft ]]
+                                if not v278.IsHovering then
+                                    return;
+                                else
+                                    v278.IsHovering = false;
+                                    v278.LeaveTween:Play();
+                                    v278.Button:SetAttribute("TimeScale", 0.35);
+                                    return;
+                                end;
+                            end;
+                            v272.OnClicked = function(v279) --[[ Line: 1552 ]] --[[ Name: OnClicked ]]
+                                -- upvalues: v18 (ref), v269 (copy)
+                                v18:FireServerConnection(("%*ObservantTeleport"):format(v269.Player.Name), "REMOTE_EVENT", v279.Generator);
+                            end;
+                            v272.Destroy = function(v280) --[[ Line: 1555 ]] --[[ Name: Destroy ]]
+                                local l_ipairs_1 = ipairs;
+                                local v282 = v280.GarbageConnections or {};
+                                for _, v284 in l_ipairs_1(v282) do
+                                    v284:Disconnect();
+                                end;
+                                if v280.Billboard then
+                                    v280.Billboard:Destroy();
+                                end;
+                                table.clear(v280);
+                            end;
+                            local function v288(v285) --[[ Line: 1563 ]] --[[ Name: addGenerator ]]
+                                -- upvalues: v269 (copy), v272 (copy), v271 (copy)
+                                local v286 = v269.Config.ObservantTeleportButton:Clone();
+                                v286.Parent = v269.Player.PlayerGui;
+                                v286.Adornee = v285;
+                                local v287 = v272.new(v285, v286);
+                                v269.Behavior.Generators[v285] = {
+                                    Button = v287,
+                                    Instance = v285
+                                };
+                                v271:AddToFilter(v285);
+                            end;
+                            v269.Behavior.Generators = {};
+                            v269.Behavior.AddedGeneratorConnection = workspace.Map.Ingame.Map.ChildAdded:Connect(function(v289) --[[ Line: 1577 ]]
+                                -- upvalues: v288 (copy)
+                                if v289.Name == "Generator" or v289.Name == "FakeGenerator" then
+                                    v288(v289);
+                                end;
+                            end);
+                            for _, v291 in ipairs(workspace.Map.Ingame.Map:GetChildren()) do
+                                if v291.Name == "Generator" or v291.Name == "FakeGenerator" then
+                                    v288(v291);
+                                end;
+                            end;
+                            l_RunService_0:BindToRenderStep("ObservantTeleportValidation", 1, function() --[[ Line: 1590 ]]
+                                -- upvalues: v269 (copy), l_RunService_0 (ref)
+                                local l_pairs_0 = pairs;
+                                local v293 = v269.Behavior.Generators or {};
+                                for v294, v295 in l_pairs_0(v293) do
+                                    if not v269.Behavior.Generators then
+                                        l_RunService_0:UnbindFromRenderStep("ObservantTeleportValidation");
+                                        return;
+                                    else
+                                        local function _(v296, v297, v298) --[[ Line: 1597 ]] --[[ Name: changeProp ]]
+                                            if v296[v297] ~= v298 then
+                                                v296[v297] = v298;
+                                            end;
+                                        end;
+                                        local v300 = (v294:GetPivot().Position - v269.Rig.PrimaryPart.Position).Magnitude < v269.Config.ObservantMinDistance;
+                                        local l_Button_0 = v295.Button.Button;
+                                        local l_Highlight_1 = v294:FindFirstChildOfClass("Highlight");
+                                        local v303 = v300 and Enum.HighlightDepthMode.Occluded or Enum.HighlightDepthMode.AlwaysOnTop;
+                                        if l_Highlight_1.DepthMode ~= v303 then
+                                            l_Highlight_1.DepthMode = v303;
+                                        end;
+                                        if l_Button_0:GetAttribute("Paused") ~= v300 then
+                                            l_Button_0:SetAttribute("Paused", v300);
+                                            if v300 then
+                                                v295.Button:OnMouseLeft();
+                                            end;
+                                        end;
+                                        v303 = v300 and Color3.new(0.4, 0.4, 0.4) or Color3.new(1, 1, 1);
+                                        if l_Button_0.ImageColor3 ~= v303 then
+                                            l_Button_0.ImageColor3 = v303;
+                                        end;
+                                        v303 = not v300;
+                                        if l_Button_0.Interactable ~= v303 then
+                                            l_Button_0.Interactable = v303;
+                                        end;
+                                    end;
+                                end;
+                            end);
+                            return;
+                        else
+                            v269.Behavior.RevertObservance(v269, false);
+                        end;
+                    end;
+                end;
+                return;
+            end;
+        end
+    }
+};
+v11.ObservantUse = function(v304, v305) --[[ Line: 1636 ]] --[[ Name: ObservantUse ]]
+    -- upvalues: v40 (copy), v15 (copy), l_StunProtectionVFX_0 (copy), l_ReplicatedStorage_0 (copy), v14 (copy), v19 (copy), v18 (copy)
+    if v305 then
+        local v306 = v305:FindFirstChild("Positions") and v305.Positions:GetChildren() and v305.Positions.Center.CFrame or v305:GetPivot();
+        v304.Cache.Animations.Observant:Play();
+        v40(v304.Behavior, "ObservantTP", v304);
+        v304.Behavior.ToggleGeneratorAura(v304, false, v305);
+        v304.AbilitiesDisabled = true;
+        local v307 = v304.Behavior.ObservantWindupVFX(v304);
+        local function v312() --[[ Line: 1653 ]] --[[ Name: destroyVFX ]]
+            -- upvalues: v307 (copy)
+            local l_ipairs_2 = ipairs;
+            local v309 = v307 or {};
+            for _, v311 in l_ipairs_2(v309) do
+                v311:Destroy();
+            end;
+        end;
+        local v313 = v15:Play(v304.Config.Sounds.ObservantTeleportChannel, {
+            Parent = v304.Rig.PrimaryPart,
+            RollOffMaxDistance = 45
+        });
+        local v314 = nil;
+        do
+            local l_v314_0 = v314;
+            local v324 = task.delay(v304.Config.ObservantTeleportWindup, function() --[[ Line: 1663 ]]
+                -- upvalues: v312 (copy), v304 (copy), l_StunProtectionVFX_0 (ref), v306 (copy), l_ReplicatedStorage_0 (ref), v14 (ref), l_v314_0 (ref)
+                v312();
+                local v316 = nil;
+                v304.Rig:SetAttribute("StunnedDisabled", true);
+                v316 = l_StunProtectionVFX_0.StunProtection:Clone();
+                v316.Parent = v304.Rig.PrimaryPart;
+                task.delay(1.5, function() --[[ Line: 1673 ]]
+                    -- upvalues: v304 (ref), v316 (ref)
+                    v304.Rig:SetAttribute("StunnedDisabled", nil);
+                    v316.Spawn.Enabled = false;
+                    game.Debris:AddItem(v316, v316.Spawn.Lifetime.Max);
+                end);
+                v304.Behavior.Teleport(v304, v306);
+                v304:PlayVoiceline("Teleport", {
+                    Priority = 5
+                });
+                local v317 = require(l_ReplicatedStorage_0.Modules.Actors);
+                for _, v319 in pairs(v317.CurrentActors) do
+                    if v319.ActorType == "Survivor" and v319.Rig and v319.Rig.PrimaryPart then
+                        local l_Magnitude_1 = (v306.Position - v319.Rig.PrimaryPart.Position).Magnitude;
+                        for v321, v322 in ipairs(v304.Config.ObservantStatusThresholds) do
+                            if l_Magnitude_1 < v322 then
+                                local v323 = v321 - 1;
+                                if v323 > 0 then
+                                    v14:ApplyStatus(v319.Rig, "Hallucination", {
+                                        Level = v323,
+                                        Duration = v304.Config.ObservantStatusDuration,
+                                        Killer = v304
+                                    });
+                                    break;
+                                else
+                                    break;
+                                end;
+                            end;
+                        end;
+                    end;
+                end;
+                l_v314_0:Disconnect();
+            end);
+            l_v314_0 = v304.Rig:GetAttributeChangedSignal("Stunned"):Connect(function() --[[ Line: 1709 ]]
+                -- upvalues: v304 (copy), l_v314_0 (ref), v324 (copy), v312 (copy), v313 (copy)
+                if v304.Rig:GetAttribute("Stunned") then
+                    if l_v314_0 then
+                        l_v314_0:Disconnect();
+                    end;
+                    task.cancel(v324);
+                    v312();
+                    if v313 then
+                        v313:Destroy();
+                    end;
+                end;
+            end);
+            v19:CreateSpeedMultiplier(v304.Rig, 0, "ObservantTeleporting", v304.Config.ObservantTeleportWindup + v304.Config.ObservantTeleportEndlag, true);
+            v304.Behavior.RevertObservance(v304, true);
+            v18:FireClientConnection(v304.Player, ("%*ObservantTeleport"):format(v304.Player.Name), "REMOTE_EVENT");
+        end;
+    end;
+end;
+v11.DetonateVoidstar = function(v325, v326, v327, v328) --[[ Line: 1731 ]] --[[ Name: DetonateVoidstar ]]
+    -- upvalues: l_RunService_0 (copy), v13 (copy), v19 (copy), l_Debris_0 (copy), l_TweenService_0 (copy), v23 (copy), l_Players_0 (copy), v18 (copy)
+    assert(l_RunService_0:IsServer(), "what are you doing");
+    assert(v326, "no voidstar :(");
+    assert(v326.State == "Running", "voidstar is already go boom boom");
+    assert(v325, "use dot notation when calling");
+    v325.Behavior.VoidstarExplosionVFX(v325, v326.PreviousCFrame);
+    local v329 = v325.Config.NovaExplosionRadius / (v327 and 1.5 or 1);
+    local l_PreviousCFrame_0 = v326.PreviousCFrame;
+    local v331 = v325.Config.NovaExplosionKnockback or 440;
+    local _ = v13:CreateHitbox(v325.Player, {
+        Size = Vector3.new(1, 1, 1, 0) * v329,
+        CFrame = l_PreviousCFrame_0,
+        Damage = v325.Config.NovaExplosionDamage,
+        Time = 0.1,
+        HitMultiple = true,
+        Knockback = 0,
+        ExecuteOnKill = false,
+        PredictVelocity = false,
+        DeathProfile = {
+            KillEffects = {
+                Explode = true
+            }
+        },
+        Shape = Enum.PartType.Ball,
+        Connections = {
+            Hit = function(v332) --[[ Line: 1763 ]] --[[ Name: Hit ]]
+                -- upvalues: v19 (ref), l_PreviousCFrame_0 (copy), v328 (copy), v329 (copy), l_Debris_0 (ref), v331 (copy), l_TweenService_0 (ref), v325 (copy), v23 (ref)
+                local l_PrimaryPart_1 = v332.PrimaryPart;
+                local l_v19_Actor_0 = v19:GetActor(v332);
+                local v335 = l_v19_Actor_0 and l_v19_Actor_0.GetPivot and l_v19_Actor_0:GetPivot() or v332.PrimaryPart.CFrame;
+                local l_Magnitude_2 = (l_PreviousCFrame_0.Position - v335.Position).Magnitude;
+                local v337 = v328 and 1.35 or math.clamp(1 - l_Magnitude_2 / v329, 0, 1);
+                local v338 = Instance.new("BodyPosition", l_PrimaryPart_1);
+                l_Debris_0:AddItem(v338, 0.35);
+                v338.Position = l_PreviousCFrame_0.Position;
+                v338.MaxForce = Vector3.new(10000, 7000, 10000, 0);
+                v338.P = v331 * 1500 * (v337 / 2 + 0.5);
+                v338.D = 1200 - v331;
+                task.delay(0.35, function() --[[ Line: 1779 ]]
+                    -- upvalues: l_PrimaryPart_1 (copy)
+                    if l_PrimaryPart_1 then
+                        local l_l_PrimaryPart_1_0 = l_PrimaryPart_1;
+                        l_l_PrimaryPart_1_0.AssemblyLinearVelocity = l_l_PrimaryPart_1_0.AssemblyLinearVelocity / 1000;
+                    end;
+                end);
+                local v340 = 0.5 + v337;
+                local l_v19_SpeedMultiplier_3 = v19:CreateSpeedMultiplier(v332, 0.4 - v337 / 4, "VoidstarExplosion", v340);
+                l_TweenService_0:Create(l_v19_SpeedMultiplier_3, TweenInfo.new(v340), {
+                    Value = 1
+                }):Play();
+                if v332.Parent == workspace.Players.Survivors then
+                    v23:IncrementActorStats(v325.Player, {
+                        Action = "Hit Survivor with Nova",
+                        RewardType = "EasyKillerAction"
+                    });
+                end;
+            end
+        }
+    });
+    for _, v344 in ipairs(l_Players_0:GetPlayers()) do
+        local v345 = v344.Character and v344.Character.PrimaryPart and v344.Character.PrimaryPart.Position;
+        local v346 = v345 and (v326.PreviousCFrame.Position - v345).Magnitude;
+        local v347 = v325.Config.NovaExplosionRadius * 2;
+        if v346 and v346 < v347 then
+            v18:FireClientConnection(v344, "ApplyCameraShake", "REMOTE_EVENT", math.clamp(v347 - v346, 0, v347) / v347 * 0.5, 0.7);
+        end;
+    end;
+    v326:Destroy();
+end;
+v11.RevertObservance = function(v348, v349) --[[ Line: 1811 ]] --[[ Name: RevertObservance ]]
+    -- upvalues: l_RunService_0 (copy), v19 (copy), v18 (copy)
+    if l_RunService_0:IsServer() then
+        v348.Behavior.ToggleObservantVFX(v348, false);
+        if not v348.Behavior.Observing then
+            return;
+        else
+            if v348.ObservantConnection then
+                v348.ObservantConnection:Disconnect();
+                v348.ObservantConnection = nil;
+            end;
+            l_RunService_0:UnbindFromRenderStep("ObservantTeleportValidation");
+            v348.Behavior.Observing = false;
+            v348:SetCooldownOf("Observant", v348.Config.ObservantC00ldown / (not v349 and 2 or 1));
+            v348.DisabledAbilities = nil;
+            v348.AbilitiesDisabled = true;
+            v19:CreateSpeedMultiplier(v348.Rig, 1, "NoliObserving", 0);
+            task.delay(v349 and v348.Config.ObservantTeleportWindup + v348.Config.ObservantTeleportEndlag or 0.5, function() --[[ Line: 1839 ]]
+                -- upvalues: v348 (copy)
+                v348.AbilitiesDisabled = false;
+            end);
+            return;
+        end;
+    else
+        if l_RunService_0:IsClient() then
+            if not v348.Behavior.Generators then
+                return;
+            else
+                v348.Animations.ObservantStart:Stop(0.15);
+                v348.Animations.ObservantLoop:Stop(0.15);
+                local l_pairs_1 = pairs;
+                local v351 = v348.Behavior.Generators or {};
+                for _, v353 in l_pairs_1(v351) do
+                    if v353.Button then
+                        v353.Button:Destroy();
+                    end;
+                end;
+                table.clear(v348.Behavior.Generators);
+                v348.Behavior.Generators = nil;
+                if v348.Behavior.AddedGeneratorConnection then
+                    v348.Behavior.AddedGeneratorConnection:Disconnect();
+                end;
+                v18:FireConnection("DisableSprinting", "NoliObserving", false);
+            end;
+        end;
+        return;
+    end;
+end;
+v11.VoidstarExplosionVFX = function(v354, v355) --[[ Line: 1870 ]] --[[ Name: VoidstarExplosionVFX ]]
+    -- upvalues: v19 (copy), v15 (copy)
+    local l_Explosion_0 = v354.Config.NovaProjectile:FindFirstChild("Explosion");
+    if l_Explosion_0 and l_Explosion_0.ClassName == "Attachment" then
+        local v357 = l_Explosion_0:Clone();
+        v357.Parent = workspace.Terrain;
+        v357.WorldCFrame = v355;
+        v19:EmitParticles(v357);
+        v15:Play(v354.Config.Sounds.Explosion, {
+            Parent = v357,
+            RollOffMaxDistance = 60
+        });
+        game.Debris:AddItem(v357, 6);
+    end;
+end;
+v11.Teleport = function(v358, v359) --[[ Line: 1888 ]] --[[ Name: Teleport ]]
+    -- upvalues: l_Debris_0 (copy), v19 (copy)
+    local v360 = typeof(v359) == "Vector3" and CFrame.new(v359) or v359;
+    local function v364(v361) --[[ Line: 1893 ]] --[[ Name: findGroundPosition ]]
+        local v362 = RaycastParams.new();
+        v362.CollisionGroup = "Killers";
+        v362.FilterDescendantsInstances = {
+            workspace.Map.Ingame
+        };
+        v362.FilterType = Enum.RaycastFilterType.Include;
+        v362.RespectCanCollide = true;
+        local v363 = workspace:Raycast(v361, Vector3.new(0, -10, 0, 0), v362);
+        return v363 and v363.Position or v361 - Vector3.new(0, 10, 0, 0);
+    end;
+    local l_ObservantTeleportVFX_0 = v358.Config.ObservantTeleportVFX;
+    if l_ObservantTeleportVFX_0 then
+        if l_ObservantTeleportVFX_0:FindFirstChild("In") then
+            local v366 = l_ObservantTeleportVFX_0.In:Clone();
+            v366.Position = v364(v358.Rig.PrimaryPart.Position) + Vector3.new(0, 0.05999999865889549, 0, 0);
+            v366.Parent = workspace.Map.Ingame;
+            l_Debris_0:AddItem(v366, 6);
+            v19:EmitParticles(v366);
+        end;
+        if l_ObservantTeleportVFX_0:FindFirstChild("Out") then
+            local v367 = v358.Config.ObservantTeleportVFX.Out:Clone();
+            v367.Position = v364(v360.Position) + Vector3.new(0, 0.05999999865889549, 0, 0);
+            v367.Parent = workspace.Map.Ingame;
+            l_Debris_0:AddItem(v367, 6);
+            v19:EmitParticles(v367);
+        end;
+    end;
+    local l_ipairs_3 = ipairs;
+    local v369 = v358.Cache.Trails or {};
+    for _, v371 in l_ipairs_3(v369) do
+        v371.Enabled = false;
+        v371:Clear();
+    end;
+    v358:PivotTo(v360);
+    l_ipairs_3 = ipairs;
+    v369 = v358.Cache.Trails or {};
+    for _, v373 in l_ipairs_3(v369) do
+        v373.Enabled = true;
+    end;
+end;
+v11.ObservantWindupVFX = function(v374) --[[ Line: 1941 ]] --[[ Name: ObservantWindupVFX ]]
+    -- upvalues: l_TweenService_0 (copy)
+    local v375 = {};
+    local v376 = {};
+    local v377 = {
+        Glitch1 = 0.25,
+        Glitch2 = 0.75,
+        Star = 1.06
+    };
+    if v374.Rig:FindFirstChild("Noli") then
+        for _, v379 in ipairs(v374.Config.ObservantTeleportVFX.BodyParts:GetChildren()) do
+            if v379:IsA("ParticleEmitter") then
+                for _, v381 in ipairs(v374.Rig.Noli:GetChildren()) do
+                    if v381:IsA("BasePart") then
+                        local v382 = v379:Clone();
+                        v382.Parent = v381;
+                        v382.Enabled = false;
+                        table.insert(v376, v382);
+                        v375[v382.Name] = v375[v382.Name] or {};
+                        table.insert(v375[v382.Name], v382);
+                    end;
+                end;
+            end;
+        end;
+    end;
+    for v383, v384 in pairs(v377) do
+        task.delay(v384, function() --[[ Line: 1967 ]]
+            -- upvalues: v375 (copy), v383 (copy)
+            local l_ipairs_4 = ipairs;
+            local v386 = v375[v383] or {};
+            for _, v388 in l_ipairs_4(v386) do
+                if not v388 or not v388.Parent then
+                    return;
+                else
+                    v388.Enabled = true;
+                end;
+            end;
+        end);
+    end;
+    local v389 = v374.Config.ObservantTeleportVFX.BodyParts.Highlight:Clone();
+    v389.Parent = v374.Rig;
+    v389.Enabled = true;
+    l_TweenService_0:Create(v389, TweenInfo.new(v374.Config.ObservantTeleportWindup, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+        FillTransparency = 3
+    }):Play();
+    table.insert(v376, v389);
+    return v376;
+end;
+v11.ToggleObservantVFX = function(v390, v391) --[[ Line: 1985 ]] --[[ Name: ToggleObservantVFX ]]
+    if not v390.Rig.PrimaryPart then
+        return;
+    else
+        local v392 = v390.Rig:FindFirstChild("Noli") and v390.Rig.Noli:FindFirstChild("Glow");
+        local v393 = v392 and v392:FindFirstChild("HalluMouth");
+        local v394 = v392 and v392:FindFirstChild("HalluEye");
+        if v393 and v394 then
+            v393:FindFirstChildOfClass("Beam").Enabled = v391;
+            v394:FindFirstChildOfClass("Beam").Enabled = v391;
+        end;
+        return;
+    end;
+end;
+v11.ToggleGeneratorAura = function(v395, v396, v397) --[[ Line: 1999 ]] --[[ Name: ToggleGeneratorAura ]]
+    -- upvalues: l_RunService_0 (copy), v15 (copy), l_TweenService_0 (copy)
+    assert(l_RunService_0:IsServer(), "what are you doing");
+    local l_Map_1 = workspace.Map.Ingame:FindFirstChild("Map");
+    local v399 = ("%*NoliWarning"):format(v395.Player.Name);
+    local v400 = ("%*NoliAura"):format(v395.Player.Name);
+    if not l_Map_1 then
+        return;
+    else
+        for _, v402 in ipairs(l_Map_1:GetChildren()) do
+            if v402.Name == "Generator" or v402.Name == "FakeGenerator" then
+                if v396 then
+                    local v403 = v395.Config.ObservantWarningTemplate:Clone();
+                    v403.Name = v399;
+                    v403.CFrame = v402:GetPivot();
+                    v403.Parent = v402;
+                    local v404 = v395.Config.ObservantHighlightTemplate:Clone();
+                    v404.Parent = v402;
+                    v404.Name = v400;
+                    v404:AddTag(v395.Player.Name .. "GenHighlight");
+                    v15:Play(v395.Config.Sounds.ObservantGeneratorStart, {
+                        Parent = v403,
+                        Name = "AuraWarningSound",
+                        RollOffMaxDistance = 30
+                    });
+                    v15:Play(v395.Config.Sounds.ObservantGeneratorLoop, {
+                        Parent = v403,
+                        Name = "AuraWarningSound",
+                        Looped = true,
+                        RollOffMaxDistance = 30
+                    });
+                else
+                    local v405 = v397 == v402;
+                    local l_v402_FirstChild_0 = v402:FindFirstChild(v399);
+                    local l_v402_FirstChild_1 = v402:FindFirstChild(v400);
+                    if l_v402_FirstChild_0 and l_v402_FirstChild_1 then
+                        l_v402_FirstChild_0.Name = l_v402_FirstChild_0.Name .. "_Done";
+                        l_v402_FirstChild_1.Name = l_v402_FirstChild_1.Name .. "_Done";
+                        while l_v402_FirstChild_0:FindFirstChild("AuraWarningSound") do
+                            l_v402_FirstChild_0.AuraWarningSound:Destroy();
+                        end;
+                        v15:Play(v395.Config.Sounds[v405 and "ObservantGeneratorWarning" or "ObservantGeneratorEnd"], {
+                            Parent = l_v402_FirstChild_0,
+                            Name = "AuraDisappear",
+                            RollOffMaxDistance = 45
+                        });
+                        if v405 then
+                            task.spawn(function() --[[ Line: 2046 ]]
+                                -- upvalues: v395 (copy), v399 (copy), v402 (copy), l_v402_FirstChild_1 (copy)
+                                local v408 = v395.Config.ObservantIncomingTemplate:Clone();
+                                v408.Name = v399 .. "Incoming";
+                                v408.CFrame = v402:GetPivot();
+                                v408.Parent = v402;
+                                game.Debris:AddItem(v408, 5);
+                                task.wait(v395.Config.ObservantTeleportWindup);
+                                for _, v410 in ipairs(v408:GetDescendants()) do
+                                    if v410:IsA("ParticleEmitter") then
+                                        v410.Enabled = false;
+                                    end;
+                                end;
+                                l_v402_FirstChild_1:Destroy();
+                            end);
+                        else
+                            l_TweenService_0:Create(l_v402_FirstChild_1, TweenInfo.new(0.7), {
+                                FillTransparency = 1,
+                                OutlineTransparency = 1
+                            }):Play();
+                            game.Debris:AddItem(l_v402_FirstChild_1, 1);
+                        end;
+                        for _, v412 in ipairs(l_v402_FirstChild_0:GetDescendants()) do
+                            if v412:IsA("ParticleEmitter") then
+                                v412.Enabled = false;
+                            end;
+                        end;
+                        game.Debris:AddItem(l_v402_FirstChild_0, 5);
+                    end;
+                end;
+            end;
+        end;
+        return;
+    end;
+end;
+v11.ToggleTendril = function(v413, v414) --[[ Line: 2082 ]] --[[ Name: ToggleTendril ]]
+    if not v413.Rig:FindFirstChild("Right Arm") then
+        warn("No arm found!");
+        return;
+    else
+        local l_TentacleBase_0 = v413.Rig["Right Arm"]:FindFirstChild("TentacleBase");
+        if l_TentacleBase_0 then
+            for _, v417 in ipairs(l_TentacleBase_0:GetDescendants()) do
+                if v417:IsA("Beam") or v417:IsA("ParticleEmitter") or v417:IsA("Trail") then
+                    v417.Enabled = v414;
+                end;
+            end;
+        end;
+        return;
+    end;
+end;
+local function v422(v418) --[[ Line: 2097 ]] --[[ Name: __createVoidstar ]]
+    local l_NovaProjectile_1 = v418.Config.NovaProjectile;
+    local v420 = (l_NovaProjectile_1:IsA("Folder") and l_NovaProjectile_1:GetChildren()[math.random(#l_NovaProjectile_1:GetChildren())] or l_NovaProjectile_1):Clone();
+    v420.Name = "Voidstar";
+    v420.Parent = v418.Rig;
+    local l_Motor6D_0 = Instance.new("Motor6D");
+    l_Motor6D_0.C0 = CFrame.new((Vector3.new(0, -0.10000000149011612, 0, 0)));
+    l_Motor6D_0.C1 = CFrame.new((Vector3.new(0, -0.10000000149011612, 0, 0)));
+    l_Motor6D_0.Part0 = v418.Rig.PrimaryPart;
+    l_Motor6D_0.Part1 = v420;
+    l_Motor6D_0.Parent = v418.Rig.PrimaryPart;
+    return v420;
+end;
+v11.EnableVoidstar = function(v423) --[[ Line: 2121 ]] --[[ Name: EnableVoidstar ]]
+    -- upvalues: v422 (copy), v19 (copy), v15 (copy)
+    assert(v423, "must pass killerInfo as argument");
+    if v423.Behavior.VoidstarEnabled then
+        return;
+    else
+        v423.Behavior.VoidstarEnabled = true;
+        local l_Rig_1 = v423.Rig;
+        local v425 = l_Rig_1 and l_Rig_1:FindFirstChild("Voidstar") or v422(v423);
+        if v425 then
+            v425.Transparency = 0;
+            v425.Main.Main.Enabled = true;
+            for _, v427 in ipairs(v425.Main:GetDescendants()) do
+                if v427:IsA("ParticleEmitter") then
+                    v427.Enabled = true;
+                end;
+            end;
+            v19:EmitParticles(v19:MergeTables({
+                v425.Appear1,
+                v425.Appear2
+            }, v425.AppearT:GetChildren()));
+            v15:Play(v423.Config.Sounds.VoidstarEnable, {
+                Parent = v425,
+                Volume = 0.2,
+                RollOffMaxDistance = 13
+            });
+        end;
+        return;
+    end;
+end;
+v11.DisableVoidstar = function(v428) --[[ Line: 2144 ]] --[[ Name: DisableVoidstar ]]
+    -- upvalues: v422 (copy)
+    assert(v428, "must pass killerInfo as argument");
+    if not v428.Behavior.VoidstarEnabled then
+        return;
+    else
+        v428.Behavior.VoidstarEnabled = false;
+        local l_Rig_2 = v428.Rig;
+        local v430 = l_Rig_2 and l_Rig_2:FindFirstChild("Voidstar") or v422(v428);
+        if v430 then
+            v430.Main.Main.Enabled = false;
+            v430.Main.Main:Clear();
+            for _, v432 in ipairs(v430.Main:GetDescendants()) do
+                if v432:IsA("ParticleEmitter") then
+                    v432.Enabled = false;
+                end;
+            end;
+            v430.Transparency = 1;
+        end;
+        return;
+    end;
+end;
+return v11;
+]====]},
+{path=[====[
+ServerStorage/Assets/Killers/c00lkidd/Behavior]====],before="53166:60b55580:43871c51",after="53111:bf187578:5a6c0295",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local _ = require(game.ReplicatedStorage.GlobalTypes);
+local v1 = {};
+local v2 = require(game.ReplicatedStorage.Modules.Sounds);
+local v3 = require(game.ReplicatedStorage.Modules.Util);
+local v4 = require(game.ReplicatedStorage.Modules.Hitboxes);
+local v5 = require(game.ReplicatedStorage.Modules.Statuses);
+local l_RunService_0 = game:GetService("RunService");
+local v7 = require(game.ReplicatedStorage.Modules.Schematics.Lighting);
+local v8 = require(game.ReplicatedStorage.Modules.Projectiles);
+local v9 = require(game.ReplicatedStorage.Modules.AchievementUtil);
+local function _(v10, v11, v12) --[[ Line: 15 ]] --[[ Name: pcallMethod ]]
+    local l_status_0, l_result_0 = pcall(function() --[[ Line: 16 ]]
+        -- upvalues: v12 (copy), v10 (copy)
+        if v12.Behavior[v10] then
+            v12.Behavior[v10](v12);
+        end;
+    end);
+    if not l_status_0 then
+        warn((("[%*]: Failed to call .%*() due to: %*"):format(v11, v10, l_result_0)));
+    end;
+end;
+v1.Abilities = {
+    Punch = {
+        LayoutOrder = 1,
+        Icon = "rbxassetid://93874368032471",
+        KeybindType = "MainAbility",
+        Cooldown = 2,
+        Callback = function(v16) --[[ Line: 42 ]] --[[ Name: Callback ]]
+            -- upvalues: v2 (copy), v4 (copy), v3 (copy)
+            if game["Run Service"]:IsServer() then
+                v16.AbilitiesDisabled = true;
+                v2:Play(v16.Config.Sounds.Swing, {
+                    Parent = v16.Rig.PrimaryPart,
+                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                    Volume = 0.25
+                });
+                task.delay(v16.Config.PunchWindup, function() --[[ Line: 49 ]]
+                    -- upvalues: v4 (ref), v16 (copy), v3 (ref), v2 (ref)
+                    local _ = v4:CreateHitbox(v16.Player, {
+                        Size = Vector3.new(4.5, 6, 5, 0),
+                        CFrameOffset = CFrame.new(0, 0, -2),
+                        Damage = v16.Config.AttackDamage,
+                        Time = v16.Config.PunchLinger,
+                        Knockback = 2,
+                        HitMultiple = false,
+                        ExecuteOnKill = true,
+                        Connections = {
+                            Hit = function(v17) --[[ Line: 61 ]] --[[ Name: Hit ]]
+                                -- upvalues: v3 (ref), v2 (ref), v16 (ref)
+                                v3:CreateSpeedMultiplier(v17, 1.5, "HitSpeedBonus", 1.25);
+                                v2:Play(v16.Config.Sounds.Hit, {
+                                    Parent = v16.Rig.PrimaryPart,
+                                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                    Volume = 0.25
+                                });
+                            end
+                        }
+                    });
+                end);
+                task.delay(0.75, function() --[[ Line: 70 ]]
+                    -- upvalues: v16 (copy)
+                    v16.AbilitiesDisabled = false;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v16.Animations.Attack:Play(0.025);
+                end;
+                return;
+            end;
+        end
+    },
+    CorruptNature = {
+        LayoutOrder = 2,
+        Icon = "rbxassetid://81200466982776",
+        KeybindType = "AltAbility1",
+        Cooldown = 16,
+        Callback = function(v19) --[[ Line: 87 ]] --[[ Name: Callback ]]
+            -- upvalues: v2 (copy), v3 (copy), v5 (copy), v8 (copy)
+            if game["Run Service"]:IsServer() then
+                v19.AbilitiesDisabled = true;
+                v2:Play(v19.Config.Sounds.CorruptThrow, {
+                    Parent = v19.Rig.PrimaryPart
+                });
+                local v20 = ("%*/CNStart"):format(script.Parent);
+                local l_pcall_0 = pcall;
+                local v22 = "CNStart";
+                local v23;
+                l_pcall_0, v23 = l_pcall_0(function() --[[ Line: 16 ]]
+                    -- upvalues: v19 (copy), v22 (copy)
+                    if v19.Behavior[v22] then
+                        v19.Behavior[v22](v19);
+                    end;
+                end);
+                if not l_pcall_0 then
+                    warn((("[%*]: Failed to call .CNStart() due to: %*"):format(v20, v23)));
+                end;
+                v20 = v3:CreateSpeedMultiplier(v19.Player, 0.01, "HinderedMovement");
+                task.delay(0.4, function() --[[ Line: 95 ]]
+                    -- upvalues: v20 (copy)
+                    game.TweenService:Create(v20, TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.In), {
+                        Value = 1
+                    }):Play();
+                    game.Debris:AddItem(v20, 0.5);
+                end);
+                task.delay(0.1, function() --[[ Line: 101 ]]
+                    -- upvalues: v19 (copy), v3 (ref), v2 (ref), v5 (ref), v8 (ref)
+                    local l_Position_0 = (v19.Rig.PrimaryPart.CFrame * CFrame.new(0, 0, -20)).Position;
+                    l_Position_0 = if v19.Player:GetAttribute("Device") == "Mobile" then v3:GetPlayerMousePosition(v19.Player, true) else v3:GetPlayerMousePosition(v19.Player);
+                    local v25 = CFrame.lookAt(v19.Rig.PrimaryPart.Position, l_Position_0) * CFrame.new(0, 0, -500);
+                    local l_PrimaryPart_0 = v19.Rig.PrimaryPart;
+                    local v27 = v19.Config.Projectile and v19.Config.Projectile:Clone() or Instance.new("Part");
+                    v27.Name = "HumanoidRootProjectile";
+                    v27.Anchored = true;
+                    v27.CanCollide = false;
+                    v27.CanQuery = false;
+                    v27.CanTouch = false;
+                    if not v19.Config.NoProjectileResize then
+                        v27.Size = Vector3.new(1, 2, 2, 0);
+                    end;
+                    local v28 = l_PrimaryPart_0.CFrame + Vector3.new(0, (v19.Rig.Humanoid.HipHeight + l_PrimaryPart_0.Size.Y / 2) / 2, 0);
+                    local v29 = (v25.Position - v28.Position) / 10;
+                    v2:Play(v19.Config.Sounds.CorruptAmbience, {
+                        Parent = v27,
+                        Looped = true
+                    });
+                    local v30 = 0;
+                    local v32 = {
+                        Size = Vector3.new(3, 3, 3, 0),
+                        Damage = v19.Config.RootPartDamage,
+                        Time = 10,
+                        Knockback = 0.5,
+                        HitMultiple = true,
+                        PredictVelocity = false,
+                        Connections = {
+                            Hit = function(v31) --[[ Line: 139 ]] --[[ Name: Hit ]]
+                                -- upvalues: v30 (ref), v19 (ref), v3 (ref), v5 (ref), v2 (ref)
+                                v30 = v30 + 1;
+                                if v30 >= 2 then
+                                    require(game.ReplicatedStorage.Modules.AchievementUtil):IncrementAchievementProgress(v19.Player, "c00lkiddProjectile");
+                                end;
+                                v3:RevealPlayerAuraTo(v19.Player, v31, 10);
+                                v5:ApplyStatus(v31, "Slowness", {
+                                    Level = 1,
+                                    Duration = 4
+                                });
+                                v2:Play(v19.Config.Sounds.CorruptHit, {
+                                    Parent = v31.PrimaryPart,
+                                    PlaybackSpeed = Random.new():NextNumber(0.975, 1.025),
+                                    Volume = 0.4
+                                });
+                                if tostring(v31.Parent) == "Survivors" then
+                                    require(game.ReplicatedStorage.Modules.Actors):IncrementActorStats(v19.Player, {
+                                        Action = "Landed Corrupt Nature hit",
+                                        RewardType = "RegularKillerAction"
+                                    });
+                                end;
+                            end
+                        }
+                    };
+                    local v33 = vector.create(math.random(-360, 360), math.random(-360, 360), math.random(-360, 360));
+                    local v34 = {
+                        Owner = v19.Player,
+                        HitboxConfig = v32,
+                        Lifetime = 10,
+                        InitialCFrame = v28,
+                        InitialVelocity = v29,
+                        Model = v27,
+                        ClientCallbackData = v19.Config.NoProjectileJitter and {} or {
+                            OnHeartbeat = {
+                                Rotation = {
+                                    rotation = v33
+                                }
+                            }
+                        }
+                    };
+                    v8.new(v34):Launch();
+                end);
+                task.delay(1.2, function() --[[ Line: 186 ]]
+                    -- upvalues: v19 (copy)
+                    v19.AbilitiesDisabled = false;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v19.Animations.CorruptNature:Play(0.025);
+                end;
+                return;
+            end;
+        end
+    },
+    WalkspeedOverride = {
+        LayoutOrder = 3,
+        Icon = "rbxassetid://101955457812737",
+        KeybindType = "AltAbility2",
+        Cooldown = 20,
+        Callback = function(v35) --[[ Line: 203 ]] --[[ Name: Callback ]]
+            -- upvalues: v3 (copy), v2 (copy), v4 (copy), v5 (copy)
+            local l_WalkspeedOverrideDuration_0 = v35.Config.WalkspeedOverrideDuration;
+            local l_WalkspeedOverrideEndlag_0 = v35.Config.WalkspeedOverrideEndlag;
+            if game["Run Service"]:IsServer() then
+                v35.AbilitiesDisabled = true;
+                v3:SetSpeedCap(v35.Rig, "C00lkiddWalkspeedOverride", v35.Config.WalkspeedOverrideSpeed);
+                local l_TweenService_0 = game:GetService("TweenService");
+                local v39 = v35.Config.c00lguiTemplate:Clone();
+                local l_JointInstance_0 = v39:FindFirstChildWhichIsA("JointInstance");
+                if l_JointInstance_0 and v39:IsA("BasePart") then
+                    local l_Size_0 = v39.Size;
+                    local v42 = l_TweenService_0:Create(v39, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                        Size = l_Size_0
+                    });
+                    local v43 = l_TweenService_0:Create(v39, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+                        Size = Vector3.new(0, 0, 0, 0)
+                    });
+                    v39.Parent = v35.Rig;
+                    v39.Anchored = false;
+                    v39.Size = Vector3.new(0, 0, 0, 0);
+                    l_JointInstance_0.Part0 = v35.Rig.PrimaryPart;
+                    v42:Play();
+                    task.delay(0.25, v43.Play, v43);
+                end;
+                game.Debris:AddItem(v39, 1);
+                local v44 = ("%*/WalkspeedStart"):format(script.Parent);
+                local l_pcall_1 = pcall;
+                local v46 = "WalkspeedStart";
+                local v47;
+                l_pcall_1, v47 = l_pcall_1(function() --[[ Line: 16 ]]
+                    -- upvalues: v35 (copy), v46 (copy)
+                    if v35.Behavior[v46] then
+                        v35.Behavior[v46](v35);
+                    end;
+                end);
+                if not l_pcall_1 then
+                    warn((("[%*]: Failed to call .WalkspeedStart() due to: %*"):format(v44, v47)));
+                end;
+                task.delay(v35.Config.WalkspeedOverrideWindup, function() --[[ Line: 234 ]]
+                    -- upvalues: v2 (ref), v35 (copy), v4 (ref), l_WalkspeedOverrideDuration_0 (copy), v3 (ref), v5 (ref), l_WalkspeedOverrideEndlag_0 (copy)
+                    local v48 = v2:Play(v35.Config.Sounds.WalkspeedOverrideLoop, {
+                        Parent = v35.Rig.PrimaryPart,
+                        Looped = true
+                    });
+                    local v49 = nil;
+                    local v50 = nil;
+                    local l_v4_Hitbox_1 = v4:CreateHitbox(v35.Player, {
+                        Size = Vector3.new(7, 5, 6, 0),
+                        Damage = v35.Config.WalkspeedOverrideDamage,
+                        CFrameOffset = CFrame.new(0, 0, -1.5),
+                        Time = l_WalkspeedOverrideDuration_0,
+                        Knockback = v35.Config.WalkspeedOverrideKnockback,
+                        HitMultiple = true,
+                        Connections = {
+                            Hit = function(v51) --[[ Line: 247 ]] --[[ Name: Hit ]]
+                                -- upvalues: v3 (ref), v49 (ref), v5 (ref), v35 (ref)
+                                local _, v53 = v3:GetEntityType(v51);
+                                if v53 == "Entity" then
+                                    return;
+                                else
+                                    v49 = v51;
+                                    v5:ApplyStatus(v51, "Burning", {
+                                        Level = 1,
+                                        Duration = 8
+                                    });
+                                    v5:ApplyStatus(v51, "Slowness", {
+                                        Level = 10,
+                                        Duration = 0.25,
+                                        Hidden = true
+                                    });
+                                    v3:RevealPlayerAuraTo(v35.Player, v51, 9);
+                                    local l_firebrand_0 = v35.Rig:FindFirstChild("firebrand");
+                                    if l_firebrand_0 then
+                                        l_firebrand_0.Transparency = 0;
+                                        task.delay(1.5, function() --[[ Line: 263 ]]
+                                            -- upvalues: l_firebrand_0 (copy)
+                                            game.TweenService:Create(l_firebrand_0, TweenInfo.new(0.5), {
+                                                Transparency = 1
+                                            }):Play();
+                                        end);
+                                    end;
+                                    local v55 = ("%*/Start"):format(script.Parent);
+                                    local l_v35_0 = v35;
+                                    local l_pcall_2 = pcall;
+                                    local v58 = "WalkspeedHit";
+                                    local v59;
+                                    l_pcall_2, v59 = l_pcall_2(function() --[[ Line: 16 ]]
+                                        -- upvalues: l_v35_0 (copy), v58 (copy)
+                                        if l_v35_0.Behavior[v58] then
+                                            l_v35_0.Behavior[v58](l_v35_0);
+                                        end;
+                                    end);
+                                    if not l_pcall_2 then
+                                        warn((("[%*]: Failed to call .WalkspeedHit() due to: %*"):format(v55, v59)));
+                                    end;
+                                    if tostring(v51.Parent) == "Survivors" then
+                                        v55 = require(game.ReplicatedStorage.Modules.Actors);
+                                        if v51.Humanoid.Health <= 0 then
+                                            v55:IncrementActorStats(v35.Player, {
+                                                Action = "Killed a Survivor with Walkspeed Override",
+                                                RewardType = "DifficultKillerAction"
+                                            });
+                                            return;
+                                        else
+                                            v55:IncrementActorStats(v35.Player, {
+                                                Action = "Landed Walkspeed Override hit",
+                                                RewardType = "RegularKillerAction"
+                                            });
+                                        end;
+                                    end;
+                                    return;
+                                end;
+                            end,
+                            Ended = function() --[[ Line: 283 ]] --[[ Name: Ended ]]
+                                -- upvalues: v48 (copy), v50 (ref)
+                                game.TweenService:Create(v48, TweenInfo.new(0.5), {
+                                    PlaybackSpeed = 0
+                                });
+                                game.Debris:AddItem(v48, 1);
+                                v50 = true;
+                            end
+                        }
+                    });
+                    local v61 = require(game.ReplicatedStorage.Modules.Network);
+                    local l_LookVector_0 = v35:GetPivot().LookVector;
+                    local v63 = v3:ApplyVelocity(v35.Rig.PrimaryPart, v35.Config.WalkspeedOverrideSpeed);
+                    v63.LineDirection = (l_LookVector_0 * Vector3.new(1, 0, 1, 0)).Unit;
+                    game.Debris:AddItem(v63, l_WalkspeedOverrideDuration_0 + 3);
+                    game.TweenService:Create(v63, TweenInfo.new(l_WalkspeedOverrideDuration_0 * 1.5), {
+                        LineVelocity = v35.Config.WalkspeedOverrideSpeed / 2
+                    }):Play();
+                    v2:Play(v35.Config.Sounds.WalkspeedOverrideLunge, {
+                        Parent = v35.Rig.PrimaryPart
+                    });
+                    local v64 = false;
+                    local v65 = ("%*C00lkiddCollision"):format(v35.Player.Name);
+                    v61:SetConnection(v65, "REMOTE_EVENT", function(v66) --[[ Line: 307 ]]
+                        -- upvalues: v35 (ref), v64 (ref)
+                        if v66 ~= v35.Player then
+                            v66:Kick("not slick at all");
+                            return;
+                        else
+                            v64 = true;
+                            return;
+                        end;
+                    end);
+                    repeat
+                        task.wait();
+                    until v49 or v50 or v64;
+                    local v67 = "IDK";
+                    if v49 then
+                        v67 = "Hit";
+                        v3:GiveInvincible(v35.Rig, "Walkspeed");
+                    elseif v64 then
+                        v67 = "Collide";
+                    elseif v50 then
+                        v67 = "Timeout";
+                    end;
+                    local v68 = (v67 == "Hit" and 1 or v35.Config.WalkspeedOverrideEndlagMultiplier) * l_WalkspeedOverrideEndlag_0;
+                    local l_StringValue_0 = Instance.new("StringValue");
+                    l_StringValue_0.Name = "Result";
+                    l_StringValue_0.Value = v67;
+                    l_StringValue_0.Parent = v35.Rig;
+                    game.Debris:AddItem(l_StringValue_0, v68);
+                    task.delay(v68, function() --[[ Line: 340 ]]
+                        -- upvalues: v35 (ref), v67 (ref), v3 (ref)
+                        v35.AbilitiesDisabled = false;
+                        if v67 == "Hit" then
+                            task.delay(1.5, function() --[[ Line: 343 ]]
+                                -- upvalues: v3 (ref), v35 (ref)
+                                v3:RemoveInvincible(v35.Rig, "Walkspeed");
+                            end);
+                        end;
+                    end);
+                    game.TweenService:Create(v63, TweenInfo.new(v67 == "Collide" and 0.25 or 0.5), {
+                        LineVelocity = 0
+                    }):Play();
+                    game.Debris:AddItem(v63, v68);
+                    v2:PlayVoiceline(v35, ("WalkspeedOverride%*"):format(v67), {
+                        Priority = 1.5
+                    });
+                    v2:Play(v35.Config.Sounds[("WalkspeedOverride%*"):format(v67)], {
+                        Parent = v35.Rig.PrimaryPart
+                    });
+                    v3:SetSpeedCap(v35.Rig, "C00lkiddWalkspeedOverride", nil);
+                    v61:RemoveConnection(v65, "REMOTE_EVENT");
+                    l_v4_Hitbox_1:Cancel();
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    local v70 = nil;
+                    v35.Animations.WalkspeedOverrideStart:Play();
+                    do
+                        local l_v70_0 = v70;
+                        task.delay(v35.Config.WalkspeedOverrideWindup, function() --[[ Line: 364 ]]
+                            -- upvalues: l_v70_0 (ref), v35 (copy)
+                            if l_v70_0 then
+                                return;
+                            else
+                                v35.Animations.WalkspeedOverrideLoop.Looped = true;
+                                v35.Animations.WalkspeedOverrideLoop:Play();
+                                return;
+                            end;
+                        end);
+                        v35.Rig:SetAttribute("FootstepsMuted", true);
+                        local l_v3_SpeedMultiplier_0 = v3:CreateSpeedMultiplier(v35.Player, 0, "HinderedMovement");
+                        task.spawn(function() --[[ Line: 379 ]]
+                            -- upvalues: v35 (copy), l_v70_0 (ref)
+                            v35.Rig.PrimaryPart:WaitForChild("LinearVelocity", 2);
+                            local v73 = 0;
+                            local v74 = false;
+                            while true do
+                                if not l_v70_0 and v35.Rig.PrimaryPart then
+                                    if v73 >= 0.2 and v35.Rig.PrimaryPart.AssemblyLinearVelocity.Magnitude <= v35.Config.WalkspeedOverrideSpeed / 3 then
+                                        if not v74 then
+                                            require(game.ReplicatedStorage.Modules.Network):FireServerConnection(("%*C00lkiddCollision"):format(v35.Player.Name), "REMOTE_EVENT");
+                                            v74 = true;
+                                        end;
+                                        return;
+                                    else
+                                        v73 = v73 + game["Run Service"].Heartbeat:Wait();
+                                    end;
+                                else
+                                    return;
+                                end;
+                            end;
+                        end);
+                        local v75 = v35.Rig:WaitForChild("Result", 6);
+                        l_v70_0 = v75 and v75.Value or "IDK BRUH";
+                        v35.Rig:SetAttribute("FootstepsMuted", nil);
+                        v35.Animations.WalkspeedOverrideStart:Stop();
+                        v35.Animations.WalkspeedOverrideLoop:Stop();
+                        if l_v70_0 == "Hit" then
+                            v35.Animations.WalkspeedOverrideHit:Play(0);
+                        elseif not v35.Animations.WalkspeedOverrideDuration and not v35.Animations.WalkspeedOverrideCollide then
+                            v35.Animations.WalkspeedOverrideMiss:Play(0.05);
+                        elseif l_v70_0 == "Timeout" and v35.Animations.WalkspeedOverrideDuration then
+                            v35.Animations.WalkspeedOverrideDuration:Play(0.05);
+                        elseif l_v70_0 == "Collide" and v35.Animations.WalkspeedOverrideCollide then
+                            v35.Animations.WalkspeedOverrideCollide:Play(0.05);
+                        end;
+                        if v75 then
+                            repeat
+                                task.wait();
+                            until not v75.Parent;
+                        end;
+                        game.TweenService:Create(l_v3_SpeedMultiplier_0, TweenInfo.new(0.5), {
+                            Value = 1
+                        }):Play();
+                        game.Debris:AddItem(l_v3_SpeedMultiplier_0, 0.5);
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    PizzaDelivery = {
+        LayoutOrder = 4,
+        Icon = "rbxassetid://105652328381208",
+        KeybindType = "AltAbility3",
+        Cooldown = 50,
+        Callback = function(v76) --[[ Line: 438 ]] --[[ Name: Callback ]]
+            -- upvalues: v2 (copy), v3 (copy), v9 (copy), v5 (copy)
+            if game["Run Service"]:IsServer() then
+                v76.AbilitiesDisabled = true;
+                v2:Play(v76.Config.Sounds.PizzaDeliveryPunchGround, {
+                    Parent = v76.Rig.PrimaryPart
+                });
+                local v77 = ("%*/Summon"):format(script.Parent);
+                local l_pcall_3 = pcall;
+                local v79 = "MinionSummon";
+                local v80;
+                l_pcall_3, v80 = l_pcall_3(function() --[[ Line: 16 ]]
+                    -- upvalues: v76 (copy), v79 (copy)
+                    if v76.Behavior[v79] then
+                        v76.Behavior[v79](v76);
+                    end;
+                end);
+                if not l_pcall_3 then
+                    warn((("[%*]: Failed to call .MinionSummon() due to: %*"):format(v77, v80)));
+                end;
+                task.delay(1, function() --[[ Line: 446 ]]
+                    -- upvalues: v76 (copy), v3 (ref), v2 (ref), v9 (ref), v5 (ref)
+                    local v81 = "";
+                    local function v86(v82, v83) --[[ Line: 449 ]] --[[ Name: __getGroundPosition ]]
+                        local v84 = RaycastParams.new();
+                        v84.FilterType = Enum.RaycastFilterType.Exclude;
+                        v84.FilterDescendantsInstances = v83 or {};
+                        v84.RespectCanCollide = true;
+                        local v85 = workspace:Raycast(v82.PrimaryPart.Position, Vector3.new(0, -100, 0, 0), v84);
+                        return v85 and v85.Position or v82.PrimaryPart.Position;
+                    end;
+                    for v87 = 1, 2 do
+                        local v88 = v76.Rig.PrimaryPart.CFrame * CFrame.new(v87 % 2 == 0 and 6 or -6, 0, 0);
+                        local v89 = OverlapParams.new();
+                        v89.FilterType = Enum.RaycastFilterType.Exclude;
+                        v89.FilterDescendantsInstances = {
+                            workspace.Players,
+                            v76.Rig
+                        };
+                        v89.RespectCanCollide = true;
+                        if not (#workspace:GetPartBoundsInBox(v88, Vector3.new(2, 5, 2, 0), v89) > 0) then
+                            local l_PizzaDeliveryRig_0 = v76.Config.PizzaDeliveryRig;
+                            local function _() --[[ Line: 479 ]] --[[ Name: __getRig ]]
+                                -- upvalues: l_PizzaDeliveryRig_0 (copy)
+                                return l_PizzaDeliveryRig_0:IsA("Folder") and l_PizzaDeliveryRig_0:GetChildren()[math.random(#l_PizzaDeliveryRig_0:GetChildren())] or l_PizzaDeliveryRig_0;
+                            end;
+                            local v92 = (l_PizzaDeliveryRig_0:IsA("Folder") and l_PizzaDeliveryRig_0:GetChildren()[math.random(#l_PizzaDeliveryRig_0:GetChildren())] or l_PizzaDeliveryRig_0):Clone();
+                            if v76.Config.PizzaDeliveryGuyNoRepeats and l_PizzaDeliveryRig_0:IsA("Folder") then
+                                local l_l_PizzaDeliveryRig_0_Children_0 = l_PizzaDeliveryRig_0:GetChildren();
+                                while v92.Name == v81 do
+                                    table.remove(l_l_PizzaDeliveryRig_0_Children_0, table.find(l_l_PizzaDeliveryRig_0_Children_0, v92));
+                                    if l_l_PizzaDeliveryRig_0_Children_0[1] then
+                                        v92 = (l_PizzaDeliveryRig_0:IsA("Folder") and l_PizzaDeliveryRig_0:GetChildren()[math.random(#l_PizzaDeliveryRig_0:GetChildren())] or l_PizzaDeliveryRig_0):Clone();
+                                    else
+                                        break;
+                                    end;
+                                end;
+                                v81 = v92.Name;
+                            end;
+                            v92:SetAttribute("Team", "Killers");
+                            v92.PrimaryPart.Anchored = true;
+                            v3:FixCharacter(v92, "Killers");
+                            v3:AddHitboxes(v92, "Killers");
+                            local l_Humanoid_0 = v92.Humanoid;
+                            l_Humanoid_0.WalkSpeed = v76.Config.PizzaDeliveryGuySpeed;
+                            l_Humanoid_0.MaxHealth = v76.Config.PizzaDeliveryGuyHealth;
+                            l_Humanoid_0.Health = v76.Config.PizzaDeliveryGuyHealth;
+                            l_Humanoid_0.StateChanged:Connect(function(_, _) --[[ Line: 510 ]]
+                                -- upvalues: l_Humanoid_0 (copy)
+                                l_Humanoid_0.PlatformStand = false;
+                                l_Humanoid_0:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false);
+                                l_Humanoid_0:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false);
+                                l_Humanoid_0:ChangeState(Enum.HumanoidStateType.GettingUp);
+                            end);
+                            local v97 = v2:Play(v76.Config.Sounds.PizzaDeliveryMinionIdle, {
+                                Parent = v92.PrimaryPart,
+                                Looped = true,
+                                Volume = 0
+                            });
+                            game.TweenService:Create(v97, TweenInfo.new(1.75), {
+                                RollOffMaxDistance = 115
+                            }):Play();
+                            local v98 = false;
+                            do
+                                local l_v92_0, l_v98_0 = v92, v98;
+                                local _ = function(v101) --[[ Line: 523 ]] --[[ Name: removeRigAfter ]]
+                                    -- upvalues: l_v98_0 (ref), v97 (copy), l_v92_0 (ref)
+                                    task.delay(v101 - 1, function() --[[ Line: 524 ]]
+                                        -- upvalues: l_v98_0 (ref), v97 (ref), l_v92_0 (ref)
+                                        if not l_v98_0 then
+                                            l_v98_0 = true;
+                                            if v97 and v97.Parent then
+                                                game.TweenService:Create(v97, TweenInfo.new(0.8), {
+                                                    PlaybackSpeed = 0
+                                                }):Play();
+                                            end;
+                                            game.Debris:AddItem(l_v92_0, 1);
+                                            for _, v103 in pairs(l_v92_0:GetDescendants()) do
+                                                if v103:IsA("BasePart") or v103:IsA("Decal") then
+                                                    game.TweenService:Create(v103, TweenInfo.new(1), {
+                                                        Transparency = 1
+                                                    }):Play();
+                                                end;
+                                            end;
+                                        end;
+                                    end);
+                                end;
+                                local l_PizzaDeliveryGuyLifetime_0 = v76.Config.PizzaDeliveryGuyLifetime;
+                                task.delay(l_PizzaDeliveryGuyLifetime_0 - 1, function() --[[ Line: 524 ]]
+                                    -- upvalues: l_v98_0 (ref), v97 (copy), l_v92_0 (ref)
+                                    if not l_v98_0 then
+                                        l_v98_0 = true;
+                                        if v97 and v97.Parent then
+                                            game.TweenService:Create(v97, TweenInfo.new(0.8), {
+                                                PlaybackSpeed = 0
+                                            }):Play();
+                                        end;
+                                        game.Debris:AddItem(l_v92_0, 1);
+                                        for _, v107 in pairs(l_v92_0:GetDescendants()) do
+                                            if v107:IsA("BasePart") or v107:IsA("Decal") then
+                                                game.TweenService:Create(v107, TweenInfo.new(1), {
+                                                    Transparency = 1
+                                                }):Play();
+                                            end;
+                                        end;
+                                    end;
+                                end);
+                                game.Debris:AddItem(l_v92_0, v76.Config.PizzaDeliveryGuyLifetime);
+                                l_PizzaDeliveryGuyLifetime_0 = workspace.Map.Ingame;
+                                l_v92_0.Parent = l_PizzaDeliveryGuyLifetime_0;
+                                l_PizzaDeliveryGuyLifetime_0 = {};
+                                local l_pairs_0 = pairs;
+                                local v109 = v76.Config.PizzaDeliverySpecificAnimations[l_v92_0.Name] or v76.Config.PizzaDeliveryAnimations;
+                                for v110, v111 in l_pairs_0(v109) do
+                                    l_PizzaDeliveryGuyLifetime_0[v110] = v3:LoadAnimationFromID(l_v92_0, v111, false);
+                                end;
+                                l_PizzaDeliveryGuyLifetime_0.Idle:Play();
+                                l_PizzaDeliveryGuyLifetime_0.Summoned:Play(0);
+                                local v112 = v76.Rig.PrimaryPart.CFrame * CFrame.new(v87 % 2 == 0 and 6 or -6, 0, 0);
+                                l_v92_0:SetPrimaryPartCFrame(v112);
+                                l_v92_0.Humanoid.Died:Once(function() --[[ Line: 558 ]]
+                                    -- upvalues: v97 (copy), v2 (ref), v76 (ref), l_v92_0 (ref)
+                                    v97:Destroy();
+                                    v2:Play(v76.Config.Sounds.PizzaDeliveryMinionDeath, {
+                                        Parent = l_v92_0.PrimaryPart,
+                                        PlaybackSpeed = Random.new():NextNumber(0.9, 1.1)
+                                    });
+                                end);
+                                v2:Play(v76.Config.Sounds.PizzaDeliveryGuySpawned, {
+                                    Parent = v76.Rig.PrimaryPart
+                                });
+                                l_v92_0:AddTag("Ragdoll");
+                                v3:RevealPlayerAuraTo(v76.Player, l_v92_0, 600, Color3.new(0.666667, 0, 0));
+                                task.wait(0.75);
+                                task.delay(1.75, function() --[[ Line: 571 ]]
+                                    -- upvalues: l_v92_0 (ref), l_PizzaDeliveryGuyLifetime_0 (copy), l_Humanoid_0 (copy), v3 (ref), v86 (copy), v76 (ref), v2 (ref), l_v98_0 (ref), v97 (copy), v9 (ref), v5 (ref)
+                                    if not l_v92_0.PrimaryPart then
+                                        return;
+                                    else
+                                        l_v92_0.PrimaryPart.Anchored = false;
+                                        l_PizzaDeliveryGuyLifetime_0.Walk:Play();
+                                        local v113 = require(game.ReplicatedStorage.Modules.Actors);
+                                        local v114 = require(game.ReplicatedStorage.Modules.SimplePath).new(l_v92_0);
+                                        while task.wait() and l_v92_0.Parent and l_v92_0.PrimaryPart and l_Humanoid_0.Health > 0 do
+                                            local v115 = nil;
+                                            local v116 = 1e999;
+                                            for _, v118 in ipairs(workspace.Players.Survivors:GetChildren()) do
+                                                if v3:IsAlive(v118) and not v118:GetAttribute("BeingExecuted") and (#v3:GetAliveSurvivorCharacters() <= 1 or not v118:GetAttribute("Undetectable")) then
+                                                    local l_Magnitude_0 = (v118.PrimaryPart.Position - l_v92_0.PrimaryPart.Position).Magnitude;
+                                                    if l_Magnitude_0 < v116 then
+                                                        v115 = v118;
+                                                        v116 = l_Magnitude_0;
+                                                    end;
+                                                end;
+                                            end;
+                                            local v120 = v115 and v115.PrimaryPart and v86(v115, workspace.Players:GetChildren());
+                                            local v121 = v115 and game.Players:GetPlayerFromCharacter(v115);
+                                            local v122 = v121 and v113.CurrentActors[v121];
+                                            if v76.Rig.Parent and v116 and v116 < v76.Config.PizzaDeliveryGuyAttackRadius then
+                                                require(game.ReplicatedStorage.Modules.Ragdolls).AddProfile(v115, {
+                                                    Velocity = (v115.PrimaryPart.Position - l_v92_0.PrimaryPart.Position).Unit * 30
+                                                });
+                                                v2:Play(v76.Config.Sounds.PizzaDeliveryMinionHit, {
+                                                    Parent = l_v92_0.PrimaryPart
+                                                });
+                                                task.delay(1, function() --[[ Line: 524 ]]
+                                                    -- upvalues: l_v98_0 (ref), v97 (ref), l_v92_0 (ref)
+                                                    if not l_v98_0 then
+                                                        l_v98_0 = true;
+                                                        if v97 and v97.Parent then
+                                                            game.TweenService:Create(v97, TweenInfo.new(0.8), {
+                                                                PlaybackSpeed = 0
+                                                            }):Play();
+                                                        end;
+                                                        game.Debris:AddItem(l_v92_0, 1);
+                                                        for _, v124 in pairs(l_v92_0:GetDescendants()) do
+                                                            if v124:IsA("BasePart") or v124:IsA("Decal") then
+                                                                game.TweenService:Create(v124, TweenInfo.new(1), {
+                                                                    Transparency = 1
+                                                                }):Play();
+                                                            end;
+                                                        end;
+                                                    end;
+                                                end);
+                                                l_PizzaDeliveryGuyLifetime_0.Walk:Stop(0);
+                                                l_PizzaDeliveryGuyLifetime_0.Hit:Play(0);
+                                                v3:ApplyDamage(v115, v76.Config.PizzaDeliveryGuyDamage, nil, v76.Rig);
+                                                if v115.Name == "Elliot" and not v3:IsAlive(v115) then
+                                                    v9:IncrementAchievementProgress(v76.Player, "c00lkiddPizzaMinion");
+                                                end;
+                                                v3:RevealPlayerAuraTo(v76.Player, v115, 7.5);
+                                                local v125 = ("%*/MinionHit"):format(script.Parent);
+                                                local l_v76_0 = v76;
+                                                local l_pcall_4 = pcall;
+                                                local v128 = "MinionHit";
+                                                local v129;
+                                                l_pcall_4, v129 = l_pcall_4(function() --[[ Line: 16 ]]
+                                                    -- upvalues: l_v76_0 (copy), v128 (copy)
+                                                    if l_v76_0.Behavior[v128] then
+                                                        l_v76_0.Behavior[v128](l_v76_0);
+                                                    end;
+                                                end);
+                                                if not l_pcall_4 then
+                                                    warn((("[%*]: Failed to call .MinionHit() due to: %*"):format(v125, v129)));
+                                                end;
+                                                v5:ApplyStatus(v115, "Burning", {
+                                                    Level = 1,
+                                                    Duration = 3
+                                                });
+                                                v5:ApplyStatus(v115, "Slowness", {
+                                                    Level = 2,
+                                                    Duration = 3
+                                                });
+                                                v2:PlayVoiceline(v76, "PizzaDeliveryHit", {
+                                                    Priority = 0,
+                                                    Chance = 1
+                                                });
+                                                if tostring(v115.Parent) == "Survivors" then
+                                                    require(game.ReplicatedStorage.Modules.Actors):IncrementActorStats(v76.Player, {
+                                                        Action = "A pizza delivery minion attacked a Survivor",
+                                                        RewardType = "EasyKillerAction"
+                                                    });
+                                                end;
+                                                if v122 and v122.Behavior then
+                                                    v122.Behavior.AILastSeen = nil;
+                                                    break;
+                                                else
+                                                    break;
+                                                end;
+                                            elseif v76.Rig.Parent and v120 then
+                                                local l_PrimaryPart_1 = l_v92_0.PrimaryPart;
+                                                if l_PrimaryPart_1 then
+                                                    if v114:Run(v120) then
+                                                        if v122 and v122.Behavior then
+                                                            v122.Behavior.AILastSeen = os.clock();
+                                                        end;
+                                                        if (l_PrimaryPart_1.Position - v120).Magnitude > v76.Config.PizzaDeliveryRange then
+                                                            l_v92_0.Humanoid.WalkSpeed = v76.Config.PizzaDeliveryOutOfRangeSpeed;
+                                                        else
+                                                            l_v92_0.Humanoid.WalkSpeed = v76.Config.PizzaDeliveryGuySpeed;
+                                                        end;
+                                                    end;
+                                                else
+                                                    break;
+                                                end;
+                                            else
+                                                task.delay(1, function() --[[ Line: 524 ]]
+                                                    -- upvalues: l_v98_0 (ref), v97 (ref), l_v92_0 (ref)
+                                                    if not l_v98_0 then
+                                                        l_v98_0 = true;
+                                                        if v97 and v97.Parent then
+                                                            game.TweenService:Create(v97, TweenInfo.new(0.8), {
+                                                                PlaybackSpeed = 0
+                                                            }):Play();
+                                                        end;
+                                                        game.Debris:AddItem(l_v92_0, 1);
+                                                        for _, v132 in pairs(l_v92_0:GetDescendants()) do
+                                                            if v132:IsA("BasePart") or v132:IsA("Decal") then
+                                                                game.TweenService:Create(v132, TweenInfo.new(1), {
+                                                                    Transparency = 1
+                                                                }):Play();
+                                                            end;
+                                                        end;
+                                                    end;
+                                                end);
+                                                l_Humanoid_0.WalkSpeed = 0;
+                                                l_PizzaDeliveryGuyLifetime_0.Walk:Stop(0);
+                                                break;
+                                            end;
+                                        end;
+                                        if v114 and v114.Destroy then
+                                            v114:Destroy();
+                                        end;
+                                        return;
+                                    end;
+                                end);
+                            end;
+                        end;
+                    end;
+                end);
+                task.delay(3, function() --[[ Line: 672 ]]
+                    -- upvalues: v76 (copy)
+                    v76.AbilitiesDisabled = false;
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v76.Animations.SummonPizzaDelivery:Play(0.025);
+                    local l_v3_SpeedMultiplier_1 = v3:CreateSpeedMultiplier(v76.Player, 0, "HinderedMovement");
+                    task.delay(2.5, function() --[[ Line: 683 ]]
+                        -- upvalues: l_v3_SpeedMultiplier_1 (copy)
+                        game.TweenService:Create(l_v3_SpeedMultiplier_1, TweenInfo.new(0.5), {
+                            Value = 1
+                        }):Play();
+                        game.Debris:AddItem(l_v3_SpeedMultiplier_1, 0.5);
+                    end);
+                end;
+                return;
+            end;
+        end
+    }
+};
+v1.Created = function(_, v135) --[[ Line: 693 ]] --[[ Name: Created ]]
+    -- upvalues: v3 (copy)
+    local v136 = {};
+    for _, v138 in v135.Config.PizzaDeliveryAnimations do
+        table.insert(v136, v138);
+    end;
+    for _, v140 in v135.Config.PizzaDeliverySpecificAnimations do
+        for _, v142 in v140 do
+            table.insert(v136, v142);
+        end;
+    end;
+    task.spawn(v3.PreloadAssets, v3, v136);
+end;
+v1.OnIntroduction = function(_, v144, v145, v146) --[[ Line: 709 ]] --[[ Name: OnIntroduction ]]
+    task.spawn(function() --[[ Line: 710 ]]
+        -- upvalues: v145 (copy)
+        local v147 = v145:WaitForChild("firebrand", 20);
+        if v147 then
+            v147.Transparency = 0;
+        end;
+    end);
+    local v148 = nil;
+    task.delay(0.5, function() --[[ Line: 718 ]]
+        -- upvalues: v148 (ref)
+        v148 = game.Lighting.ClockTime;
+        game.TweenService:Create(game.Lighting, TweenInfo.new(0.75), {
+            ClockTime = 0
+        }):Play();
+    end);
+    task.delay(1.5, function() --[[ Line: 723 ]]
+        -- upvalues: v144 (copy), v148 (ref), v146 (copy)
+        local v149 = v144.Config.IntroSky:Clone();
+        v149.Parent = game.Lighting;
+        game.TweenService:Create(game.Lighting, TweenInfo.new(1.5), {
+            ClockTime = v148 or 12
+        }):Play();
+        game.Debris:AddItem(v149, v146 - 1.5);
+    end);
+end;
+v1.OnVictory = function(_, v151, v152, _, v154) --[[ Line: 731 ]] --[[ Name: OnVictory ]]
+    -- upvalues: v7 (copy), l_RunService_0 (copy)
+    if v151 == "Start" then
+        v7:SetCustomLighting(v152.Config.OutroLighting);
+        local _ = os.clock();
+        game.Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", true);
+        local v156 = l_RunService_0.RenderStepped:Connect(function() --[[ Line: 740 ]]
+            workspace.CurrentCamera.FieldOfView = 25;
+        end);
+        task.delay(v154, function() --[[ Line: 744 ]]
+            -- upvalues: v156 (copy)
+            v156:Disconnect();
+        end);
+        task.spawn(function() --[[ Line: 749 ]]
+            -- upvalues: v152 (copy), v154 (copy), l_RunService_0 (ref)
+            local v157 = v152.Config.IntroSky:Clone();
+            v157.Parent = game.Lighting;
+            game.Debris:AddItem(v157, v154 - 1.5);
+            local v158 = workspace.Misc:WaitForChild("KillerCutsceneBackground", 3);
+            if v158 then
+                local v159 = nil;
+                do
+                    local l_v159_0 = v159;
+                    l_v159_0 = l_RunService_0.RenderStepped:Connect(function(v161) --[[ Line: 757 ]]
+                        -- upvalues: v158 (copy), l_v159_0 (ref)
+                        if not v158 or not v158.Parent or not v158:FindFirstChild("People") then
+                            l_v159_0:Disconnect();
+                            return;
+                        else
+                            for v162, v163 in pairs(v158.People:GetChildren()) do
+                                local l_PrimaryPart_2 = v163.PrimaryPart;
+                                l_PrimaryPart_2.CFrame = l_PrimaryPart_2.CFrame * CFrame.Angles(0, v161 * (v162 % 2 == 0 and 2.25 or -2.25), 0);
+                            end;
+                            task.wait();
+                            return;
+                        end;
+                    end);
+                    task.delay(v154, l_v159_0.Disconnect, l_v159_0);
+                end;
+            end;
+        end);
+        return;
+    else
+        if v151 == "End" then
+            game.Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", false);
+            game.Players.LocalPlayer:SetAttribute("FOVMultipliersDisabled", nil);
+            v7:SetAsCurrentLighting();
+        end;
+        return;
+    end;
+end;
+v1.OnExecution = function(_, v166, v167) --[[ Line: 779 ]] --[[ Name: OnExecution ]]
+    local v168 = false;
+    if v167.Name == "007n7" then
+        v168 = v166.Rig.PrimaryPart.CFrame * CFrame.new(3, -2.75, 2.25) * CFrame.Angles(1.5707963267948966, 0, -0.3490658503988659);
+    end;
+    local v169 = v167.Name == "007n7" and Vector3.new() or (v166.Rig.PrimaryPart.CFrame * CFrame.new(5, 0.5, 1)).LookVector.Unit * 200;
+    local v170 = v167.Name == "007n7" and 3.6 or 3.5;
+    local v171 = require(game.ReplicatedStorage.Modules.Ragdolls);
+    task.delay(2.1, function() --[[ Line: 789 ]]
+        -- upvalues: v171 (copy), v167 (copy), v169 (copy)
+        v171.AddProfile(v167, {
+            AnchorDelay = true,
+            Applied = os.clock() + 5,
+            Velocity = v169
+        });
+        local l_Humanoid_1 = v167:FindFirstChild("Humanoid");
+        if l_Humanoid_1 then
+            l_Humanoid_1.BreakJointsOnDeath = false;
+            l_Humanoid_1.Health = 0;
+        end;
+    end);
+    task.delay(v170, function() --[[ Line: 798 ]]
+        -- upvalues: v167 (copy)
+        if v167 and v167.PrimaryPart then
+            v167.PrimaryPart.Anchored = false;
+        end;
+    end);
+end;
+return v1;
+]====]},
+{path=[====[
+ServerStorage/Assets/Survivors/Chance/Behavior]====],before="28813:ef2dc65e:1a62bd35",after="28774:ddedd2a6:700a75a5",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local v0 = {};
+local v1 = {
+    InvalidShotArg = "\n\nForsakenCheatKiller 777:\nYou Lose!\n"
+};
+local l_ReplicatedStorage_0 = game:GetService("ReplicatedStorage");
+local l_RunService_0 = game:GetService("RunService");
+local v4 = require(l_ReplicatedStorage_0.Modules.Actors);
+local v5 = require(l_ReplicatedStorage_0.Modules.Sounds);
+local v6 = require(l_ReplicatedStorage_0.Modules.Util);
+local v7 = require(l_ReplicatedStorage_0.Modules.Hitboxes);
+local v8 = require(l_ReplicatedStorage_0.Modules.Statuses);
+local v9 = require(l_ReplicatedStorage_0.Modules.AchievementUtil);
+local v10 = require(l_ReplicatedStorage_0.Modules.Network);
+local function _(v11) --[[ Line: 17 ]] --[[ Name: coinflip ]]
+    local v12 = Random.new():NextNumber(0, 1) <= 0.5 + v11.CoinPity / 100;
+    if v12 then
+        v11.CoinPity = 0;
+        return v12;
+    else
+        v11.CoinPity = v11.CoinPity + v11.Config.CoinFlipPity;
+        return v12;
+    end;
+end;
+local function _(v14) --[[ Line: 31 ]] --[[ Name: validateVectorUnit ]]
+    if v14 ~= v14 then
+        return false;
+    else
+        return v14;
+    end;
+end;
+local function v20(v16, v17) --[[ Line: 37 ]] --[[ Name: updatePityDisplay ]]
+    local l_AbilityContainer_0 = v16.Player.PlayerGui.MainUI:FindFirstChild("AbilityContainer");
+    local v19 = l_AbilityContainer_0 and l_AbilityContainer_0:FindFirstChild("CoinFlip");
+    if not v19 then
+        return;
+    elseif v16.CoinPity > 0 then
+        v19.Charges.Text = string.format("+%.1f%%", v16.CoinPity);
+        if v17 then
+            v19.Charges.TextColor3 = Color3.new(1, 0, 0);
+            game.TweenService:Create(v19.Charges, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                TextColor3 = Color3.new(1, 1, 1)
+            }):Play();
+            return;
+        else
+            v19.Charges.TextColor3 = Color3.new(1, 1, 1);
+            return;
+        end;
+    else
+        v19.Charges.Text = "";
+        return;
+    end;
+end;
+local function v25(v21, v22, ...) --[[ Line: 70 ]] --[[ Name: __pcallMethod ]]
+    assert(v21, "bad moduleInfo, must be a table");
+    local l_status_0, l_result_0 = pcall(function(...) --[[ Line: 73 ]]
+        -- upvalues: v21 (copy), v22 (copy)
+        if v21[v22] then
+            return v21[v22](...);
+        else
+            return;
+        end;
+    end, ...);
+    if not l_status_0 then
+        warn((("Failed to call :%*() due to: %*"):format(v22, l_result_0)));
+    end;
+    return l_status_0, l_result_0;
+end;
+v0.Created = function(_, v27) --[[ Line: 84 ]] --[[ Name: Created ]]
+    -- upvalues: v10 (copy), v1 (copy), v4 (copy), v20 (copy)
+    if game["Run Service"]:IsServer() then
+        v27.Rig.Humanoid.MaxHealth = math.random(70, 90);
+        v27.Rig.Humanoid.Health = v27.Rig.Humanoid.MaxHealth;
+        v27.ShotBuffer = 0;
+        v27.CoinPity = 0;
+        v10:SetConnection(v27.Player.Name .. "ChanceFireShot", "REMOTE_EVENT", function(v28, ...) --[[ Line: 92 ]]
+            -- upvalues: v27 (copy), v1 (ref), v4 (ref)
+            if v28 ~= v27.Player then
+                v28:Kick(v1.InvalidShotArg);
+                return;
+            else
+                local v29 = v4.CurrentActors[v28];
+                if v29 and v29.Behavior and v29.Behavior.FireShot then
+                    v29.Behavior.FireShot(v29, ...);
+                end;
+                return;
+            end;
+        end);
+        return;
+    else
+        if game["Run Service"]:IsClient() then
+            v10:SetConnection(("%*ChancePityUpdate"):format(v27.Player.Name), "REMOTE_EVENT", function(v30, v31) --[[ Line: 104 ]]
+                -- upvalues: v27 (copy), v20 (ref)
+                v27.CoinPity = v30;
+                v20(v27, v31);
+            end);
+        end;
+        return;
+    end;
+end;
+v0.Destroyed = function(_, v33) --[[ Line: 111 ]] --[[ Name: Destroyed ]]
+    -- upvalues: v10 (copy)
+    if game["Run Service"]:IsServer() then
+        v10:RemoveConnection(v33.Player.Name .. "ChanceFireShot", "REMOTE_EVENT");
+        return;
+    else
+        if game["Run Service"]:IsClient() then
+            v10:RemoveConnection(("%*ChancePityUpdate"):format(v33.Player.Name), "REMOTE_EVENT");
+        end;
+        return;
+    end;
+end;
+v0.FireShot = function(v34, v35) --[[ Line: 120 ]] --[[ Name: FireShot ]]
+    -- upvalues: l_RunService_0 (copy), v1 (copy), v7 (copy), v8 (copy), v5 (copy), v4 (copy), v9 (copy)
+    assert(l_RunService_0:IsServer() and v34 and v34.Player, "what are you doing");
+    local _ = v35 * Vector3.new(1, 0, 1, 0);
+    local l_Player_0 = v34.Player;
+    if v34 and v34.ShotBuffer and v34.ShotBuffer > 0 and v35 then
+        local l_Unit_0 = v35.Unit;
+        if l_Unit_0 == l_Unit_0 and l_Unit_0 then
+            v34.ShotBuffer = v34.ShotBuffer - 1;
+            local l_PrimaryPart_0 = v34.Rig.PrimaryPart;
+            l_Unit_0 = 0;
+            local _ = v7:CreateHitbox(v34.Player, {
+                Size = Vector3.new(v34.Config.ShootHitboxSize, v34.Config.ShootHitboxSize, v34.Config.ShootHitboxRange),
+                CFrameOffset = CFrame.new(0, 0, -v34.Config.ShootHitboxRange / 2),
+                Damage = v34.Config.ShootDamage,
+                Time = 0.005,
+                HitMultiple = true,
+                Knockback = v34.Config.ShootKnockback,
+                Connections = {
+                    Hit = function(v40) --[[ Line: 150 ]] --[[ Name: Hit ]]
+                        -- upvalues: l_PrimaryPart_0 (copy), v34 (copy), v8 (ref), v5 (ref), v4 (ref), v9 (ref), l_Unit_0 (ref)
+                        local l_PrimaryPart_1 = v40.PrimaryPart;
+                        if l_PrimaryPart_1 then
+                            local v42 = (l_PrimaryPart_0.Position - l_PrimaryPart_1.Position).Magnitude / v34.Config.ShootHitboxRange;
+                            local function _(v43, v44, v45) --[[ Line: 156 ]] --[[ Name: getValue ]]
+                                return v43 + (v44 - v43) * (1 - math.clamp(v45, 0, 1));
+                            end;
+                            local l_ShootMinKnockback_0 = v34.Config.ShootMinKnockback;
+                            local _ = l_ShootMinKnockback_0 + (v34.Config.ShootMaxKnockback - l_ShootMinKnockback_0) * (1 - math.clamp(v42, 0, 1));
+                            local l_ShootMinStunDuration_0 = v34.Config.ShootMinStunDuration;
+                            l_ShootMinKnockback_0 = l_ShootMinStunDuration_0 + (v34.Config.ShootMaxStunDuration - l_ShootMinStunDuration_0) * (1 - math.clamp(v42, 0, 1));
+                            if l_ShootMinKnockback_0 > 1 then
+                                v8:ApplyStatus(v40, "Stunned", {
+                                    Duration = l_ShootMinKnockback_0
+                                });
+                            end;
+                            v5:Play(v34.Config.Sounds.GunHitSFX, {
+                                Parent = l_PrimaryPart_1,
+                                Volume = 0.3
+                            });
+                            if tostring(v40.Parent) == "Killers" then
+                                v4:IncrementActorStats(v34.Player, {
+                                    Action = "Shot the Killer",
+                                    RewardType = "Offensive"
+                                });
+                            end;
+                            if v34.TimeSinceLastHeads and os.clock() <= v34.TimeSinceLastHeads + 10 then
+                                v9:IncrementAchievementProgress(v34.Player, "ChanceReference");
+                            end;
+                            l_Unit_0 = l_Unit_0 + 1;
+                            if l_Unit_0 >= 3 then
+                                v9:IncrementAchievementProgress(v34.Player, "ChanceMomGetTheCamera");
+                            end;
+                        end;
+                    end
+                }
+            });
+            return;
+        end;
+    end;
+    l_Player_0:Kick(v1.InvalidShotArg);
+end;
+v0.Abilities = {
+    CoinFlip = {
+        LayoutOrder = 1,
+        KeybindType = "AltAbility1",
+        Icon = "rbxassetid://91225744028483",
+        Callback = function(v51, v52) --[[ Line: 201 ]] --[[ Name: Callback ]]
+            -- upvalues: v5 (copy), v9 (copy), v8 (copy), v10 (copy)
+            if game["Run Service"]:IsServer() then
+                v51.AbilitiesDisabled = true;
+                v51:ChangeExpression("Gambling");
+                v51:PlayVoiceline("FlipCoin", {
+                    Priority = 4
+                });
+                task.delay(1.75, function() --[[ Line: 209 ]]
+                    -- upvalues: v51 (copy)
+                    v51.AbilitiesDisabled = false;
+                end);
+                task.delay(0.1, function() --[[ Line: 214 ]]
+                    -- upvalues: v51 (copy)
+                    if not v51.Rig.Parent then
+                        return;
+                    else
+                        v51.Rig.Coin.Transparency = 0;
+                        for _, v54 in (v51.Rig.Coin:GetChildren()) do
+                            if v54:IsA("Decal") then
+                                v54.Transparency = 0;
+                            end;
+                        end;
+                        return;
+                    end;
+                end);
+                task.delay(1.375, function() --[[ Line: 230 ]]
+                    -- upvalues: v51 (copy)
+                    if not v51.Rig.Parent then
+                        return;
+                    else
+                        v51.Rig.Coin.Transparency = 1;
+                        for _, v56 in (v51.Rig.Coin:GetChildren()) do
+                            if v56:IsA("Decal") then
+                                v56.Transparency = 1;
+                            end;
+                        end;
+                        return;
+                    end;
+                end);
+                local v57 = Random.new():NextNumber(0, 1) <= 0.5 + v51.CoinPity / 100;
+                if v57 then
+                    v51.CoinPity = 0;
+                else
+                    v51.CoinPity = v51.CoinPity + v51.Config.CoinFlipPity;
+                end;
+                local l_v57_0 = v57;
+                if not v51.Charges then
+                    v51.Charges = 0;
+                end;
+                if not v51.WeaknessLevel then
+                    v51.WeaknessLevel = 0;
+                end;
+                if not v51.HeadsInARow then
+                    v51.HeadsInARow = 0;
+                end;
+                local l_PrimaryPart_2 = v51.Rig.PrimaryPart;
+                v5:Play(v51.Config.Sounds.FlipCoinSFX, {
+                    Parent = l_PrimaryPart_2
+                });
+                task.delay(1.15, function() --[[ Line: 257 ]]
+                    -- upvalues: l_v57_0 (copy), v51 (copy), v5 (ref), l_PrimaryPart_2 (copy), v9 (ref), v8 (ref), v10 (ref)
+                    if l_v57_0 then
+                        v51.TimeSinceLastHeads = os.clock();
+                        local l_v51_0 = v51;
+                        l_v51_0.HeadsInARow = l_v51_0.HeadsInARow + 1;
+                        v51.Charges = math.clamp(v51.Charges + 1, 0, 3);
+                        v51:ChangeExpression("Happy", 1.5);
+                        v51:IncrementCharges("Reroll", 1, 3);
+                        v51:PlayVoiceline("Heads", {
+                            Priority = 4
+                        });
+                        v5:Play(v51.Config.Sounds.FlipCoinHeadsSFX, {
+                            Parent = l_PrimaryPart_2
+                        });
+                        if v51.Charges >= 3 then
+                            v51:IncrementCharges("HatFix", 1, 1);
+                        end;
+                        if not v51.GunDisabled then
+                            v51:IncrementCharges("Shoot", 1, 3);
+                        end;
+                        if v51.HeadsInARow >= 5 then
+                            v9:IncrementAchievementProgress(v51.Player, "ChanceTime");
+                        end;
+                    else
+                        v51.HeadsInARow = 0;
+                        local l_v51_1 = v51;
+                        l_v51_1.WeaknessLevel = l_v51_1.WeaknessLevel + 1;
+                        v51:ChangeExpression("Sad", 1.5);
+                        v8:ApplyStatus(v51.Player, "Vulnerable", {
+                            Level = v51.WeaknessLevel,
+                            Duration = v51.Config.CoinFlipWeaknessDuration
+                        });
+                        v51:PlayVoiceline("Tails", {
+                            Priority = 4
+                        });
+                        v5:Play(v51.Config.Sounds.FlipCoinTailsSFX, {
+                            Parent = l_PrimaryPart_2
+                        });
+                        if v51.WeaknessLevel >= 50 then
+                            v9:IncrementAchievementProgress(v51.Player, "ChanceWeakness");
+                        end;
+                    end;
+                    v10:FireClientConnection(v51.Player, ("%*ChancePityUpdate"):format(v51.Player.Name), "REMOTE_EVENT", v51.CoinPity, not l_v57_0);
+                end);
+                return l_v57_0;
+            else
+                if game["Run Service"]:IsClient() then
+                    if v52 == "SUPERLUCKY" then
+                        v51.Animations.FlipCoinHeads:Play(0.05);
+                        return;
+                    elseif v52 then
+                        v51.Animations.FlipCoinHeads:Play(0.05);
+                        return;
+                    else
+                        v51.Animations.FlipCoinTails:Play(0.05);
+                    end;
+                end;
+                return;
+            end;
+        end
+    },
+    Shoot = {
+        Name = "One Shot",
+        LayoutOrder = 2,
+        KeybindType = "AltAbility2",
+        Icon = "rbxassetid://78498256535383",
+        Charges = 0,
+        Callback = function(v62, v63) --[[ Line: 310 ]] --[[ Name: Callback ]]
+            -- upvalues: v25 (copy), v5 (copy), v7 (copy), v8 (copy), v9 (copy), v4 (copy), v6 (copy), v10 (copy)
+            if game["Run Service"]:IsServer() then
+                v62.AbilitiesDisabled = true;
+                v62:ChangeExpression("Gambling");
+                v25(v62.Behavior, "OnRolledOutcome", v62.Behavior, v62);
+                task.delay(2.25, function() --[[ Line: 319 ]]
+                    -- upvalues: v62 (copy)
+                    v62.AbilitiesDisabled = false;
+                end);
+                task.delay(0.1, function() --[[ Line: 324 ]]
+                    -- upvalues: v62 (copy)
+                    for _, v65 in pairs(v62.Rig:GetDescendants()) do
+                        if v65:IsA("BasePart") and v65.Name:find("Flintlock") and not v62.Config.GunAlwaysVisible then
+                            v65.Transparency = 0;
+                        end;
+                    end;
+                end);
+                task.delay(v62.Config.FlintlockHideTime or 1.7, function() --[[ Line: 333 ]]
+                    -- upvalues: v62 (copy)
+                    for _, v67 in pairs(v62.Rig:GetDescendants()) do
+                        if v67:IsA("BasePart") and v67.Name:find("Flintlock") and not v62.Config.GunAlwaysVisible then
+                            v67.Transparency = 1;
+                        end;
+                    end;
+                end);
+                local v68 = {
+                    explode = 25,
+                    nothing = 25,
+                    shoot = 50
+                };
+                for _ = 2, tonumber(v62.Charges) or 0 do
+                    v68.explode = math.clamp(v68.explode - v62.Config.ShootLessFailureChancePerCharge, 0, 100);
+                    v68.nothing = math.clamp(v68.nothing - v62.Config.ShootLessFailureChancePerCharge, 0, 100);
+                    v68.shoot = math.clamp(v68.shoot + v62.Config.ShootSuccessChancePerCharge, 0, 100);
+                end;
+                local v70 = 0;
+                for _, v72 in pairs(v68) do
+                    v70 = v70 + v72;
+                end;
+                local v73 = "explode";
+                local v74 = 0;
+                local v75 = Random.new():NextNumber(0, v70);
+                for v76, v77 in pairs(v68) do
+                    v74 = v74 + v77;
+                    if v75 <= v74 then
+                        v73 = v76;
+                        break;
+                    end;
+                end;
+                v62.Charges = 0;
+                v62:IncrementCharges("Reroll", 0, 0);
+                v62:IncrementCharges("Shoot", 0, 0);
+                v62:IncrementCharges("HatFix", 0, 0);
+                local l_PrimaryPart_3 = v62.Rig.PrimaryPart;
+                v5:Play(v62.Config.Sounds.GunWindUpSFX, {
+                    Parent = l_PrimaryPart_3,
+                    Volume = 0.1
+                });
+                v62:PlayVoiceline("Aim", {
+                    Priority = 4
+                });
+                if v73 == "shoot" then
+                    v62.ShotBuffer = v62.ShotBuffer + 1;
+                end;
+                task.delay(0.9, function() --[[ Line: 406 ]]
+                    -- upvalues: l_PrimaryPart_3 (copy), v73 (ref), v62 (copy), v7 (ref), v8 (ref), v9 (ref), v4 (ref), v5 (ref), v6 (ref)
+                    if l_PrimaryPart_3.Anchored then
+                        return;
+                    else
+                        if v73 == "explode" then
+                            v62:ChangeExpression("Uhoh", 0.4);
+                            task.wait(0.4);
+                            v62:PlayVoiceline("ExplodeGun", {
+                                Priority = 4
+                            });
+                            if l_PrimaryPart_3.Anchored then
+                                return;
+                            else
+                                local _ = v7:CreateHitbox(v62.Player, {
+                                    Size = Vector3.new(10, 10, 10, 0),
+                                    CFrame = function() --[[ Line: 419 ]] --[[ Name: CFrame ]]
+                                        -- upvalues: l_PrimaryPart_3 (ref)
+                                        return l_PrimaryPart_3.CFrame;
+                                    end,
+                                    CFrameOffset = CFrame.new(0, 0, 0),
+                                    Damage = v62.Config.ShootDamage,
+                                    Shape = Enum.PartType.Ball,
+                                    Time = 0.005,
+                                    HitMultiple = true,
+                                    Knockback = function(v79) --[[ Line: 426 ]] --[[ Name: Knockback ]]
+                                        -- upvalues: l_PrimaryPart_3 (ref), v62 (ref)
+                                        local l_PrimaryPart_4 = v79.PrimaryPart;
+                                        if l_PrimaryPart_4 then
+                                            return (l_PrimaryPart_4.Position - l_PrimaryPart_3.Position).Unit * v62.Config.ShootExplosionKnockback;
+                                        else
+                                            return 0;
+                                        end;
+                                    end,
+                                    Connections = {
+                                        Hit = function(v81) --[[ Line: 437 ]] --[[ Name: Hit ]]
+                                            -- upvalues: v8 (ref), v62 (ref), v9 (ref), v4 (ref)
+                                            if v81.PrimaryPart then
+                                                v8:ApplyStatus(v81, "Stunned", {
+                                                    Duration = v62.Config.ShootExplosionStunDuration
+                                                });
+                                                v9:IncrementAchievementProgress(v62.Player, "ChanceKablam");
+                                                v4:IncrementActorStats(v62.Player, {
+                                                    Action = "Blew up the Killer",
+                                                    RewardType = "Offensive"
+                                                });
+                                            end;
+                                        end
+                                    }
+                                });
+                                v5:Play(v62.Config.Sounds.GunExplodeSFX, {
+                                    Parent = l_PrimaryPart_3,
+                                    Volume = 0.3
+                                });
+                                v6:ApplyDamage(v62.Rig, v62.Config.ShootSelfDamage);
+                                v62.GunDisabled = true;
+                                for _, v84 in pairs(v62.Rig:GetDescendants()) do
+                                    if v84:IsA("BasePart") and v84.Name:find("Flintlock") and not v62.Config.GunAlwaysVisible then
+                                        v84.Transparency = 1;
+                                    end;
+                                end;
+                                if v62.Rig.Humanoid.Health <= 0 then
+                                    v9:IncrementAchievementProgress(v62.Player, "ChanceDead");
+                                end;
+                            end;
+                        elseif v73 == "nothing" then
+                            v62:ChangeExpression("Sad", 1.5);
+                            v62:PlayVoiceline("GunFail", {
+                                Priority = 4
+                            });
+                            v4:IncrementActorStats(v62.Player, {
+                                Action = "You Tried",
+                                RewardType = "Survivalist"
+                            });
+                        elseif v73 == "shoot" then
+                            v62:ChangeExpression("Happy", 1.5);
+                            v5:Play(v62.Config.Sounds.GunFireSuccessSFX, {
+                                Parent = l_PrimaryPart_3,
+                                Volume = 0.3
+                            });
+                            v62:PlayVoiceline("ShootSuccess", {
+                                Priority = 4
+                            });
+                        end;
+                        if v73 ~= "nothing" then
+                            for _, v86 in pairs(v62.Rig:GetDescendants()) do
+                                if (v86:IsA("Light") or v86:IsA("ParticleEmitter")) and v86.Parent.Name == "Muzzle" then
+                                    task.spawn(function() --[[ Line: 490 ]]
+                                        -- upvalues: v86 (copy)
+                                        v86.Enabled = true;
+                                        task.wait(0.1);
+                                        v86.Enabled = false;
+                                    end);
+                                end;
+                            end;
+                        end;
+                        return;
+                    end;
+                end);
+                return {
+                    Outcome = v73
+                };
+            else
+                if game["Run Service"]:IsClient() then
+                    local l_Outcome_0 = v63.Outcome;
+                    local _ = v63.Sent;
+                    v62.Animations.AimGun:Play();
+                    v62.Animations.AimGun:AdjustSpeed(1);
+                    v10:FireConnection("DisableSprinting", "ShootingGun", true);
+                    local l_v6_SpeedMultiplier_0 = v6:CreateSpeedMultiplier(v62.Player, 0.3, "ShootingGun");
+                    task.delay(0.9, function() --[[ Line: 518 ]]
+                        -- upvalues: v10 (ref), l_v6_SpeedMultiplier_0 (copy), l_Outcome_0 (copy), v62 (copy), v6 (ref)
+                        task.delay(1.2, function() --[[ Line: 520 ]]
+                            -- upvalues: v10 (ref), l_v6_SpeedMultiplier_0 (ref)
+                            v10:FireConnection("DisableSprinting", "ShootingGun", nil);
+                            game.TweenService:Create(l_v6_SpeedMultiplier_0, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                                Value = 1
+                            }):Play();
+                            game.Debris:AddItem(l_v6_SpeedMultiplier_0, 1);
+                        end);
+                        if l_Outcome_0 == "explode" then
+                            v62.Animations.AimGun:AdjustSpeed(0);
+                            task.wait(0.4);
+                            v62.Animations.GunExplode:Play(0);
+                            v62.Animations.AimGun:Stop(0);
+                            v6:ApplyCameraShake(v62.Config.CameraShakeMagnitude, v62.Config.CameraShakeDuration);
+                            return;
+                        elseif l_Outcome_0 == "nothing" then
+                            v62.Animations.GunFail:Play(0);
+                            return;
+                        else
+                            if l_Outcome_0 == "shoot" then
+                                v62.Animations.GunFire:Play(0);
+                                v62.Animations.AimGun:Stop(0);
+                                v6:ApplyCameraShake(v62.Config.CameraShakeMagnitude, v62.Config.CameraShakeDuration);
+                                v10:FireServerConnection(v62.Player.Name .. "ChanceFireShot", "REMOTE_EVENT", v62.Rig.PrimaryPart.CFrame.LookVector);
+                            end;
+                            return;
+                        end;
+                    end);
+                end;
+                return;
+            end;
+        end
+    },
+    Reroll = {
+        LayoutOrder = 3,
+        KeybindType = "AltAbility3",
+        Icon = "rbxassetid://80029151869083",
+        Charges = 0,
+        Callback = function(v90, v91) --[[ Line: 555 ]] --[[ Name: Callback ]]
+            -- upvalues: v5 (copy)
+            if game["Run Service"]:IsServer() then
+                v90.AbilitiesDisabled = true;
+                task.delay(2, function() --[[ Line: 561 ]]
+                    -- upvalues: v90 (copy)
+                    v90.AbilitiesDisabled = false;
+                end);
+                local v92 = math.min(math.round(math.random(v90.Config.HealthMin, v90.Config.HealthMax) - v90.Config.RerollBasePenalty) * (math.max(0, v90.Charges - 1) * 0.05 + 1), v90.Config.HealthMax);
+                local l_PrimaryPart_5 = v90.Rig.PrimaryPart;
+                v5:Play(v90.Config.Sounds.StatRerollSFX, {
+                    Parent = l_PrimaryPart_5,
+                    Volume = 0.25
+                });
+                v90.Charges = 0;
+                v90:IncrementCharges("Reroll", 0, 0);
+                v90:IncrementCharges("Shoot", 0, 0);
+                v90:IncrementCharges("HatFix", 0, 0);
+                v90:ChangeExpression("Gambling", 1.5);
+                local l_Humanoid_0 = v90.Rig.Humanoid;
+                local v95 = l_Humanoid_0.Health / l_Humanoid_0.MaxHealth;
+                l_Humanoid_0.MaxHealth = v92;
+                l_Humanoid_0.Health = v92 * v95;
+                return v91;
+            else
+                if game["Run Service"]:IsClient() then
+
+                end;
+                return;
+            end;
+        end
+    },
+    HatFix = {
+        LayoutOrder = 4,
+        KeybindType = "AltAbility4",
+        Icon = "rbxassetid://93434599531478",
+        Charges = 0,
+        Callback = function(v96, _) --[[ Line: 609 ]] --[[ Name: Callback ]]
+            -- upvalues: v8 (copy), v10 (copy)
+            if game["Run Service"]:IsServer() then
+                v96.AbilitiesDisabled = true;
+                v96:PlayVoiceline("HatFix", {
+                    Priority = 4
+                });
+                task.delay(2, function() --[[ Line: 616 ]]
+                    -- upvalues: v96 (copy)
+                    v96.AbilitiesDisabled = false;
+                end);
+                task.delay(1, function() --[[ Line: 621 ]]
+                    -- upvalues: v96 (copy), v8 (ref), v10 (ref)
+                    v96.Charges = 0;
+                    v96.WeaknessLevel = 0;
+                    v96.GunDisabled = nil;
+                    v96:IncrementCharges("Reroll", 0, 0);
+                    v96:IncrementCharges("Shoot", 0, 0);
+                    v96:IncrementCharges("HatFix", 0, 0);
+                    v96:ChangeExpression("Gambling", 1.5);
+                    v8:RemoveStatus(v96.Player, "Vulnerable");
+                    v96.CoinPity = 0;
+                    v10:FireClientConnection(v96.Player, ("%*ChancePityUpdate"):format(v96.Player.Name), "REMOTE_EVENT", 0, false);
+                end);
+                return;
+            else
+                if game["Run Service"]:IsClient() then
+                    v96.Animations.HatFix:Play();
+                end;
+                return;
+            end;
+        end
+    }
+};
+return v0;
+]====]},
+{path=[====[
+ServerStorage/Assets/Survivors/Chance/Config]====],before="9978:90a36e83:c0a12e96",after="9882:f32e7089:5a3f7596",source=[====[
+-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
+
+local v0 = {
+    DisplayName = "Chance",
+    Quote = "\"99% of gamblers quit before they win big\"",
+    Credits = "",
+    Class = "Sentinel",
+    RenderImage = "rbxassetid://126924178701380",
+    Price = 777,
+    Speed = 12,
+    HealthMin = 65,
+    HealthMax = 130,
+    CoinFlipCooldown = 1.75,
+    CoinFlipWeaknessDuration = 15,
+    CoinFlipPity = 2.5,
+    GunAlwaysVisible = false,
+    ShootSuccessChancePerCharge = 20,
+    ShootLessFailureChancePerCharge = 10,
+    ShootStunDurationDebuffPerChanceAlive = 15,
+    ShootCooldown = 45,
+    ShootHitboxSize = 2.5,
+    ShootHitboxRange = 90,
+    ShootMaxStunDuration = 4,
+    ShootMinStunDuration = 1,
+    ShootMaxKnockback = 14,
+    ShootMinKnockback = 5,
+    ShootDamage = 50,
+    ShootKnockback = 3,
+    ShootExplosionKnockback = 25,
+    ShootExplosionStunDuration = 5,
+    ShootSelfDamage = 25,
+    CameraShakeMagnitude = 1.5,
+    CameraShakeDuration = 0.4,
+    RerollBasePenalty = 10,
+    RerollCooldown = 20,
+    RandomnessDifferencePerCharge = 3,
+    HatFixCooldown = 60,
+	Expressions = {
+		Happy = "rbxassetid://92225688434461",
+		Default = "rbxassetid://76254460000954",
+		Hurt = "rbxassetid://102172172675803",
+		Injured = "rbxassetid://83906964540493",
+		Dead = "rbxassetid://123735458751609",
+		Drinking = "rbxassetid://89448343694123",
+		Gambling = "rbxassetid://113790771759092",
+		Sad = "rbxassetid://132238504335731",
+		Uhoh = "rbxassetid://90106827583875"
+    },
+    Animations = {
+        FlipCoinHeads = "rbxassetid://113049523133974",
+        FlipCoinTails = "rbxassetid://113238245087870",
+        AimGun = "rbxassetid://130898730062374",
+        GunFire = "rbxassetid://98303778862384",
+        GunFail = "rbxassetid://80859169196524",
+        GunExplode = "rbxassetid://108665611403553",
+        HatFix = "rbxassetid://117170871416506"
+    },
+    Sounds = {
+        FlipCoinHeadsSFX = "rbxassetid://104239877200025",
+        FlipCoinTailsSFX = "rbxassetid://101120969540575",
+        FlipCoinSFX = "rbxassetid://76040750930413",
+        StatRerollSFX = "rbxassetid://83163547903343",
+        GunWindUpSFX = "rbxassetid://139526116364056",
+        GunFireSuccessSFX = "rbxassetid://114083139823568",
+        GunExplodeSFX = "rbxassetid://2814355346",
+        GunHitSFX = "rbxassetid://124324777507465"
+    },
+    TextInteractions = {
+        Requests = {
+            ElliotPizza = {
+                "Heyy! Can\226\128\153t a guy like me get some pizza \226\128\152round here?",
+                "Hey kid! Mind if I get a good slice of pizza?",
+                "Lady Luck\226\128\153s not on my side right now, mind if I get a slice as a good luck charm?",
+                "Some pizza should set me right back on my feet. Spare some, won\226\128\153tcha?",
+                "Your pizza\226\128\153s got something to it, kid! Hurry and throw one my way!"
+            },
+            BuildermanSentry = {
+                "Heya\226\128\153, a sentry over here could do some quick work on those nutjobs.",
+                "One sentry over here, Builder bro!",
+                "Soo.. a sentry here should be fine, don\226\128\153tcha think?",
+                "Right here\226\128\153s a good spot for a sentry!",
+                "Buildin\226\128\153 a sentry over here should be good!"
+            },
+            BuildermanDispenser = {
+                "Hey Doc\226\128\153, a dispenser over here should work wonders!",
+                "Work your dispenser over in this spot!",
+                "Dispenser over here! Quick!",
+                "I gotta use some of your dispensers here! Put \226\128\152er down!",
+                "Put your dispenser over here, Doc!"
+            },
+            DusekkarProtection = {
+                "Pumpkin fella\226\128\153, I could use some of your magic!",
+                "A little help over here with your magic?",
+                "That magical force field of yours would be nice to have, you know?",
+                "Your force field might keep me safe in case my flintlock explodes!",
+                "A force field would be useful right about now!"
+            },
+            HemmorhageAsk = {
+                "Wow, ahaha... I'm... bleeding. Could ya' help with that? Please? Pretty please?",
+                "Ah. I'm bleeding.. caaannn I ask for some help?",
+                "Bleeding! Hurts! A lot..! It sucks! Help me out here, bud...",
+                "Spare some help for a dying fella' over here? I'll repay the favor! Someday!",
+                "I really, really hate bleeding, don't you? Help out a dying person here bud..."
+            }
+        },
+        Thanks = {
+            Regular = {
+                "Heh, thanks pal!",
+                "You won\226\128\153t regret this one bit!",
+                "Glad to have received the help, pal!",
+                "Thanks! This should be useful.",
+                "Thanks! Now to get back to shootin\226\128\153.",
+                "Alright, thanks pal!"
+            }
+        }
+    }
+};
+v0.Information = {
+    {
+        Separator = "GENERAL INFO"
+    },
+    {
+        Header = "CHANCE",
+        Text = "The sounds of machines promising great rewards spiral within his ears. Gambling with his life, his potential lies inside of the result of his coin. He also wields a shoddy flintlock that feels like it could break at any moment, but it's one that he'll take to his death.\n"
+    },
+    {
+        Header = "STATS",
+        Text = "Difficulty: \240\159\142\176 \240\159\142\176 \240\159\142\176 never stop gambling\n" .. ("Health: %*-%*\n"):format(v0.HealthMin, v0.HealthMax) .. ("Regular Speed: %*\n"):format(v0.Speed or 12) .. ("Sprinting Speed: %*\n"):format(v0.SprintSpeed or 26) .. ("Max Stamina: %*\n"):format(v0.MaxStamina or 100) .. ("Stamina Loss per sec: %*\n"):format(v0.StaminaLoss or 10) .. ("Stamina Gain per sec: %*\n"):format(v0.StaminaGain or 20)
+    },
+    {
+        Separator = "PASSIVES"
+    },
+    {
+        Header = "UNPREDICTABLE FATE",
+        Quote = "\"TAKE A CHANCE WITH CHAAAANCE BABY\" - Chance",
+        Text = "Chance's Max HP stat is set to be a random value of 70-90.\n"
+    },
+    {
+        Separator = "ABILITIES"
+    },
+    {
+        Image = "rbxassetid://91225744028483",
+        Header = "COIN FLIP",
+        Quote = "\"I gambled with my LIFE\" - ???     \"did you win though\" - Chance",
+        Text = ("Cooldown: %*s\n"):format(v0.CoinFlipCooldown) .. "Chance flips a coin.\n" .. "If the coin lands on heads, gain a charge for all other abilities.\n" .. ("If the coin lands on tails, gain <b>Vulnerable</b> for %*s.\n"):format(v0.CoinFlipWeaknessDuration) .. "For every time the coin lands on tails, the level of <b>Vulnerable</b> that gets inflicted on you goes up by 1.\n" .. "<b>The Vulnerable that gets inflicted has no cap.</b>\n" .. ("Coin Flip gains +%*%% increased chance to land on heads for every consecutive tails, resetting when a heads is rolled.\n"):format(v0.CoinFlipPity)
+    },
+    {
+        Image = "rbxassetid://78498256535383",
+        Header = "ONE SHOT",
+        Quote = "\"You only have one shot.\" - Talking Cat",
+        Text = ("Cooldown: %*s\n"):format(v0.ShootCooldown) .. "Chance pulls out an unreliable flintlock, and after a windup of 1s, pulls the trigger.\n" .. "Upon the flintlock being triggered, all of the possible outcomes can occur:\n" .. "  * (25% chance) Nothing happens.\n" .. ("  * (25%% chance) The flintlock explodes, dealing %* damage to the user and generating a 6\195\1516\195\1516 hitbox around Chance that stuns the Killer for %* seconds, then disables the ability indefinitely.\n"):format(v0.ShootSelfDamage, v0.ShootExplosionStunDuration) .. ("  * (50%% chance) The flintlock fires, stunning any killer that gets shot at within %* studs for %*-%*s. The shot becomes less effective depending on how far away Chance is from the killer.\n"):format(v0.ShootHitboxRange, v0.ShootMinStunDuration, v0.ShootMaxStunDuration) .. ("For every additional charge that this ability has, the chance of a successful shot will go up by %*%% while every other outcome's chance will decrease by %*%%.\n"):format(v0.ShootSuccessChancePerCharge, v0.ShootLessFailureChancePerCharge) .. ("For every additional Chance that's ingame, the duration of the flintlock's stun is decreased by %*%%.\n"):format(v0.ShootStunDurationDebuffPerChanceAlive) .. "This ability starts off with 0 charges and has a cap of 3 charges.\n" .. "Using this ability removes all charges on every ability.\n"
+    },
+    {
+        Image = "rbxassetid://80029151869083",
+        Header = "REROLL",
+        Quote = "\"Just one more go at it and I'll be a millionaire!\" - A College Student in Debt",
+        Text = ("Cooldown: %*s\n"):format(v0.RerollCooldown) .. "Chance rerolls the value of his Max HP stat.\n" .. "Upon activation, a random number between 55 to 120 is chosen.\n" .. "For every charge this ability has, the rolled value is modified as follows:\n" .. "  * 1 charge: No bonus.\n" .. "  * 2 charges: Rolled HP is increased by 5%.\n" .. "  * 3 charges: Rolled HP is increased by 10%.\n" .. "This ability starts off with 0 charges and has a cap of 3 charges.\n" .. "Chance's Maximum HP is unable to go beyond 130 HP.\n" .. "Using this ability removes all charges on every ability.\n"
+    },
+    {
+        Image = "rbxassetid://93434599531478",
+        Header = "HAT FIX",
+        Quote = "\"This hat demonstrates good taste and exudes class.\" - Roblox",
+        Text = ("Cooldown: %*s\n"):format(v0.HatFixCooldown) .. "Upon activating this ability, all <b>Vulnerable</b> stacks that were inflicted onto you through using <b>Coin Flip</b> are removed.\n" .. "This ability can only be used after reaching 3 charges for all other abilities.\n" .. "Using this ability removes all charges on every ability & re-enables the <b>One Shot</b> ability if it's disabled.\n"
+    }
+};
+return v0;
+]====]},
+{path=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior]====],before="54705:72193444:2864d995",after="3856:c87e17c3:9441b782",source=[====[
+-- Newest UPD Two Time mechanics for FCT. Ability media deliberately omitted.
+local RunService=game:GetService("RunService")
+local Util=require(game.ReplicatedStorage.Modules.Util)
+local Impl=require(RunService:IsServer() and script.Server or script.Client)
+local Behavior={}
+local function ability(name,order,icon,key,extra)
+ local result={LayoutOrder=order,Icon="rbxassetid://"..icon,KeybindType=key}
+ for k,v in pairs(extra or {}) do result[k]=v end
+ result.Callback=function(actor,data)
+  if RunService:IsServer() then return Impl[name](actor) end
+  if Impl[name] then return Impl[name](actor,data) end
+ end
+ return result
+end
+Behavior.Abilities={
+ Dagger=ability("Dagger",1,"129077533212750","AltAbility1"),
+ Crouch=ability("Crouch",2,"77707049887484","AltAbility2"),
+ Pray=ability("Pray",3,"83582849559932","AltAbility3",{Cooldown=0,Sensitive=true}),
+ Ritual=ability("Ritual",4,"95580729656404","AltAbility4",{Cooldown=5,Charges=1})
+}
+Behavior.AddRig = function(_, v121, v122) --[[ Line: 612 ]] --[[ Name: AddRig ]]
+    -- upvalues: v4 (copy)
+    local v123 = v121.Config.LifeAppearances[v122];
+    if v123 then
+        if v123:IsA("Folder") then
+            v123 = v123:GetChildren()[math.random(#v123:GetChildren())];
+        end;
+        for _, v125 in pairs(v121.Rig:GetDescendants()) do
+            if (v125:IsA("BasePart") or v125:IsA("Decal")) and v125.Name ~= "Expression" and v125.Name ~= "CollisionHitbox" and v125.Name ~= "QueryHitbox" then
+                v125.Transparency = 1;
+            end;
+        end;
+        if v121.LastRig then
+            v121.LastRig:Destroy();
+            v121.LastRig = nil;
+        end;
+        local v126 = v123:Clone();
+        for _,item in v126:GetDescendants() do if item:IsA("Sound") then item:Destroy() end end
+        for _, v128 in pairs(v126:GetDescendants()) do
+            if v128:IsA("BasePart") then
+                v128.CollisionGroup = "Survivors";
+                v128.CanCollide = false;
+                v128.CanTouch = false;
+                v128.CanQuery = false;
+                v128.Massless = true;
+            end;
+        end;
+        for _, v130 in (v121.Rig:GetChildren()) do
+            if v130:IsA("BasePart") then
+                v130.RootPriority = 1;
+            end;
+        end;
+        for _, v132 in pairs(v126:GetChildren()) do
+            local l_FirstChild_1 = v121.Rig:FindFirstChild(v132.Name);
+            if l_FirstChild_1 then
+                if v132:IsA("Humanoid") then
+                    v132.EvaluateStateMachine = false;
+                end;
+                if l_FirstChild_1:IsA("BasePart") then
+                    v132.Anchored = false;
+                    v132.CanCollide = false;
+                    v132.CFrame = l_FirstChild_1.CFrame;
+                    local l_WeldConstraint_0 = Instance.new("WeldConstraint");
+                    l_WeldConstraint_0.Part1 = v132;
+                    l_WeldConstraint_0.Part0 = l_FirstChild_1;
+                    l_WeldConstraint_0.Parent = v132;
+                end;
+            end;
+        end;
+        v126.Parent = v121.Rig;
+        v121.LastRig = v126;
+        v121.Config.Expressions = v121.Config.ExpressionsTable[v122] or v121.Config.Expressions;
+        v121:ChangeExpression("Hurt", 1);
+        Util:FixCharacter(v121.Rig);
+    end;
+end;
+
+function Behavior.Created(_,actor) Impl.Created(actor) end
+function Behavior.Destroyed(_,actor) Impl.Destroyed(actor) end
+function Behavior.OnHit(_,actor,hitbox,damage,lms)
+ if RunService:IsServer() then return Impl.OnHit(actor,hitbox,damage,lms) end
+end
+function Behavior.LastManStanding(_,actor)
+ if RunService:IsServer() and actor.Config.TwoTimeRoundHooks then return Impl.OnHit(actor,nil,0,true) end
+end
+function Behavior.OnHelpless(_,actor)
+ if RunService:IsServer() then Impl.Interrupt(actor) end
+end
+Behavior.OnStunned=Behavior.OnHelpless
+return Behavior
+]====]},
+{path=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,after="10077:dada0ab6:c0faa1f7",source=[====[
+-- Public image-based presentation only; gameplay never waits on an AnimationTrack.
+local RunService=game:GetService("RunService")
+local Players=game:GetService("Players")
+local UserInputService=game:GetService("UserInputService")
+local TweenService=game:GetService("TweenService")
+local Debris=game:GetService("Debris")
+local Modules=game.ReplicatedStorage.Modules
+local Network=require(Modules.Network)
+local Util=require(Modules.Util)
+local Client={}
+local function connect(a,signal,callback)
+ table.insert(a.TTClientConnections,signal:Connect(callback))
+end
+local function owner(a) return a.Player==Players.LocalPlayer end
+local function blood(a,value)
+ local display=a.HealthbarDisplay
+ if not display then return end
+ local fraction=math.clamp(value/a.Config.BloodRequiredForRespawn,0,1)
+ display.Bar.Inner.Size=UDim2.fromScale(1,fraction)
+ display.Display.Visible=fraction<1
+ display.Full.Visible=fraction>=1
+ display.Position=UDim2.fromScale(1,.5)
+ display.Size=UDim2.fromScale(1,.532)
+end
+local function sprite(a,image,module)
+ if not image or not module then return end
+ local frames=require(module)
+ task.spawn(function()
+  while not a.TTClientDestroyed and image.Parent do
+   if image.Visible then
+    for _,frame in frames do
+     if a.TTClientDestroyed or not image.Parent then return end
+     image.ImageRectOffset=Vector2.new(frame[1],frame[2]);image.ImageRectSize=Vector2.new(frame[3],frame[4])
+     task.wait(.03125)
+    end
+   else task.wait(.1) end
+  end
+ end)
+end
+local function stopPray(a,notify)
+ a.TTClientPraying=nil
+ if a.TTClientJump~=nil then
+  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTClientJump);a.TTClientJump=nil
+ end
+ if a.HeldAbilities then a.HeldAbilities.Pray=nil end
+ Network:FireConnection("DisableSprinting","TwoTimePray",false)
+ if notify then Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",false) end
+end
+local function locate(a,position)
+ if a.TTMarker then a.TTMarker:Destroy() end
+ local marker=Instance.new("Part");marker.Name="TwoTimeRitualMarker";marker.Anchored=true;marker.CanCollide=false;marker.CanTouch=false;marker.CanQuery=false;marker.Transparency=1;marker.Position=position+Vector3.new(0,3,0);marker.Parent=workspace
+ local gui=Instance.new("BillboardGui");gui.Size=UDim2.fromOffset(64,64);gui.AlwaysOnTop=true;gui.Parent=marker
+ local image=Instance.new("ImageLabel");image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayHighlightImage;image.Parent=gui
+ a.TTMarker=marker;Debris:AddItem(marker,a.Config.PrayHighlightDuration)
+end
+function Client.Pray(a,result)
+ if type(result)~="table" then return end
+ if result.Locate then locate(a,result.Locate);return end
+ if not result.Started then return end
+ a.TTClientPraying=true
+ a.TTClientJump=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
+ a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+ Network:FireConnection("DisableSprinting","TwoTimePray",true)
+ if not (a.HeldAbilities and a.HeldAbilities.Pray) then stopPray(a,true) end
+end
+function Client.Dagger(a,result)
+ if type(result)~="table" or result.Cancelled then return end
+ a.TTClientAttackUntil=os.clock()+1
+ Network:FireConnection("DisableSprinting","TwoTimeStab",true)
+end
+function Client.Ritual(a,result)
+ if type(result)~="table" or not result.Started then return end
+ a.TTClientRitualUntil=os.clock()+result.Duration
+ Network:FireConnection("DisableSprinting","TwoTimeRitual",true)
+end
+local function createIndicator(a)
+ local start=Instance.new("Attachment");start.Parent=workspace.Terrain
+ local finish=Instance.new("Attachment");finish.Parent=workspace.Terrain
+ local beam=Instance.new("Beam");beam.Attachment0=start;beam.Attachment1=finish;beam.Width0=.12;beam.Width1=.04;beam.FaceCamera=true;beam.Color=ColorSequence.new(Color3.fromRGB(160,160,170));beam.Transparency=NumberSequence.new(.35);beam.Enabled=false;beam.Parent=start
+ a.TTIndicator={start,finish,beam}
+end
+function Client.Created(a)
+ a.TTClientConnections={}
+ local rig=a.Rig
+ if not rig or not rig.PrimaryPart then return end
+ if not owner(a) then
+  local highlight=Instance.new("Highlight");highlight.Name="TwoTimeCrouchTeammateReveal";highlight.FillColor=Color3.fromRGB(130,131,137);highlight.OutlineColor=highlight.FillColor;highlight.FillTransparency=1;highlight.OutlineTransparency=1;highlight.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop;highlight.Parent=rig
+  a.TTHighlight=highlight
+  local previous=false
+  connect(a,RunService.Heartbeat,function()
+   local character=Players.LocalPlayer.Character
+   local isSurvivor=character and character.Parent and character.Parent.Name=="Survivors"
+   local visible=isSurvivor and character.PrimaryPart and rig.Parent and rig.PrimaryPart and rig:GetAttribute("Crouching")==true and (character.PrimaryPart.Position-rig.PrimaryPart.Position).Magnitude<=a.Config.CrouchTeammateRevealDistance
+   visible=not not visible
+   if visible~=previous then
+    previous=visible
+    if a.TTHighlightTween then a.TTHighlightTween:Cancel() end
+    a.TTHighlightTween=TweenService:Create(highlight,TweenInfo.new(a.Config.CrouchTeammateRevealFadeTime),{FillTransparency=visible and .75 or 1,OutlineTransparency=visible and .4 or 1});a.TTHighlightTween:Play()
+   end
+  end)
+  return
+ end
+ local Sprinting=require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
+ a.TTOriginalSprintSpeed=Sprinting.SprintSpeed or a.Config.SprintSpeed
+ local template=a.Config.HealthBar
+ local display=template:Clone();display.Parent=a.Player.PlayerGui:WaitForChild("MainUI")
+ a.HealthbarDisplay=display;blood(a,rig:GetAttribute("TwoTimeOblation") or 0)
+ sprite(a,display.Display,display.Display:FindFirstChild("Idle"))
+ sprite(a,display.Full,display.Full:FindFirstChild("Full"))
+ for _,name in {"Vines","Wings"} do
+  local image=display.Full:FindFirstChild(name)
+  if image then sprite(a,image,image:FindFirstChild("Sprite")) end
+ end
+ createIndicator(a)
+ Network:SetConnection("TwoTimePortState","REMOTE_EVENT",function(kind,data)
+  if kind=="Blood" then blood(a,data)
+  elseif kind=="Pray" and not data then stopPray(a,false)
+  elseif kind=="Revive" then
+   stopPray(a,true)
+   if a.HealthbarDisplay then a.HealthbarDisplay:Destroy();a.HealthbarDisplay=nil end
+   Sprinting.Stamina=math.clamp(Sprinting.Stamina+40,0,Sprinting.MaxStamina or 100)
+  end
+ end)
+ connect(a,UserInputService.WindowFocusReleased,function() stopPray(a,true) end)
+ connect(a,UserInputService.InputEnded,function(input)
+  if a.TTClientPraying and input.UserInputType==Enum.UserInputType.MouseButton1 then stopPray(a,true) end
+ end)
+ local pulse=0;local lastCrouch=false
+ connect(a,RunService.Heartbeat,function(dt)
+  if not rig.Parent or not rig.PrimaryPart then return end
+  local crouched=rig:GetAttribute("Crouching")==true
+  if crouched~=lastCrouch then
+   lastCrouch=crouched
+   Sprinting.SprintSpeed=crouched and a.Config.CrouchRunSpeed or a.TTOriginalSprintSpeed
+   if Sprinting.IsSprinting then Sprinting:Toggle(true) end
+  end
+  local folder=rig:FindFirstChild("SpeedMultipliers")
+  if folder then
+   local multiplier=folder:FindFirstChild("TwoTimeCrouching")
+   if crouched then
+    if not multiplier then multiplier=Util:CreateSpeedMultiplier(rig,1,"TwoTimeCrouching") end
+    -- Sprinting uses SprintSpeed/BaseSpeed. Walking and running need different base ratios.
+    multiplier.Value=Sprinting.IsSprinting and 1 or a.Config.CrouchSpeed/a.Config.Speed
+    local bonus=folder:FindFirstChild("CrouchBonusTT") or Util:CreateSpeedMultiplier(rig,1,"CrouchBonusTT")
+    bonus.Value=rig:GetAttribute("TwoTimeCrouchBonus") or 1
+   else
+    if multiplier then multiplier:Destroy() end
+    local bonus=folder:FindFirstChild("CrouchBonusTT");if bonus then bonus:Destroy() end
+   end
+  end
+  if a.TTClientAttackUntil and os.clock()>=a.TTClientAttackUntil then a.TTClientAttackUntil=nil;Network:FireConnection("DisableSprinting","TwoTimeStab",false) end
+  if a.TTClientRitualUntil and os.clock()>=a.TTClientRitualUntil then a.TTClientRitualUntil=nil;Network:FireConnection("DisableSprinting","TwoTimeRitual",false) end
+  if a.TTClientPraying then
+   pulse+=dt
+   if not (a.HeldAbilities and a.HeldAbilities.Pray) then stopPray(a,true)
+   elseif pulse>=.2 then pulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",true) end
+  end
+  local indicator=a.TTIndicator
+  if indicator then
+   indicator[3].Enabled=crouched
+   if crouched then
+    local root=rig.PrimaryPart
+    local origin=root.Position-Vector3.new(0,rig.Humanoid.HipHeight+root.Size.Y/2-.1,0)
+    local distance=(a.Config.DaggerLungeForce+a.Config.DaggerLungeForce/3)/2*a.Config.DaggerCrouchMoverEndlag
+    local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={rig}
+    local hit=workspace:Raycast(origin,root.CFrame.LookVector*distance,params)
+    indicator[1].WorldPosition=origin;indicator[2].WorldPosition=hit and hit.Position or origin+root.CFrame.LookVector*distance
+   end
+  end
+ end)
+end
+function Client.Destroyed(a)
+ a.TTClientDestroyed=true
+ for _,connection in a.TTClientConnections or {} do connection:Disconnect() end
+ if a.TTHighlight then a.TTHighlight:Destroy() end
+ if a.TTHighlightTween then a.TTHighlightTween:Cancel() end
+ if not owner(a) then return end
+ stopPray(a,true)
+ Network:RemoveConnection("TwoTimePortState","REMOTE_EVENT")
+ for _,name in {"TwoTimeStab","TwoTimeRitual"} do Network:FireConnection("DisableSprinting",name,false) end
+ if a.HealthbarDisplay then a.HealthbarDisplay:Destroy();a.HealthbarDisplay=nil end
+ if a.TTMarker then a.TTMarker:Destroy() end
+ if a.TTIndicator then for _,object in a.TTIndicator do object:Destroy() end end
+ local Sprinting=require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
+ if a.TTOriginalSprintSpeed then Sprinting.SprintSpeed=a.TTOriginalSprintSpeed end
+ local folder=a.Rig and a.Rig:FindFirstChild("SpeedMultipliers")
+ if folder then for _,name in {"TwoTimeCrouching","CrouchBonusTT"} do local v=folder:FindFirstChild(name);if v then v:Destroy() end end end
+end
+return Client
+]====]},
+{path=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Rules]====],before=false,after="2012:c07084eb:39174afa",source=[====[
+-- Pure kit math, shared by server, indicator, and regression tests.
+local Rules = {}
+function Rules.Oblation(config, backstab, crouched)
+ return (backstab and config.BloodFromBack or config.BloodFromFront) * (crouched and config.CrouchOblationMultiplier or 1)
+end
+function Rules.Stun(config, crouched, elapsed)
+ if not crouched then return 2 end
+ return config.DaggerCrouchMinStunTime + (config.DaggerBackstabStatusTime-config.DaggerCrouchMinStunTime)*math.clamp(elapsed/config.DaggerCrouchStunChargeTime,0,1)
+end
+function Rules.CrouchCooldown(config, elapsed)
+ return math.clamp(config.CrouchCooldown-elapsed,config.CrouchMinCooldown,config.CrouchCooldown)
+end
+function Rules.MissDuration(config, distance)
+ return math.clamp(distance/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
+end
+function Rules.Pray(config, blood, missingHealth, elapsed)
+ local requirement=config.BloodRequiredForRespawn
+ local spent=math.min(math.max(blood,0),requirement*elapsed/config.PrayFullConversionTime,math.max(missingHealth,0)*requirement/config.PrayHealthPerFullOblation)
+ return spent,spent/requirement*config.PrayHealthPerFullOblation
+end
+function Rules.LMS(config,blood)
+ local fraction=math.clamp(blood/config.BloodRequiredForRespawn,0,1)
+ return config.Health+(config.LastSurvivorMaxHealth-config.Health)*fraction,config.LastSurvivorHealthBonus*fraction,6*fraction
+end
+function Rules.Backstab(attackerPosition, attackerLook, victimPosition, victimLook, config)
+ local offset=victimPosition-attackerPosition
+ offset=Vector3.new(offset.X,0,offset.Z)
+ local facing=Vector3.new(victimLook.X,0,victimLook.Z)
+ local aim=Vector3.new(attackerLook.X,0,attackerLook.Z)
+ if offset.Magnitude<.001 or facing.Magnitude<.001 or aim.Magnitude<.001 then return false end
+ return offset.Unit:Dot(facing.Unit)>math.cos(math.rad(config.DaggerBackstabThreshold)) and aim.Unit:Dot(facing.Unit)>math.cos(math.rad(config.DaggerLookDirectionAngle))
+end
+return Rules
+]====]},
+{path=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,after="19452:b6a039bb:e64a3db6",source=[====[
+-- FCT APIs and FCT visual templates; newest UPD balance. No animation or sound calls.
+local RunService=game:GetService("RunService")
+local Players=game:GetService("Players")
+local Debris=game:GetService("Debris")
+local TweenService=game:GetService("TweenService")
+local Modules=game.ReplicatedStorage.Modules
+local Util=require(Modules.Util)
+local Statuses=require(Modules.Statuses)
+local Hitboxes=require(Modules.Hitboxes)
+local Network=require(Modules.Network)
+local Rules=require(script.Parent.Rules)
+local Server={}
+local function alive(a)
+ return not a.TTDestroyed and a.Rig and a.Rig.Parent and a.Rig.PrimaryPart and a.Rig:FindFirstChildOfClass("Humanoid") and a.Rig.Humanoid.Health>0
+end
+local function send(a,kind,data)
+ if a.Player and a.Player.Parent then Network:FireClientConnection(a.Player,"TwoTimePortState","REMOTE_EVENT",kind,data) end
+end
+local function lock(a,key,on)
+ a.AbilityDisablers=a.AbilityDisablers or {}
+ a.AbilityDisablers["TwoTimePort"..key]=on or nil
+end
+local function blocked(a)
+ local rig=a.Rig
+ return rig:GetAttribute("Stunned") or rig:GetAttribute("Helpless") or rig:GetAttribute("Ragdolling") or rig:GetAttribute("AbilitiesDisabled") or rig.PrimaryPart.Anchored
+end
+local function removeSpeed(a,key)
+ local folder=a.Rig and a.Rig:FindFirstChild("SpeedMultipliers")
+ local value=folder and folder:FindFirstChild(key)
+ if value then value:Destroy() end
+end
+local function knife(a,on)
+ for part,transparency in pairs(a.DaggerParts or {}) do
+  if part.Parent then part.Transparency=on and transparency or 1 end
+ end
+ -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
+end
+local function nearest(a)
+ local best,distance=nil,math.huge
+ local players=workspace:FindFirstChild("Players")
+ local killers=players and players:FindFirstChild("Killers")
+ if killers then for _,rig in killers:GetChildren() do
+  local humanoid=rig:FindFirstChildOfClass("Humanoid")
+  if rig~=a.Rig and rig.PrimaryPart and humanoid and humanoid.Health>0 and not rig:GetAttribute("TwoTimeIgnoreTarget") then
+   local range=(rig.PrimaryPart.Position-a.Rig.PrimaryPart.Position).Magnitude
+   if range<distance then best,distance=rig,range end
+  end
+ end end
+ return best,distance
+end
+local function updateBlood(a,value)
+ a.Blood=math.clamp(value,0,a.Config.BloodRequiredForRespawn)
+ a.Rig:SetAttribute("TwoTimeOblation",a.Blood)
+ send(a,"Blood",a.Blood)
+ local floor=a.RespawnLocation and a.RespawnLocation:FindFirstChild("EnabledFloor")
+ if floor then
+  local light=floor:FindFirstChild("Transparent")
+  if light and light:IsA("Light") then light.Brightness=2+8*a.Blood/a.Config.BloodRequiredForRespawn end
+  local shader=floor:FindFirstChild("FullShader")
+  if shader and shader:IsA("ParticleEmitter") then shader.Enabled=a.Blood>=a.Config.BloodRequiredForRespawn end
+ end
+end
+function Server.StopPray(a,interrupted)
+ if not a.TTPraying then return end
+ a.TTPraying=nil
+ a.Rig:SetAttribute("TwoTimePraying",nil)
+ lock(a,"Pray",false);removeSpeed(a,"TwoTimePray")
+ if a.TTJump then a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTJump.Enabled);a.TTJump=nil end
+ if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown) end
+ send(a,"Pray",false)
+end
+function Server.StopCrouch(a,manual)
+ if not a.TTCrouchStart then return end
+ local elapsed=os.clock()-a.TTCrouchStart
+ a.TTCrouchStart=nil;a.TTRamp=0
+ a.Rig:SetAttribute("Crouching",nil)
+ a.Rig:SetAttribute("FootstepsMuted",a.TTPreviousFootstepsMuted)
+ a.TTPreviousFootstepsMuted=nil
+ a.Rig:SetAttribute("TwoTimeCrouchBonus",nil)
+ a:SetCooldownOf("Crouch",Rules.CrouchCooldown(a.Config,elapsed))
+ Statuses:RemoveStatus(a.Player,"Invisibility");Statuses:RemoveStatus(a.Player,"Undetectable")
+ removeSpeed(a,"TwoTimeCrouching");removeSpeed(a,"CrouchBonusTT")
+ knife(a,false)
+ if manual and alive(a) then
+  local _,distance=nearest(a)
+  if distance<=30 then Statuses:ApplyStatus(a.Player,"Speed",{Level=2,Duration=a.Config.CrouchSpeedCloseTime}) end
+ end
+end
+local function cancelAttack(a)
+ a.TTAttackToken=(a.TTAttackToken or 0)+1
+ if a.TTHitbox then a.TTHitbox:Cancel();a.TTHitbox=nil end
+ if a.TTVelocity then a.TTVelocity:Destroy();a.TTVelocity=nil end
+ lock(a,"Dagger",false);removeSpeed(a,"TwoTimeStab");knife(a,false)
+end
+function Server.Dagger(a)
+ if not alive(a) or blocked(a) or a.TTPraying or a.TTRitualCasting or a.TTAttacking then return {Cancelled=true} end
+ a.TTAttacking=true
+ local crouched=a.TTCrouchStart~=nil
+ local charge=crouched and os.clock()-a.TTCrouchStart or 0
+ Server.StopCrouch(a,false)
+ cancelAttack(a)
+ local token=a.TTAttackToken
+ lock(a,"Dagger",true);knife(a,true)
+ Util:CreateSpeedMultiplier(a.Rig,.1,"TwoTimeStab")
+ local hit=false
+ local function current() return alive(a) and a.TTAttackToken==token and not blocked(a) end
+ task.delay(a.Config.DaggerWindup,function()
+  if not current() then cancelAttack(a);a.TTAttacking=nil;return end
+  local duration=crouched and a.Config.DaggerCrouchHitTime or a.Config.DaggerHitTime
+  local velocity=Util:ApplyVelocity(a.Rig.PrimaryPart,crouched and a.Config.DaggerLungeForce or a.Config.DaggerUncrouchedLungeForce)
+  a.TTVelocity=velocity
+  TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
+  Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
+  a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
+   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
+   Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
+   Connections={Hit=function(victim)
+    if hit or not current() then return end
+    local root=victim.PrimaryPart;local humanoid=victim:FindFirstChildOfClass("Humanoid")
+    if not root or not humanoid or humanoid.Health<=0 or victim:GetAttribute("Invincible") then return end
+    hit=true
+    -- Raw root transforms, never actor:GetPivot() prediction/extrapolation.
+    local ours=a.Rig.PrimaryPart
+    local back=Rules.Backstab(ours.Position,ours.CFrame.LookVector,root.Position,root.CFrame.LookVector,a.Config)
+    local immune=victim:GetAttribute("StunnedDisabled") or victim:GetAttribute("Stunned") or Statuses:PlayerHasStatus(victim,"Stunned")
+    local targetActor=require(Modules.Actors).CurrentActors[Players:GetPlayerFromCharacter(victim)] or require(Modules.Actors).CurrentActors[victim]
+    local exclusions=targetActor and targetActor.Config and targetActor.Config.StatusData and targetActor.Config.StatusData.ExcludeApplying
+    immune=immune or exclusions and table.find(exclusions,"Stunned")
+    Util:ApplyDamage(victim,back and a.Config.DaggerBackstabDamage or a.Config.DaggerDamage,nil,a.Rig)
+    if not immune then
+     if back then Statuses:ApplyStatus(victim,"Stunned",{Duration=Rules.Stun(a.Config,crouched,charge)})
+     else
+      Statuses:ApplyStatus(victim,"Slowness",{Level=2,Duration=a.Config.DaggerStatusTime})
+      Statuses:ApplyStatus(victim,"Helpless",{Level=1,Duration=a.Config.DaggerStatusTime,TimeStackable=false})
+     end
+     local team=tostring(victim.Parent)
+     local summon=victim:HasTag("SurvivorConstruct") or victim:HasTag("KillerConstruct") or victim:GetAttribute("IsMinion") or victim:GetAttribute("Summon")
+     if not summon and (team=="Killers" or team=="Survivors") and a.LivesUsed==1 then updateBlood(a,a.Blood+Rules.Oblation(a.Config,back,crouched)) end
+    end
+    if a.TTVelocity then a.TTVelocity:Destroy();a.TTVelocity=nil end
+   end}
+  })
+  task.delay(duration,function()
+   if a.TTAttackToken~=token then return end
+   a.TTHitbox=nil
+   if crouched and not hit and alive(a) then
+    local _,distance=nearest(a)
+    Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=Rules.MissDuration(a.Config,distance)})
+   end
+  end)
+ end)
+ Statuses:ApplyStatus(a.Player,"Resistance",{Level=a.Config.DaggerResLevel,Duration=a.Config.DaggerResDuration})
+ local total=a.Config.DaggerWindup+(crouched and a.Config.DaggerCrouchHitTime+a.Config.DaggerCrouchEndlag+a.Config.DaggerCrouchEndlagTweenTime or  .7)
+ task.delay(total,function()
+  if a.TTAttackToken==token then cancelAttack(a);a.TTAttacking=nil end
+ end)
+ return {Crouched=crouched,Duration=total}
+end
+function Server.Crouch(a)
+ if not alive(a) or blocked(a) or a.TTPraying or a.TTRitualCasting or a.TTAttacking then return {Cancelled=true} end
+ if a.TTCrouchStart then Server.StopCrouch(a,true);return end
+ a.TTCrouchStart=os.clock();a.TTRamp=0
+ a.TTPreviousFootstepsMuted=a.Rig:GetAttribute("FootstepsMuted")
+ a.Rig:SetAttribute("FootstepsMuted",true)
+ a.Rig:SetAttribute("Crouching",true)
+ a:SetCooldownOf("Crouch",1)
+ knife(a,true)
+ Statuses:ApplyStatus(a.Player,"Invisibility",{Level=a.Config.CrouchInvisibilityLevel,Duration=a.Config.CrouchDuration})
+ Statuses:ApplyStatus(a.Player,"Undetectable",{Level=a.Config.CrouchUndetectableLevel,Duration=a.Config.CrouchDuration})
+ return {Started=true}
+end
+function Server.Pray(a)
+ if not alive(a) or blocked(a) or a.TTAttacking or a.TTRitualCasting then return {Cancelled=true} end
+ if a.TTPraying then Server.StopPray(a,false);return end
+ local ritual=a.RespawnLocation
+ if not ritual or not ritual.Parent or a.LivesUsed~=1 then return {Cancelled=true} end
+ if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position} end
+ if a.Blood<=0 or a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then return {Cancelled=true} end
+ Server.StopCrouch(a,false)
+ a.TTPraying=true;a.TTPrayStart=os.clock();a.TTPrayLease=os.clock()
+ a.TTPrayDamage=0
+ a.Rig:SetAttribute("TwoTimePraying",true)
+ lock(a,"Pray",true)
+ Util:CreateSpeedMultiplier(a.Rig,0,"TwoTimePray")
+ a.TTJump={Enabled=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)}
+ a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+ return {Started=true}
+end
+local function effect(a,name,parent)
+ local template=a.Config.VFX and a.Config.VFX:FindFirstChild(name)
+ if not template then return end
+ local clone=template:Clone();clone.Parent=parent
+ for _,object in clone:GetDescendants() do
+  if object:IsA("Sound") then object:Destroy()
+  elseif object:IsA("ParticleEmitter") then object:Emit(object:GetAttribute("EmitCount") or 8) end
+ end
+ Debris:AddItem(clone,3)
+end
+function Server.Ritual(a)
+ local function invalid()
+  a:IncrementCharges("Ritual",1,1)
+  return {Cancelled=true}
+ end
+ if not alive(a) or blocked(a) or a.TTAttacking or a.TTPraying or a.TTRitualCasting or a.RespawnLocation or a.LivesUsed~=1 then return invalid() end
+ local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+ local players=workspace:FindFirstChild("Players")
+ params.FilterDescendantsInstances=players and {players} or {a.Rig}
+ local root=a.Rig.PrimaryPart
+ local forward=workspace:Raycast(root.Position,root.CFrame.LookVector*2.648,params)
+ local distance=forward and math.max(0,forward.Distance-1) or 2.648
+ local ground=workspace:Raycast(root.Position+root.CFrame.LookVector*distance,Vector3.new(0,-12,0),params)
+ if not ground or ground.Normal.Y<.65 then return invalid() end
+ local ingame=workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Ingame") or workspace
+ for _,part in ingame:GetDescendants() do
+  if part:IsA("BasePart") and (part.Name:find("RespawnLocation") or part.Name:find("Builderman")) and (part.Position-ground.Position).Magnitude<a.Config.RespawnLocationDistance then return invalid() end
+ end
+ a.TTRitualCasting=true;a.TTRitualToken=(a.TTRitualToken or 0)+1
+ local token=a.TTRitualToken
+ lock(a,"Ritual",true);Server.StopCrouch(a,false);knife(a,true)
+ Util:CreateSpeedMultiplier(a.Rig,0,"TwoTimeRitual")
+ local startPosition=root.Position
+ task.delay(1.5,function()
+  if not alive(a) or not a.TTRitualCasting or a.TTRitualToken~=token or blocked(a) or (root.Position-startPosition).Magnitude>4 then return end
+  local spawn=a.Config.RespawnLocation:Clone()
+  spawn.Name=a.Player.Name.."RespawnLocation";spawn.Anchored=true;spawn.CanCollide=false
+  spawn.CFrame=CFrame.lookAt(ground.Position-Vector3.new(0,.1,0),ground.Position-Vector3.new(0,.1,0)+root.CFrame.LookVector*Vector3.new(1,0,1))
+  for _,item in spawn:GetDescendants() do if item:IsA("Sound") then item:Destroy() end end
+  spawn.Parent=ingame;a.RespawnLocation=spawn
+  effect(a,"Ritual",spawn)
+  local floor=a.Config.VFX and a.Config.VFX:FindFirstChild("EnabledFloor")
+  if floor then local clone=floor:Clone();clone.Parent=spawn;for _,v in clone:GetDescendants() do if v:IsA("Sound") then v:Destroy() end end end
+  updateBlood(a,a.Blood)
+ end)
+ task.delay(3.5,function()
+  if a.TTDestroyed or a.TTRitualToken~=token then return end
+  a.TTRitualCasting=nil;lock(a,"Ritual",false);removeSpeed(a,"TwoTimeRitual");knife(a,false)
+  if not a.RespawnLocation then a:IncrementCharges("Ritual",1,1);a:SetCooldownOf("Ritual",0) end
+ end)
+ return {Started=true,Duration=3.5}
+end
+function Server.Interrupt(a)
+ Server.StopCrouch(a,false);Server.StopPray(a,true)
+ if a.TTAttacking then cancelAttack(a);a.TTAttacking=nil end
+ if a.TTRitualCasting then
+  a.TTRitualToken=(a.TTRitualToken or 0)+1
+  a.TTRitualCasting=nil;lock(a,"Ritual",false);removeSpeed(a,"TwoTimeRitual");knife(a,false)
+  if not a.RespawnLocation then a:IncrementCharges("Ritual",1,1);a:SetCooldownOf("Ritual",0) end
+ end
+end
+function Server.OnHit(a,hitbox,damage,lms)
+ if not alive(a) then return end
+ damage=math.max(0,tonumber(damage) or 0)
+ if a.TTPraying then
+  a.TTPrayDamage=(a.TTPrayDamage or 0)+damage
+  if a.TTPrayDamage>=a.Config.PrayInterruptDamage then Server.StopPray(a,true) end
+ end
+ if damage>0 then a.TTRamp=0;a.TTRampResetUntil=os.clock()+.15;a.Rig:SetAttribute("TwoTimeCrouchBonus",1) end
+ if a.LivesUsed~=1 or a.TTReviving then return end
+ if not lms and (damage<a.Rig.Humanoid.Health or a.Blood<a.Config.BloodRequiredForRespawn or not a.RespawnLocation or not a.RespawnLocation.Parent) then return end
+ a.TTReviving=true
+ if hitbox then hitbox.TimePast=9999 end -- FCT Util/Hitboxes cancel the lethal hit before applying it.
+ cancelAttack(a);a.TTAttacking=nil;Server.StopPray(a,false);Server.StopCrouch(a,false)
+ a.TTRitualCasting=nil;a.TTRitualToken=(a.TTRitualToken or 0)+1
+ lock(a,"Ritual",false);removeSpeed(a,"TwoTimeRitual")
+ local blood=a.Blood
+ a.LivesUsed=2;a.Rig:SetAttribute("IsSecondLife",true)
+ Statuses:RemoveStatuses(a.Player,true)
+ local h=a.Rig.Humanoid
+ if lms then
+  local maxHealth,healing=Rules.LMS(a.Config,blood)
+  h.MaxHealth=maxHealth;h.Health=math.min(maxHealth,h.Health+healing)
+ else h.MaxHealth=a.Config.Health/a.Config.NextLifeHealthDivisor;h.Health=h.MaxHealth end
+ Util:GiveInvincible(a.Rig,"TTRevive",a.Config.InvincibilityDuration)
+ -- AddRig uses FCT's already-owned appearance templates and public expression decals.
+ a.Behavior:AddRig(a,2)
+ knife(a,false)
+ local ritual=a.RespawnLocation
+ if not lms and ritual and ritual.Parent then
+  local height=(Util:GetDistanceFromGround(a.Rig) or 3)
+  a:PivotTo(ritual.CFrame+Vector3.new(0,height,0))
+  effect(a,"Respawned",ritual)
+ else effect(a,"Respawned",a.Rig.PrimaryPart) end
+ if ritual then Debris:AddItem(ritual,2);a.RespawnLocation=nil end
+ local ritualAbility=a.Behavior.Abilities.Ritual
+ if ritualAbility then a:IncrementCharges("Ritual",0,0) end
+ updateBlood(a,0);send(a,"Revive",true)
+ local _,_,speedTime=Rules.LMS(a.Config,blood)
+ if not lms or speedTime>0 then Statuses:ApplyStatus(a.Player,"Speed",{Level=2,Duration=lms and speedTime or 6,Instant=true}) end
+ if not lms then Statuses:ApplyStatus(a.Player,"Vulnerable",{Level=5,Duration=12,BypassInvincibility=true}) end
+ -- Explicit opt-in for a round-based host; continuous combat has no timer or automatic LMS.
+ if a.Config.TwoTimeRoundHooks then
+  a.TimeAddMultiplier=25/40
+  local round=game.ServerScriptService:FindFirstChild("RoundManager",true)
+  if round and not lms then require(round):AddTime(nil,15/40) end
+ end
+ a.TTReviving=nil
+ return "Ignored"
+end
+function Server.Created(a)
+ a.TTConnections={};a.LivesUsed=1;a.Blood=0;a.TTAttackToken=0
+ a.Behavior:AddRig(a,1)
+ local dagger=a.Config.DaggerTemplate:Clone()
+ for _,item in dagger:GetDescendants() do if item:IsA("Sound") then item:Destroy() end end
+ local motor=dagger:FindFirstChildOfClass("Motor6D")
+ if motor then motor.Part0=a.Rig.PrimaryPart;dagger.Parent=a.Rig else dagger:Destroy() end
+ a.DaggerParts={}
+ if dagger.Parent then for _,part in dagger:GetDescendants() do
+  if part:IsA("BasePart") or part:IsA("Decal") then a.DaggerParts[part]=part.Transparency;part.Transparency=1 end
+  if part:IsA("BasePart") then part.CanCollide=false;part.CanTouch=false;part.Massless=true end
+ end end
+ local remote="TwoTimePortHold_"..a.Player.UserId
+ Network:SetConnection(remote,"REMOTE_EVENT",function(player,holding)
+  if player~=a.Player or not a.TTPraying then return end
+  if holding==true then a.TTPrayLease=os.clock() else Server.StopPray(a,false) end
+ end)
+ a.TTHoldRemote=remote
+ table.insert(a.TTConnections,a.Rig.Humanoid.HealthChanged:Connect(function(health)
+  if a.TTLastHP and health<a.TTLastHP then a.TTRamp=0;a.TTRampResetUntil=os.clock()+.15 end
+  a.TTLastHP=health
+ end))
+ table.insert(a.TTConnections,RunService.Heartbeat:Connect(function(dt)
+  if not alive(a) then Server.Destroyed(a);return end
+  if blocked(a) then
+   Server.Interrupt(a)
+  end
+  if a.TTCrouchStart then
+   local elapsed=os.clock()-a.TTCrouchStart
+   if elapsed>=a.Config.CrouchDuration then Server.StopCrouch(a,false)
+   else
+    local target,distance=nearest(a);local h=a.Rig.Humanoid;local root=a.Rig.PrimaryPart
+    local direction=target and target.PrimaryPart.Position-root.Position
+    local motion=root.AssemblyLinearVelocity*Vector3.new(1,0,1)
+    local running=motion.Magnitude>a.Config.CrouchSpeed+1
+    if running and direction and direction.Magnitude>.001 and distance<=a.Config.CrouchSpeedBoostDistance and motion.Unit:Dot(direction.Unit)>a.Config.CrouchSpeedBoostDot and os.clock()>=(a.TTRampResetUntil or 0) then a.TTRamp=math.min(a.Config.CrouchSpeedBoostTime,a.TTRamp+dt) else a.TTRamp=0 end
+    a.Rig:SetAttribute("TwoTimeCrouchBonus",1+(a.Config.CrouchSpeedBoostMax-1)*a.TTRamp/a.Config.CrouchSpeedBoostTime)
+   end
+  end
+  if a.TTPraying then
+   local ritual=a.RespawnLocation
+   if os.clock()-a.TTPrayLease>1.25 or os.clock()-a.TTPrayStart>30 or not ritual or not ritual.Parent or (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then Server.StopPray(a,false)
+   else
+    local h=a.Rig.Humanoid
+    local spent,healed=Rules.Pray(a.Config,a.Blood,h.MaxHealth-h.Health,math.min(dt,.25))
+    if spent>0 then updateBlood(a,a.Blood-spent);h.Health=math.min(h.MaxHealth,h.Health+healed) end
+    if a.Blood<=.00001 or h.Health>=h.MaxHealth then Server.StopPray(a,false) end
+   end
+  end
+ end))
+ if a.Config.TwoTimeRoundHooks then
+  local survivors=workspace.Players.Survivors
+  table.insert(a.TTConnections,survivors.ChildRemoved:Connect(function()
+   if alive(a) and #survivors:GetChildren()==1 then Server.OnHit(a,nil,0,true) end
+  end))
+ end
+ updateBlood(a,0)
+end
+function Server.Destroyed(a)
+ if a.TTDestroyed then return end
+ Server.StopPray(a,false);Server.StopCrouch(a,false);cancelAttack(a)
+ a.TTDestroyed=true
+ lock(a,"Ritual",false);removeSpeed(a,"TwoTimeRitual")
+ for _,connection in a.TTConnections or {} do connection:Disconnect() end
+ if a.TTHoldRemote then Network:RemoveConnection(a.TTHoldRemote,"REMOTE_EVENT") end
+ if a.RespawnLocation then a.RespawnLocation:Destroy();a.RespawnLocation=nil end
+end
+return Server
+]====]},
+{path=[====[
+ServerStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",after="14133:ea0af3d6:5f27dea5",source=[====[
+
+local t1 = {
+	DisplayName = "Two Time",
+	Quote = "\"Shadows die twice.\"",
+	Class = "Sentinel",
+	RenderImage = "rbxassetid://107234615040462",
+	Price = 500,
+	Exclusive = false,
+	LMSEffect = {
+		ProcessingModule = "BasicLMS",
+		SoundId = "heartbeat",
+		ImageId = function(s1: string) -- line: 14
+			if s1 == "Azure" then
+				return "rbxassetid://114627570317346"
+			end
+
+			return "rbxassetid://103025892289003"
+		end,
+		PrimaryColor = function(s2: string) -- line: 20
+			if s2 == "Azure" then
+				return Color3.fromRGB(115, 0, 255)
+			end
+
+			return Color3.fromRGB(255, 0, 0)
+		end,
+		SecondaryColor = Color3.fromRGB(0, 0, 0)
+	},
+	Health = 80,
+	Speed = 12,
+	DaggerCooldown = 30,
+	DaggerWindup = 0.3,
+	DaggerDamage = 10,
+	DaggerBackstabDamage = 20,
+	DaggerLungeForce = 110,
+	DaggerUncrouchedLungeForce = 50,
+	DaggerBackstabThreshold = 70,
+	DaggerLookDirectionAngle = 70,
+	DaggerStatusTime = 1,
+	DaggerBackstabStatusTime = 3.5,
+	DaggerCrouchMinStunTime = 2,
+	DaggerCrouchStunChargeTime = 1,
+	DaggerLifestealFromFront = 0,
+	DaggerLifestealFromBack = 0,
+	DaggerCrouchEndlag = 0.225,
+	DaggerCrouchEndlagTweenTime = 0.15,
+	DaggerCrouchMoverEndlag = 0.4,
+	DaggerCrouchSprintLockTime = 1,
+	DaggerUncrouchedSprintLockTime = 1,
+	DaggerMissSlownessDistanceInterval = 10,
+	DaggerMissSlownessDurationMultiplier = 1,
+	DaggerMissSlownessMaxDuration = 8,
+	DaggerMissSlownessLevel = 2,
+	PrayRange = 10,
+	PrayHoldTime = NumberRange.new(0.15, 30),
+	PrayHighlightDuration = 4,
+	PrayHighlightImage = "rbxassetid://100508591140926",
+	PrayHealthPerFullOblation = 66.66666666666667,
+	PrayFullConversionTime = 10,
+	PrayInterruptDamage = 5,
+	PrayInterruptCooldown = 6,
+	DaggerResLevel = 1,
+	DaggerResDuration = 0.7,
+	BloodReqIncreasePerTwoTime = 1,
+	CrouchCooldown = 30,
+	CrouchMinCooldown = 15,
+	CrouchDuration = 15,
+	CrouchSpeed = 10,
+	CrouchRunSpeed = 23,
+	CrouchInvisibilityLevel = 3,
+	CrouchUndetectableLevel = 1,
+	CrouchSpeedCloseTime = 1,
+	CrouchStabAmplifyTime = 4,
+	CrouchRevealTime = 2,
+	CrouchSpeedBoostMax = 1.5,
+	CrouchSpeedBoostTime = 4,
+	CrouchSpeedBoostDot = 0.2,
+	CrouchSpeedBoostDistance = 105,
+	CrouchTeammateRevealDistance = 100,
+	CrouchTeammateRevealFadeTime = 1.25,
+	CrouchOblationMultiplier = 1.25,
+	CrouchDistances = {
+		CLOSE = {
+			0,
+			30
+		},
+		DEBUFF_SLOWNESS = {
+			75,
+			-1
+		},
+		DEBUFF_HIGHLIGHT = {
+			125,
+			-1
+		}
+	},
+	CrouchSlownessDebuffMax = 150,
+	Lives = 2,
+	BloodRequiredForRespawn = 8,
+	BloodFromFront = 1.6,
+	BloodFromBack = 3.2,
+	RespawnLocationDistance = 10,
+	NextLifeHealthDivisor = 1.6,
+	InvincibilityDuration = 2,
+	LastSurvivorMaxHealth = 110,
+	LastSurvivorHealthBonus = 50,
+	RespawnLocation = script.Spawn,
+ HealthBar = script.Sidebar,
+ AudioReplication = script.AudioReplication,
+ VFX = script.TwoTimeVFX,
+ LifeAppearances = {[1]=script.Life1,[2]=script.Life2},
+ DaggerTemplate = script.GhostFire,
+	Animations = {},
+ Sounds = {},
+	ExpressionsTable = {
+		[1] = {
+			Happy = "rbxassetid://82471736046966",
+			Default = "rbxassetid://111259025475261",
+			Hurt = "rbxassetid://124079311211417",
+			Injured = "rbxassetid://82982231751339",
+			Dead = "rbxassetid://74288576584860",
+			Drinking = "rbxassetid://135845534213100"
+		},
+		[2] = {
+			Happy = "rbxassetid://105016806376431",
+			Default = "rbxassetid://80110682472998",
+			Hurt = "rbxassetid://91658006415418",
+			Injured = "rbxassetid://135831503096288",
+			Dead = "rbxassetid://86722867217862",
+			Drinking = "rbxassetid://116753879639619"
+		}
+	}
+}
+
+t1.Expressions = t1.ExpressionsTable[1]
+t1.TextInteractions = {
+	Requests = {
+		ElliotPizza = {
+			"Hey, hey. Pizza, pizza please.",
+			"Pizza’s something I haven’t tried much, mind if I get a slice?",
+			"I must ask for a pizza.",
+			"Do you have pizza? I could use one!",
+			"May I have a pizza slice?",
+			"I really want a pizza! May I have one?"
+		},
+		BuildermanSentry = {
+			"Your turrets may be of use over here.",
+			"A sentry here should be put to use. Place it here.",
+			"Place your sentry over here. It will help against the foes.",
+			"Put down a sentry here.",
+			"Your sentry will be of use over here."
+		},
+		BuildermanDispenser = {
+			"I’m in need of a dispenser in my position.",
+			"I require a dispenser to be placed here.",
+			"Dispenser here, please.",
+			"Put down one of your dispensers here.",
+			"Your dispenser is needed here."
+		},
+		DusekkarProtection = {
+			"Divine pumpkin, I humbly request your divine ability.",
+			"Divine pumpkin, I implore you to cast your ability onto me.",
+			"Divine pumpkin, I ask of thee to be blessed.",
+			"Divine pumpkin, blessed be thy heart should you cast a spell unto me.",
+			"Divine pumpkin, I ask for thy divine intervention."
+		},
+		HemmorhageAsk = {
+			"By the Spawn's grace... I ... I must ask for your aid...",
+			"My wounds.. are severe, I fear. Please, aid me, and the Spawn will smile at thy.",
+			"I beg, I plead.. I ask for your aid as my body drains with every second...",
+			"May you be blessed by the Spawn should you lend me your aid..",
+			"Lend me your aid, and the Spawn shall guide you forward..."
+		},
+		HelperPulse = {
+			"Your mechanisms are of most utmost importance right now, no time to waste..",
+			"Keep a steady pace, machine... You mustn't waste a minute in tending to the group.",
+			"Let your energy shine in those who need it most...",
+			"Perhaps you may use your energy on the ones who may need it?",
+			"We are in need of your energy, mechanism, and we must get it, fast.."
+		},
+		HelperInspire = {
+			"Make haste, for our group seem to have grown exhausted..",
+			"Let your mechanisms beam on the group, and may their beings feel ever so blessed by the Spawn while you do so.",
+			"Shall we huddle closer together so your energy is conserved when you activate it?",
+			"You've a keen eye for the others, do you not? You must see that they have grown tired.. You simply must help.",
+			"We need your assistance on the matter, do you still have the energy to do so?"
+		}
+	},
+	Thanks = {
+		Regular = {
+			"Much appreciated.",
+			"Very thankful for your service.",
+			"May good fortune come your way for your generosity.",
+			"The Spawn would be pleased with your acts of kindness.",
+			"I thank you for your service.",
+			"Oh give thanks to the Spawn, for he is good; for their steadfast love endures forever."
+		},
+		DusekkarProtection = {
+			{
+				"TwoTime: The Spawn would be pleased with your acts of kindness!",
+				"Dusekkar: ...",
+				"Dusekkar: Eugh..."
+			},
+			{
+				"TwoTime: Oh give thanks to the Spawn, for he is good; for their steadfast love endures forever.",
+				"Dusekkar: ...",
+				"Dusekkar: Ugh..."
+			}
+		}
+	}
+}
+
+local v2 = math.floor(t1.BloodFromFront / t1.BloodRequiredForRespawn * 100)
+local v3 = math.floor(t1.BloodFromBack / t1.BloodRequiredForRespawn * 100)
+
+t1.Information = {
+	{
+		Separator = "GENERAL INFO"
+	},
+	{
+		Header = "TWO TIME",
+		Text = "A fragile cultist that holds a terrible secret. Bearing nothing other than a sleek dagger and manic smile, they're able to earn a second life through risk and sacrifice.\n"
+	},
+	{
+		Header = "STATS",
+		Text = "Difficulty: ★★★★☆\n" .. `Health: { t1.Health or 100 }\n` .. `Regular Speed: { t1.Speed or 12 }\n` .. `Sprinting Speed: { t1.SprintSpeed or 26 }\n` .. `Max Stamina: { t1.MaxStamina or 100 }\n` .. `Stamina Loss per sec: { t1.StaminaLoss or 10 }\n` .. `Stamina Gain per sec: { t1.StaminaGain or 20 }\n`
+	},
+	{
+		Separator = "PASSIVES"
+	},
+	{
+		Header = "OBLATION",
+		Quote = "\"You both shall set out on the grand step to rebirth.\" - ██████",
+		Text = "<font color=\"#6c6e78\">Two Time</font> has a bar on the right side of the screen that, when filled, grants them a second life.\n" .. "The only way to fill this bar is by dealing damage to the Killer.\n\n" .. `Landing a stab to the front will fill { v2 }% of the bar.\n` .. `Landing a stab to the back will fill { v3 }% of the bar.\n` .. "Crouched Lunge Stabs increases the <b>OBLATION</b> gain by 25%.\n\n" .. "<font color=\"#6c6e78\">Two Time</font> will enter their second life upon taking lethal damage or being the last alive Survivor.\n" .. "In their second life, they only have 50 maximum health.\n" .. "Upon activation:\n\n" .. " * Stamina is restored by 40%\n" .. " * All status effects are removed\n" .. ` * <font color="#6c6e78">Two Time</font> is made invincible for { t1.InvincibilityDuration } seconds \n` .. " * <b>Speed II</b> is applied for 6 seconds\n" .. " * <b>Vulnerable V</b> is applied for 12 seconds\n"
+	},
+	{
+		Separator = "ABILITIES"
+	},
+	{
+		Header = "SACRIFICIAL DAGGER",
+		Image = "rbxassetid://129077533212750",
+		Quote = "\"Lookie, █████—they gave us this cool knife!\" - Two Time",
+		Text = `Cooldown: { t1.DaggerCooldown }s\n` .. `After a { t1.DaggerWindup }s windup, <font color="#6c6e78">Two Time</font> stabs forward and gains <b>Resistance { t1.DaggerResLevel }</b> for { t1.DaggerResDuration } seconds.\n\n` .. `Landing a stab to the front will do { t1.DaggerDamage } damage and inflict <b>Slowness II</b> and <b>Helpless I</b> for { t1.DaggerStatusTime }s.\n\n` .. `Landing a stab to the back will instead do { t1.DaggerBackstabDamage } damage and stun the Killer for 2s.\n\n` .. `Using this ability while <b>crouched</b> quickly lunges you forward with a stab that has increased endlag but grants 25% more <b>OBLATION</b> progress. A crouched backstab's stun scales linearly from { t1.DaggerCrouchMinStunTime }s to { t1.DaggerBackstabStatusTime }s after { t1.DaggerCrouchStunChargeTime }s of crouching. The charge is measured when the stab begins.\n\n` .. `Missing a <b>crouched stab</b> will inflict <font color="#6c6e78">Two Time</font> with Slowness II for up to { t1.DaggerMissSlownessMaxDuration }s depending on their distance from the Killer after it ends.\n\n` .. "Landing a stab on a summon or a stun immune Killer does not grant any <b>OBLATION</b> progress.\n"
+	},
+	{
+		Header = "CROUCH",
+		Image = "rbxassetid://77707049887484",
+		Quote = "\"Quiet, Two Time! They're not supposed to see us in here, hehe!\" - █████",
+		Text = `Cooldown: { t1.CrouchCooldown }s\n` .. "<font color=\"#6c6e78\">Two Time</font> crouches down to silence their footsteps and become stealthier.\n\n" .. `<font color="#6c6e78">Two Time</font> remains <b>crouched</b> for at most { t1.CrouchDuration } seconds, but can uncrouch whenever they need to.\n` .. `Crouching applies <b>Undetectable I</b> and <b>Invisibility III</b> for at most { t1.CrouchDuration } seconds.\n\n` .. `While <b>crouched</b>, <font color="#6c6e78">Two Time</font>'s aura is revealed to teammates within { t1.CrouchTeammateRevealDistance } studs.\n\n` .. `While <b>crouched</b>, <font color="#6c6e78">Two Time</font> will gradually gain speed while running towards the Killer, with this speed boost capping out at { math.round((t1.CrouchSpeedBoostMax - 1) * 100) }% after { t1.CrouchSpeedBoostTime }s of running. This speed boost is immediately lost if <font color="#6c6e78">Two Time</font> exits Crouch, takes damage, or stops running towards the Killer.\n\n` .. "Uncrouching manually will forcibly remove these statuses and if <font color=\"#6c6e78\">Two Time</font> is within 30 studs of the Killer, will additionally grant <font color=\"#6c6e78\">Two Time</font> <b>Speed II</b> for 1s.\n"
+	},
+	{
+		Header = "PRAY",
+		Image = "rbxassetid://83582849559932",
+		Quote = "\"May Spawn bless us today!\" - ██████",
+		Text = "<font color=\"#6c6e78\">Two Time</font> will kneel near their <b>RITUAL</b> and begin praying while this ability is held.\n" .. "Letting go of the ability will stop <b>PRAYING</b>.\n\n" .. "While <b>PRAYING</b>, <font color=\"#6c6e78\">Two Time</font> will rapidly exchange <b>OBLATION</b> progress for HP.\n" .. `<font color="#6c6e78">Two Time</font> will gain 1 HP for every { 100 / t1.PrayHealthPerFullOblation }% <b>OBLATION</b> progress spent, restoring up to approximately { string.format("%.2f", t1.PrayHealthPerFullOblation) } HP from a full bar, without exceeding their maximum health.\n\n` .. "If <font color=\"#6c6e78\">Two Time</font> is not near their <b>RITUAL</b> when attempting to use this ability, the location of their <b>RITUAL</b> will be revealed to them for 4s.\n\n" .. "<font color=\"#6c6e78\">Two Time</font> is unable to use this ability if they do not have a <b>RITUAL</b>.\n"
+	},
+	{
+		Header = "RITUAL",
+		Image = "rbxassetid://95580729656404",
+		Quote = "\"Spawn will be eternally pleased at our devotion!\" - ██████",
+		Text = "<font color=\"#6c6e78\">Two Time</font> inscribes a respawn location on the ground.\n" .. "Dying with a full <b>OBLATION</b> bar will instantly teleport <font color=\"#6c6e78\">Two Time</font> to this point.\n\n" .. "<b>This ability can only be used once per round.</b>\n\n" .. "If <font color=\"#6c6e78\">Two Time</font> becomes the last survivor alive and has not already entered their second life, <b>RITUAL</b> will automatically trigger regardless of whether <b>OBLATION</b> was full or not.\n" .. `If this happens, <font color="#6c6e78">Two Time</font> will have their maximum health increased up to { t1.LastSurvivorMaxHealth }, be healed for up to { t1.LastSurvivorHealthBonus } HP, and will not be afflicted with <b>Vulnerable V</b>.` .. "Additionally, they will not teleport to their Ritual, and any buffs they receive will be decreased depending on how much <b>OBLATION</b> they are missing.\n"
+	},
+	{
+		Separator = "CREDITS",
+		Text = "Writer: 4Montaigne, sayso_1230Programmer: voxov_tired, ffPranksterDesigner: astertudeAnimator: sayso_1230Renderer: doc"
+	}
+}
+
+-- Port choices where the export lacks authoritative server code:
+-- Preserve FCT's 4x6x5.5 hitbox size; apply documented latest forward offset (+1.5).
+-- Miss penalty: 1s per 10 studs, capped at 8s (inferred from exported settings).
+t1.DaggerHitboxSize=Vector3.new(4,6,5.5)
+t1.DaggerHitboxOffset=7
+t1.DaggerHitTime=.25
+t1.DaggerCrouchHitTime=.415
+t1.PraySensitiveButton=true
+-- Custom, server-validated hold lease; omit PrayHoldTime to avoid the old generic charge protocol.
+t1.PrayHoldTime=nil
+t1.TwoTimeRoundHooks=false
+t1.SprintSpeed=26
+t1.MaxStamina=100
+t1.StaminaLoss=10
+t1.StaminaGain=20
+t1.TwoTimePortVersion="1.0.0"
+return t1
+]====]}
+}
+local pending={}
+for _,plan in plans do
+ assert(#plan.source<200000,"Source exceeds Studio's limit: "..plan.path..". Nothing changed.")
+ assert(fingerprint(plan.source)==plan.after,"Incomplete installer text. Copy the entire Raw file again.")
+ local target=find(plan.path)
+ if target then
+  assert(target:IsA("ModuleScript"),"Expected ModuleScript at "..plan.path..". Nothing changed.")
+  local current=fingerprint(target.Source)
+  if current~=plan.after then
+   assert(plan.before and current==plan.before,"Unexpected edited source at "..plan.path..". Nothing changed; keep your edits and send that module for reconciliation.")
+   table.insert(pending,{target=target,plan=plan,before=target.Source})
+  end
+ else
+  assert(plan.before==false,"Missing FCT module at "..plan.path..". Nothing changed.")
+  local parentPath=plan.path:match("^(.*)/[^/]+$")
+  assert(find(parentPath),"Missing parent at "..parentPath..". Nothing changed.")
+  table.insert(pending,{plan=plan})
+ end
+end
+if #pending==0 then print("[Two Time FCT Port] Already applied.");return end
+local backup=Instance.new("Folder")
+backup.Name="TwoTimeFCTPort_Backup_"..os.date("!%Y%m%d_%H%M%S")
+backup.Parent=game:GetService("ServerStorage")
+for i,item in pending do
+ local saved=item.target and item.target:Clone() or Instance.new("Folder")
+ saved.Name=string.format("%02d_%s",i,item.plan.path:match("[^/]+$"))
+ saved:SetAttribute("OriginalPath",item.plan.path)
+ saved:SetAttribute("WasCreated",item.target==nil)
+ saved:SetAttribute("InstalledFingerprint",item.plan.after)
+ saved.Parent=backup
+end
+local ok,err=pcall(function()
+ for _,item in pending do
+  if not item.target then
+   item.target=Instance.new("ModuleScript")
+   item.target.Name=item.plan.path:match("[^/]+$")
+   item.target.Parent=find(item.plan.path:match("^(.*)/[^/]+$"))
+  end
+  item.target.Source=item.plan.source
+ end
+end)
+if not ok then
+ for i=#pending,1,-1 do
+  local item=pending[i]
+  if item.before then item.target.Source=item.before elseif item.target then item.target:Destroy() end
+ end
+ backup:Destroy()
+ error("[Two Time FCT Port] Rolled back after write failure: "..tostring(err))
+end
+pcall(function()game:GetService("ChangeHistoryService"):SetWaypoint("Two Time FCT Port")end)
+print("[Two Time FCT Port] Applied "..#pending.." modules. Backup: "..backup:GetFullName()..". Save and start a fresh playtest. Kit animations and sounds are disabled.")
