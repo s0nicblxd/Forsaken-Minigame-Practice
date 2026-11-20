@@ -34,7 +34,7 @@ local CFrame={new=function(...)return {...}end}
 local Enum={HumanoidStateType={Jumping='Jumping'}}
 local TweenInfo={new=function()return {}end}
 local Debris={AddItem=function()end}
-local TweenService={Create=function(_,object,_,values)return {Play=function()for k,v in values do object[k]=v end end}end}
+local TweenService={Create=function(_,object,_,values)return {Play=function()for k,v in values do object[k]=v end end,Cancel=function()end}end}
 local heartbeat=signal()
 local RunService={Heartbeat=heartbeat}
 local Players={GetPlayerFromCharacter=function(_,rig)return rig.player end}
@@ -77,6 +77,7 @@ function Util:ApplyVelocity(root,value)local v=object();v.LineVelocity=value;ret
 function Util:ApplyDamage(victim,damage)victim.Humanoid.Health-=damage end
 function Util:GiveInvincible(rig,_,duration)rig.invincibility=duration end
 function Util:GetDistanceFromGround()return 3 end
+local Visuals={Build=function()return {GetChildren=function()return {}end,Destroy=function()end}end}
 local Hitboxes={}
 function Hitboxes:CreateHitbox(_,settings)
  self.last=settings;self.count=(self.count or 0)+1
@@ -89,17 +90,27 @@ local Vector2={new=function(x,y)return {X=x,Y=y}end}
 local Color3={fromRGB=function(...)return {...}end}
 local ColorSequence={new=function(x)return x end}
 local NumberSequence={new=function(x)return x end}
+Enum.RaycastFilterType={Exclude='Exclude'}
+local RaycastParams={new=function()return {}end}
+Enum.EasingStyle={Quint='Quint'};Enum.EasingDirection={Out='Out'}
 Enum.UserInputType={MouseButton1='MouseButton1'}
 Enum.HighlightDepthMode={AlwaysOnTop='AlwaysOnTop'}
 local function node()
- local n=object();n.Visible=true
+ local n=object();n.Visible=true;n.Destroying={Once=function()end}
  function n:FindFirstChild(name)return self[name]end
  return n
 end
 local Instance={new=function()return node()end}
+RunService.RenderStepped=signal()
 local UserInputService={WindowFocusReleased=signal(),InputEnded=signal()}
 local sprint={SprintSpeed=26,Stamina=20,MaxStamina=100,Toggle=function(self)self.toggled=true end}
 local require=function(module)if module=='Sprint' then return sprint else return {}end end
+local Visuals={Build=function()
+ local folder=node();folder.Beam=node();folder.Beam.Width0=1;folder.Beam.Width1=1
+ folder.EndSymbol={GetChildren=function()return {}end}
+ return folder
+end}
+function Util:CreateWarning(_,text)self.lastWarning=text end
 local function ui()
  local n=node();n.Bar={Inner={}};n.Display=node();n.Display.Idle={}
  n.Full=node();n.Full.Full={};n.Full.Vines=node();n.Full.Vines.Sprite={};n.Full.Wings=node();n.Full.Wings.Sprite={}
@@ -111,25 +122,54 @@ local rig=rig()
 rig.PrimaryPart.Size=Vector3.new(2,2,1)
 localPlayer.Character=rig
 workspace.Terrain={}
+function workspace:Raycast(origin,direction)
+ if direction.Y<0 then return {Position=Vector3.new(origin.X,0,origin.Z)} end
+end
 local game={ReplicatedStorage={Systems={Character={Game={Sprinting='Sprint'}}}}}
 function Network:FireConnection(name,key,value)self.locks=self.locks or {};self.locks[key]=value end
 function Network:FireServerConnection(name,_,value)self.lastHold=value end
-local task={spawn=function()end}
+local scheduledTask=task
+local task={spawn=function()end,delay=scheduledTask.delay}
 local a={Player=localPlayer,Rig=rig,HeldAbilities={},Config={HealthBar={Clone=ui},BloodRequiredForRespawn=8,Speed=12,SprintSpeed=26,CrouchSpeed=10,CrouchRunSpeed=23,CrouchTeammateRevealDistance=100,CrouchTeammateRevealFadeTime=1.25,DaggerLungeForce=110,DaggerCrouchMoverEndlag=.4,PrayHighlightImage='rbxassetid://100508591140926',PrayHighlightDuration=4}}
 local Client={}
 local function connect(a,signal,callback)
  table.insert(a.TTClientConnections,signal:Connect(callback))
 end
 local function owner(a) return a.Player==Players.LocalPlayer end
+local function meterVisibility(a)
+ local display=a.HealthbarDisplay
+ if not display then return end
+ local shown=a.TTClientPraying or os.clock()<(a.TTMeterUntil or 0)
+ local mode=shown and (a.TTMeterFull and "full" or "partial") or "hidden"
+ if a.TTMeterMode==mode then return end
+ a.TTMeterMode=mode;a.TTMeterToken=(a.TTMeterToken or 0)+1
+ local token=a.TTMeterToken
+ if a.TTMeterTween then a.TTMeterTween:Cancel() end
+ if shown then display.Visible=true end
+ local info=TweenInfo.new(a.TTClientPraying and .05 or .65,Enum.EasingStyle.Quint,Enum.EasingDirection.Out)
+ a.TTMeterTween=TweenService:Create(display,info,{
+  Position=UDim2.fromScale(mode=="full" and 1 or shown and 1.025 or 1.175,.5),
+  Size=UDim2.fromScale(1,shown and .532 or .4)
+ })
+ a.TTMeterTween:Play()
+ if not shown then task.delay(.65,function()
+  if a.TTMeterToken==token and a.HealthbarDisplay==display and not a.TTClientDestroyed then display.Visible=false end
+ end) end
+end
 local function blood(a,value)
  local display=a.HealthbarDisplay
  if not display then return end
  local fraction=math.clamp(value/a.Config.BloodRequiredForRespawn,0,1)
- display.Bar.Inner.Size=UDim2.fromScale(1,fraction)
+ if value>0 or a.TTLastBlood and value~=a.TTLastBlood then a.TTMeterUntil=os.clock()+5 end
+ a.TTLastBlood=value;a.TTMeterFull=fraction>=1
  display.Display.Visible=fraction<1
  display.Full.Visible=fraction>=1
- display.Position=UDim2.fromScale(1,.5)
- display.Size=UDim2.fromScale(1,.532)
+ if a.TTBloodTween then a.TTBloodTween:Cancel() end
+ a.TTBloodTween=TweenService:Create(display.Bar.Inner,TweenInfo.new(a.TTClientPraying and .05 or .25),{Size=UDim2.fromScale(1,fraction)})
+ a.TTBloodTween:Play();meterVisibility(a)
+end
+local function warning(a,message)
+ if message then Util:CreateWarning("TwoTimeWarning",message,a.Config.WarningTemplate) end
 end
 local function sprite(a,image,module)
  if not image or not module then return end
@@ -147,7 +187,9 @@ local function sprite(a,image,module)
  end)
 end
 local function stopPray(a,notify)
+ if a.TTClientPraying then a.TTMeterUntil=os.clock()+5 end
  a.TTClientPraying=nil
+ meterVisibility(a)
  if a.TTClientJump~=nil then
   a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTClientJump);a.TTClientJump=nil
  end
@@ -158,15 +200,27 @@ end
 local function locate(a,position)
  if a.TTMarker then a.TTMarker:Destroy() end
  local marker=Instance.new("Part");marker.Name="TwoTimeRitualMarker";marker.Anchored=true;marker.CanCollide=false;marker.CanTouch=false;marker.CanQuery=false;marker.Transparency=1;marker.Position=position+Vector3.new(0,3,0);marker.Parent=workspace
- local gui=Instance.new("BillboardGui");gui.Size=UDim2.fromOffset(64,64);gui.AlwaysOnTop=true;gui.Parent=marker
- local image=Instance.new("ImageLabel");image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayHighlightImage;image.Parent=gui
- a.TTMarker=marker;Debris:AddItem(marker,a.Config.PrayHighlightDuration)
+ local gui=Instance.new("BillboardGui");gui.Size=UDim2.fromOffset(120,120);gui.AlwaysOnTop=true;gui.Adornee=marker;gui.LightInfluence=0;gui.Parent=marker
+ local image=Instance.new("ImageLabel");image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayHighlightImage;image.ImageColor3=Color3.fromRGB(201,201,201);image.ImageTransparency=1;image.Parent=gui
+ local rotation=Instance.new("NumberValue");rotation.Value=900;rotation.Parent=marker
+ local render=RunService.RenderStepped:Connect(function(dt)
+  if image.Parent then image.Rotation=((image.Rotation or 0)+rotation.Value*dt)%360 end
+ end)
+ marker.Destroying:Once(function()render:Disconnect()end)
+ TweenService:Create(image,TweenInfo.new(.2),{ImageTransparency=0}):Play()
+ TweenService:Create(rotation,TweenInfo.new(2,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Value=45}):Play()
+ task.delay(a.Config.PrayHighlightDuration-.35,function()
+  if marker.Parent then TweenService:Create(image,TweenInfo.new(.35),{ImageTransparency=1}):Play();Debris:AddItem(marker,.35) end
+ end)
+ a.TTMarker=marker
 end
 function Client.Pray(a,result)
  if type(result)~="table" then return end
+ warning(a,result.Warning)
  if result.Locate then locate(a,result.Locate);return end
  if not result.Started then return end
  a.TTClientPraying=true
+ meterVisibility(a)
  a.TTClientJump=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
  Network:FireConnection("DisableSprinting","TwoTimePray",true)
@@ -183,9 +237,15 @@ function Client.Ritual(a,result)
  Network:FireConnection("DisableSprinting","TwoTimeRitual",true)
 end
 local function createIndicator(a)
+ local asset=Visuals.Build("LungeIndicator")
  local start=Instance.new("Attachment");start.Parent=workspace.Terrain
  local finish=Instance.new("Attachment");finish.Parent=workspace.Terrain
- local beam=Instance.new("Beam");beam.Attachment0=start;beam.Attachment1=finish;beam.Width0=.12;beam.Width1=.04;beam.FaceCamera=true;beam.Color=ColorSequence.new(Color3.fromRGB(160,160,170));beam.Transparency=NumberSequence.new(.35);beam.Enabled=false;beam.Parent=start
+ local beam=asset.Beam;beam.Attachment0=start;beam.Attachment1=finish;beam.Enabled=false;beam.Parent=start
+ a.TTIndicatorEmitters={}
+ for _,emitter in asset.EndSymbol:GetChildren() do
+  emitter.Enabled=false;emitter.Parent=finish;table.insert(a.TTIndicatorEmitters,emitter)
+ end
+ asset:Destroy()
  a.TTIndicator={start,finish,beam}
 end
 function Client.Created(a)
@@ -213,6 +273,7 @@ function Client.Created(a)
  a.TTOriginalSprintSpeed=Sprinting.SprintSpeed or a.Config.SprintSpeed
  local template=a.Config.HealthBar
  local display=template:Clone();display.Parent=a.Player.PlayerGui:WaitForChild("MainUI")
+ display.Visible=false;display.Position=UDim2.fromScale(1.175,.5);display.Size=UDim2.fromScale(1,.4)
  a.HealthbarDisplay=display;blood(a,rig:GetAttribute("TwoTimeOblation") or 0)
  sprite(a,display.Display,display.Display:FindFirstChild("Idle"))
  sprite(a,display.Full,display.Full:FindFirstChild("Full"))
@@ -222,7 +283,8 @@ function Client.Created(a)
  end
  createIndicator(a)
  Network:SetConnection("TwoTimePortState","REMOTE_EVENT",function(kind,data)
-  if kind=="Blood" then blood(a,data)
+  if kind=="Warning" then warning(a,data)
+  elseif kind=="Blood" then blood(a,data)
   elseif kind=="Pray" and not data then stopPray(a,false)
   elseif kind=="Revive" then
    stopPray(a,true)
@@ -237,6 +299,7 @@ function Client.Created(a)
  local pulse=0;local lastCrouch=false
  connect(a,RunService.Heartbeat,function(dt)
   if not rig.Parent or not rig.PrimaryPart then return end
+  meterVisibility(a)
   local crouched=rig:GetAttribute("Crouching")==true
   if crouched~=lastCrouch then
    lastCrouch=crouched
@@ -264,22 +327,44 @@ function Client.Created(a)
    if not (a.HeldAbilities and a.HeldAbilities.Pray) then stopPray(a,true)
    elseif pulse>=.2 then pulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",true) end
   end
+ end)
+ connect(a,RunService.RenderStepped,function()
+  if not rig.Parent or not rig.PrimaryPart then return end
+  local crouched=rig:GetAttribute("Crouching")==true
   local indicator=a.TTIndicator
   if indicator then
-   indicator[3].Enabled=crouched
-   if crouched then
+   local usable=true
+   if a.CanUseAbility then local ok,result=pcall(a.CanUseAbility,a,"Dagger");usable=ok and result==true end
+   local visible=crouched and rig.Humanoid.Health>0 and usable
+   indicator[3].Enabled=visible
+   for _,emitter in a.TTIndicatorEmitters do
+    if emitter.Enabled~=visible then emitter.Enabled=visible;if visible then emitter:Emit(1) else emitter:Clear() end end
+   end
+   if visible then
     local root=rig.PrimaryPart
-    local origin=root.Position-Vector3.new(0,rig.Humanoid.HipHeight+root.Size.Y/2-.1,0)
-    local distance=(a.Config.DaggerLungeForce+a.Config.DaggerLungeForce/3)/2*a.Config.DaggerCrouchMoverEndlag
-    local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={rig}
-    local hit=workspace:Raycast(origin,root.CFrame.LookVector*distance,params)
-    indicator[1].WorldPosition=origin;indicator[2].WorldPosition=hit and hit.Position or origin+root.CFrame.LookVector*distance
+    local forward=root.CFrame.LookVector*Vector3.new(1,0,1)
+    if forward.Magnitude>.01 then
+     forward=forward.Unit
+     local height=rig.Humanoid.HipHeight+root.Size.Y/2
+     local distance=(a.Config.DaggerLungeForce+a.Config.DaggerLungeForce/3)/2*a.Config.DaggerCrouchMoverEndlag
+     local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={workspace:FindFirstChild("Players") or rig}
+     local wall=workspace:Raycast(root.Position,forward*distance,params)
+     if wall then distance=math.max((wall.Position-root.Position).Magnitude-1,0) end
+     local endpoint=root.Position+forward*distance
+     local ground=workspace:Raycast(endpoint,Vector3.new(0,-(height+6),0),params)
+     indicator[1].WorldPosition=root.Position-Vector3.new(0,height-.1,0)
+     indicator[2].WorldPosition=ground and ground.Position+Vector3.new(0,.1,0) or endpoint-Vector3.new(0,height-.1,0)
+     indicator[3].Transparency=NumberSequence.new((math.sin(os.clock()*2)+1)*.15+.2,1)
+    end
    end
   end
  end)
 end
 function Client.Destroyed(a)
  a.TTClientDestroyed=true
+ a.TTMeterToken=(a.TTMeterToken or 0)+1
+ if a.TTMeterTween then a.TTMeterTween:Cancel() end
+ if a.TTBloodTween then a.TTBloodTween:Cancel() end
  for _,connection in a.TTClientConnections or {} do connection:Disconnect() end
  if a.TTHighlight then a.TTHighlight:Destroy() end
  if a.TTHighlightTween then a.TTHighlightTween:Cancel() end
@@ -299,15 +384,20 @@ end
 
 Client.Created(a)
 assert(a.HealthbarDisplay and #a.TTClientConnections>0)
+assert(a.HealthbarDisplay.Visible==false,"meter must start hidden")
+assert(a.TTIndicator[3].Width0==1 and a.TTIndicator[3].Width1==1)
 Network.callbacks.TwoTimePortState('Blood',8);assert(a.HealthbarDisplay.Full.Visible)
 Network.callbacks.TwoTimePortState('Blood',4);assert(not a.HealthbarDisplay.Full.Visible and a.HealthbarDisplay.Display.Visible)
 assert(a.HealthbarDisplay.Bar.Inner.Size.Y==.5,'full meter must support decreasing during Pray')
+advance(6);heartbeat:Fire(.1);advance(.7)
+assert(not a.HealthbarDisplay.Visible,"meter must hide after inactivity, including a full meter")
 -- Release happened before the server reply: no sticky hold.
 a.HeldAbilities.Pray=nil
 Client.Pray(a,{Started=true});assert(not a.TTClientPraying and Network.lastHold==false)
 -- Focus loss releases server lease and local sprint lock.
 a.HeldAbilities.Pray=true;Client.Pray(a,{Started=true})
 assert(a.TTClientPraying and Network.locks.TwoTimePray)
+assert(a.HealthbarDisplay.Visible,"Pray must reveal the meter")
 UserInputService.WindowFocusReleased:Fire()
 assert(not a.TTClientPraying and not Network.locks.TwoTimePray)
 -- Mouse released outside hotbar is still handled by the global input listener.
@@ -318,13 +408,22 @@ assert(not a.TTClientPraying and Network.lastHold==false)
 a.HeldAbilities.Pray=true;Client.Pray(a,{Started=true})
 a.HeldAbilities.Pray=nil;heartbeat:Fire(.1)
 assert(not a.TTClientPraying)
-Client.Pray(a,{Locate=Vector3.new(1,2,3)});assert(a.TTMarker)
+Network.callbacks.TwoTimePortState("Warning","You need Oblation to pray.");assert(Util.lastWarning=="You need Oblation to pray.")
+Client.Pray(a,{Locate=Vector3.new(1,2,3),Warning="Return to your Ritual to pray."});assert(a.TTMarker)
 Client.Dagger(a,{Duration=1});assert(Network.locks.TwoTimeStab)
 Client.Ritual(a,{Started=true,Duration=3.5});assert(Network.locks.TwoTimeRitual)
 now+=4;heartbeat:Fire(.1)
 assert(not Network.locks.TwoTimeStab and not Network.locks.TwoTimeRitual)
 Network.callbacks.TwoTimePortState('Revive',true)
 assert(a.HealthbarDisplay==nil and sprint.Stamina==60)
+-- Indicator only displays when crouched and Dagger is actually usable.
+rig.attrs.Crouching=true;a.CanUseAbility=function()return false end
+RunService.RenderStepped:Fire(.016);assert(not a.TTIndicator[3].Enabled)
+a.CanUseAbility=function()return true end
+RunService.RenderStepped:Fire(.016);assert(a.TTIndicator[3].Enabled)
+assert(a.TTIndicator[2].WorldPosition.Y==.1,'endpoint should lie on the ground')
+rig.attrs.Crouching=nil
+RunService.RenderStepped:Fire(.016);assert(not a.TTIndicator[3].Enabled)
 Client.Destroyed(a)
 assert(Network.callbacks.TwoTimePortState==nil)
 assert(sprint.SprintSpeed==26 and not Network.locks.TwoTimePray)

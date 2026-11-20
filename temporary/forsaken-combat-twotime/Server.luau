@@ -9,6 +9,7 @@ local Statuses=require(Modules.Statuses)
 local Hitboxes=require(Modules.Hitboxes)
 local Network=require(Modules.Network)
 local Rules=require(script.Parent.Rules)
+local Visuals=require(script.Parent.Visuals)
 local Server={}
 local function alive(a)
  return not a.TTDestroyed and a.Rig and a.Rig.Parent and a.Rig.PrimaryPart and a.Rig:FindFirstChildOfClass("Humanoid") and a.Rig.Humanoid.Health>0
@@ -34,6 +35,29 @@ local function knife(a,on)
   if part.Parent then part.Transparency=on and transparency or 1 end
  end
  -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
+end
+local function stopPrayVFX(a)
+ local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
+ for _,object in visuals or {} do
+  for _,item in object:GetDescendants() do
+   if item:IsA("ParticleEmitter") then item.Enabled=false
+   elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
+  end
+  if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
+  Debris:AddItem(object,4)
+ end
+end
+local function startPrayVFX(a)
+ stopPrayVFX(a)
+ local folder=Visuals.Build("Pray")
+ a.TTPrayVFX=folder:GetChildren()
+ for _,object in a.TTPrayVFX do object.Parent=a.Rig.PrimaryPart end
+ folder:Destroy()
+ for _,object in a.TTPrayVFX do
+  for _,item in object:GetDescendants() do
+   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+  end
+ end
 end
 local function nearest(a)
  local best,distance=nil,math.huge
@@ -63,10 +87,11 @@ end
 function Server.StopPray(a,interrupted)
  if not a.TTPraying then return end
  a.TTPraying=nil
+ stopPrayVFX(a)
  a.Rig:SetAttribute("TwoTimePraying",nil)
  lock(a,"Pray",false);removeSpeed(a,"TwoTimePray")
  if a.TTJump then a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTJump.Enabled);a.TTJump=nil end
- if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown) end
+ if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown);send(a,"Warning","Your prayer was interrupted.") end
  send(a,"Pray",false)
 end
 function Server.StopCrouch(a,manual)
@@ -112,7 +137,8 @@ function Server.Dagger(a)
   TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
   Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
   a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
-   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
+   Size=a.Config.DaggerHitboxSize,PredictVelocity=false,CastPoint=a.Rig,
+   CFrame=function() return a.Rig.PrimaryPart.CFrame*CFrame.new(0,0,-a.Config.DaggerHitboxOffset) end,
    Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
    Connections={Hit=function(victim)
     if hit or not current() then return end
@@ -145,7 +171,8 @@ function Server.Dagger(a)
    a.TTHitbox=nil
    if crouched and not hit and alive(a) then
     local _,distance=nearest(a)
-    Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=Rules.MissDuration(a.Config,distance)})
+    local penalty=Rules.MissDuration(a.Config,distance)
+    if penalty>0 then Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=penalty}) end
    end
   end)
  end)
@@ -173,9 +200,10 @@ function Server.Pray(a)
  if not alive(a) or blocked(a) or a.TTAttacking or a.TTRitualCasting then return {Cancelled=true} end
  if a.TTPraying then Server.StopPray(a,false);return end
  local ritual=a.RespawnLocation
- if not ritual or not ritual.Parent or a.LivesUsed~=1 then return {Cancelled=true} end
- if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position} end
- if a.Blood<=0 or a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then return {Cancelled=true} end
+ if not ritual or not ritual.Parent or a.LivesUsed~=1 then send(a,"Warning","You must place your Ritual before praying.");return {Cancelled=true} end
+ if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position,Warning="Return to your Ritual to pray."} end
+ if a.Blood<=0 then send(a,"Warning","You need Oblation to pray.");return {Cancelled=true} end
+ if a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then send(a,"Warning","You are already at full health.");return {Cancelled=true} end
  Server.StopCrouch(a,false)
  a.TTPraying=true;a.TTPrayStart=os.clock();a.TTPrayLease=os.clock()
  a.TTPrayDamage=0
@@ -184,6 +212,7 @@ function Server.Pray(a)
  Util:CreateSpeedMultiplier(a.Rig,0,"TwoTimePray")
  a.TTJump={Enabled=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)}
  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+ startPrayVFX(a)
  return {Started=true}
 end
 local function effect(a,name,parent)

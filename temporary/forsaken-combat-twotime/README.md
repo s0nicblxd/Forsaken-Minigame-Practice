@@ -2,11 +2,17 @@
 
 Studio Command Bar installer for the current FCT combat build, following the newest supplied UPD configuration and the user's ordered patch notes. No new kit animation IDs are loaded and no kit sounds are played. Existing generic locomotion remains in use. Public ability icons, expressions, FCT life models, dagger, Ritual effects and Oblation UI are retained.
 
+## Upgrade the already-working port
+
+Stop Play, copy the entire **Raw** `Repair-TwoTime-Polish.command.luau` file into Studio's **Edit-mode Command Bar**, and save/start a fresh playtest. It updates 10 Two Time modules, imports the exported visual properties, and leaves the installed shared Weakness/Azure/Guest changes alone. A fresh installation can use the full installer below; it also accepts the previously published working port.
+
+This repair fixes the close-range stab dead zone, makes miss Slowness start beyond 30 studs, restores UPD's one-stud-wide textured indicator and endpoint particles, adds Pray's exported VFX and warning feedback, and restores conditional meter visibility. Animations/audio remain omitted.
+
 ## Apply
 
 1. Use your current FCT place with the Guest compatibility fix and the latest Azure optional-animation repair already applied. Save a copy of the place.
 2. Stop Play. Open `Apply-TwoTime-FCT.command.luau` in GitHub's **Raw** view, copy the entire file, and paste it into Studio's **Command Bar in Edit mode**.
-3. Wait for `[Two Time FCT Port] Applied 27 modules`, save, and start a new playtest. Select the default Two Time.
+3. Wait for `[Two Time FCT Port] Applied 29 modules`, save, and start a new playtest. Select the default Two Time.
 4. Do not paste the installer into a Script's Source property: the installer contains several modules. Each installed module is below Studio's 200,000-byte Source limit; the largest is 160,512 bytes.
 
 The installer updates both ReplicatedStorage and ServerStorage Two Time snapshots. It also installs the Weakness/Vulnerable migration and damage-path support described below. It checks exact source fingerprints before changing anything, backs up affected modules in ServerStorage, is safe to run twice, and rolls back writes if an assignment fails. If a module was edited separately, it stops with its path instead of overwriting the edits.
@@ -16,10 +22,10 @@ The installer updates both ReplicatedStorage and ServerStorage Two Time snapshot
 ## Kit
 
 - **Dagger:** 30s cooldown, 0.3s windup, 10 front damage / 20 back damage, Resistance I for 0.7s. Standing backstabs stun for 2s. Crouched backstabs scale from 2 to 3.5s over the first second crouched, sampled at stab activation. Backstab detection uses actual root transforms, not extrapolated actor pivots. Standing lunge is restored (force 50); crouched force is 110. No lifesteal.
-- **Oblation:** 20% per front stab, 40% per backstab, multiplied by 1.25 for crouchstabs. Capped at a full meter; summons and stun-immune/already-stunned targets grant none. The meter can decrease after reaching full.
-- **Crouch:** 30s cooldown setting, reduced by elapsed crouch time down to 15s; 1s initial toggle delay; 15s maximum duration. Walk 10, run 23, Invisibility III and Undetectable I, footsteps muted. Running toward a killer within 105 studs builds up to 50% extra speed over 4s. Damage, stopping the approach, and leaving crouch reset the bonus. Nearby survivor teammates can see a fading highlight within 100 studs. A rebuilt beam previews lunge travel. Manual uncrouch within 30 studs of a killer gives Speed II for 1s.
-- **Missed crouchstab:** Slowness II scales with killer distance, up to 8s. Crouch endlag 0.225s and recovery tween 0.15s; sprint lock 1s.
-- **Pray:** hold AltAbility3 or hold the hotbar button within 10 studs of your Ritual. Converts 1.5% Oblation into 1 HP, up to 66.67 HP per full bar, with a 10s full-conversion setting. Movement/jumping are locked while praying. Release, focus loss, leaving range, full health, depleted meter, interruption, or a lost client hold lease stop it. Damage totaling 5 during the channel interrupts it and gives a 6s cooldown. Attempting it outside range reveals the Ritual for 4s. It has no normal cooldown.
+- **Oblation:** 20% per front stab, 40% per backstab, multiplied by 1.25 for crouchstabs. Capped at a full meter; summons and stun-immune/already-stunned targets grant none. The meter can decrease after reaching full. It starts hidden, appears on meter changes or while praying, and retracts/hides five seconds after the last change; reaching full does not pin it permanently.
+- **Crouch:** 30s cooldown setting, reduced by elapsed crouch time down to 15s; 1s initial toggle delay; 15s maximum duration. Walk 10, run 23, Invisibility III and Undetectable I, footsteps muted. Running toward a killer within 105 studs builds up to 50% extra speed over 4s. Damage, stopping the approach, and leaving crouch reset the bonus. Nearby survivor teammates can see a fading highlight within 100 studs. UPD’s textured one-stud-wide beam and endpoint particles preview lunge travel, follow the ground, exclude characters from obstruction checks, and hide while Dagger is unavailable. Manual uncrouch within 30 studs of a killer gives Speed II for 1s.
+- **Missed crouchstab:** Slowness II starts beyond 30 studs and increases by 1s per additional 10 studs, up to 8s. No killer means no miss penalty. Crouch endlag 0.225s and recovery tween 0.15s; sprint lock 1s.
+- **Pray:** hold AltAbility3 or hold the hotbar button within 10 studs of your Ritual. Converts 1.5% Oblation into 1 HP, up to 66.67 HP per full bar, with a 10s full-conversion setting. Movement/jumping are locked while praying. Release, focus loss, leaving range, full health, depleted meter, interruption, or a lost client hold lease stop it. Damage totaling 5 during the channel interrupts it and gives a 6s cooldown. Attempting it outside range reveals the Ritual for 4s. It has no normal cooldown. Actual UPD startup and looping particle/beam/light properties are restored, with VFX shutdown on release or interruption. Missing Ritual, empty Oblation, full health, distance and interruption produce warnings using FCT’s warning template. The out-of-range marker spins, slows and fades.
 - **Ritual:** AltAbility4, one placement per character life cycle, 3.5s action, ground/wall/nearby-Ritual placement validation. A full bar and placed Ritual prevent one lethal hit, teleport you back, and switch appearance.
 - **Second life:** 50 maximum HP, full healing, +40 stamina, status cleanse, 2s invincibility, Speed II for 6s, Vulnerable V for 12s. Stale crouch, dagger, prayer and Ritual locks are cleared. A full meter without a Ritual does not prevent death.
 
@@ -42,23 +48,24 @@ Chance's existing penalty and Slateskin's old status removal now target Vulnerab
 
 The exported UPD does not contain full authoritative ability callbacks. Several gameplay details therefore had to be rebuilt:
 
-- Hitbox size remains FCT's 4 × 6 × 5.5; the latest documented +1.5-stud forward shift produces a 7-stud offset. Exact live-game geometry cannot be verified from these exports.
-- Miss duration uses 1s per 10 studs, capped at 8s, inferred from UPD's settings.
+- Hitbox size remains FCT’s 4 × 6 × 5.5, now centered 3.25 studs forward so its near edge starts 0.5 studs ahead instead of leaving a 4.25-stud gap. It follows the actual root without prediction and retains line-of-sight checks from the attacker. Exact live-game geometry cannot be verified from these exports.
+- The 30-stud grace distance is a deliberate fairness adjustment after playtest feedback; the export does not reveal the authoritative miss formula. Beyond it, the exported interval/multiplier/cap settings are used.
 - Prayer damage interruption uses cumulative damage during a channel. The exported setting supplies the threshold but not the complete implementation.
-- The trajectory beam is rebuilt; the original newer Beam/endpoint instances are not imported.
+- Visuals.luau reconstructs the actual UPD Beam, endpoint emitters and Pray hierarchy from typed instance properties, including attachment transforms and references. Public textures are used directly; no external model download or restricted media is required. Warning wording and VFX activation timing are reconstructed because the export lacks those server callbacks.
 - Multiple-Two-Time Oblation requirement scaling is not inferred from the unused config field.
 - Skin-specific custom behavior and future private animations/audio are outside this default-kit port.
 
 ## Validation
 
-All 27 installed modules plus the installer/restore compile with Luau. Mocked regressions execute actual port callbacks and cover:
+All 29 installed modules plus the installer/restore compile with Luau. Mocked regressions execute actual port callbacks and cover:
 
 - Windup, front/back detection, charged stuns, meter gains, immunity/summon exclusions, missed attacks, and interruption cleanup.
 - Heartbeat-driven speed buildup/reset, held Pray leases, healing ratios, partial spending, full-health stops, stale-client release, one-use lethal revival and explicit proportional LMS math.
-- Client meter updates after full, late input release, focus loss, mouse release outside the hotbar, sprint-lock recovery and cleanup.
+- Client meter updates after full, initial hiding, inactivity hiding, Pray reveal, late input release, focus loss, mouse release outside the hotbar, sprint-lock recovery, cooldown-gated indicator visibility and ground placement.
+- Visual factory creation and writable property checks against Roblox’s API schema, exact beam widths/textures, attachment references, startup particle emission and prayer effect cleanup.
 - Weakness/Vulnerable application/removal and actual Util/Hitboxes arithmetic, including their combined effects and legacy migration.
-- Installer atomic preflight, simulated write-failure rollback, repeat application and restoration.
+- Installer atomic preflight, simulated write-failure rollback, repeat application and restoration, including upgrading and restoring the previously published working port.
 
-Run `luau regression.luau`, `luau client-regression.luau`, and `luau damage-regression.luau` with the Luau CLI. The installer regression harness was also run locally. These are mocked tests, not a claim of a Roblox Studio playtest.
+Run `luau regression.luau`, `luau client-regression.luau`, `luau damage-regression.luau`, and `luau visual-regression.luau` with the Luau CLI. The installer regression harness was also run locally. These are mocked tests, not a claim of a Roblox Studio playtest.
 
 Studio checks: place Ritual; land standing and charged crouchstabs on the Slasher bot; spend a full meter through Pray; release the key and click outside the button; take damage while praying; test a missed crouchstab; refill Oblation and take lethal damage. Verify the second lethal hit kills, no automatic solo LMS activation occurs, and Guest/Azure still function. Also verify camera/footstep behavior and physical lunge/teleport clearance in your map.

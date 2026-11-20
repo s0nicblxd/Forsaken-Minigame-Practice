@@ -10471,7 +10471,7 @@ Behavior.OnStunned=Behavior.OnHelpless
 return Behavior
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,after="10077:dada0ab6:c0faa1f7",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,previous="10077:dada0ab6:c0faa1f7",after="13717:fa340eb8:3e37c1cf",source=[====[
 -- Public image-based presentation only; gameplay never waits on an AnimationTrack.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -10481,20 +10481,46 @@ local Debris=game:GetService("Debris")
 local Modules=game.ReplicatedStorage.Modules
 local Network=require(Modules.Network)
 local Util=require(Modules.Util)
+local Visuals=require(script.Parent.Visuals)
 local Client={}
 local function connect(a,signal,callback)
  table.insert(a.TTClientConnections,signal:Connect(callback))
 end
 local function owner(a) return a.Player==Players.LocalPlayer end
+local function meterVisibility(a)
+ local display=a.HealthbarDisplay
+ if not display then return end
+ local shown=a.TTClientPraying or os.clock()<(a.TTMeterUntil or 0)
+ local mode=shown and (a.TTMeterFull and "full" or "partial") or "hidden"
+ if a.TTMeterMode==mode then return end
+ a.TTMeterMode=mode;a.TTMeterToken=(a.TTMeterToken or 0)+1
+ local token=a.TTMeterToken
+ if a.TTMeterTween then a.TTMeterTween:Cancel() end
+ if shown then display.Visible=true end
+ local info=TweenInfo.new(a.TTClientPraying and .05 or .65,Enum.EasingStyle.Quint,Enum.EasingDirection.Out)
+ a.TTMeterTween=TweenService:Create(display,info,{
+  Position=UDim2.fromScale(mode=="full" and 1 or shown and 1.025 or 1.175,.5),
+  Size=UDim2.fromScale(1,shown and .532 or .4)
+ })
+ a.TTMeterTween:Play()
+ if not shown then task.delay(.65,function()
+  if a.TTMeterToken==token and a.HealthbarDisplay==display and not a.TTClientDestroyed then display.Visible=false end
+ end) end
+end
 local function blood(a,value)
  local display=a.HealthbarDisplay
  if not display then return end
  local fraction=math.clamp(value/a.Config.BloodRequiredForRespawn,0,1)
- display.Bar.Inner.Size=UDim2.fromScale(1,fraction)
+ if value>0 or a.TTLastBlood and value~=a.TTLastBlood then a.TTMeterUntil=os.clock()+5 end
+ a.TTLastBlood=value;a.TTMeterFull=fraction>=1
  display.Display.Visible=fraction<1
  display.Full.Visible=fraction>=1
- display.Position=UDim2.fromScale(1,.5)
- display.Size=UDim2.fromScale(1,.532)
+ if a.TTBloodTween then a.TTBloodTween:Cancel() end
+ a.TTBloodTween=TweenService:Create(display.Bar.Inner,TweenInfo.new(a.TTClientPraying and .05 or .25),{Size=UDim2.fromScale(1,fraction)})
+ a.TTBloodTween:Play();meterVisibility(a)
+end
+local function warning(a,message)
+ if message then Util:CreateWarning("TwoTimeWarning",message,a.Config.WarningTemplate) end
 end
 local function sprite(a,image,module)
  if not image or not module then return end
@@ -10512,7 +10538,9 @@ local function sprite(a,image,module)
  end)
 end
 local function stopPray(a,notify)
+ if a.TTClientPraying then a.TTMeterUntil=os.clock()+5 end
  a.TTClientPraying=nil
+ meterVisibility(a)
  if a.TTClientJump~=nil then
   a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTClientJump);a.TTClientJump=nil
  end
@@ -10523,15 +10551,27 @@ end
 local function locate(a,position)
  if a.TTMarker then a.TTMarker:Destroy() end
  local marker=Instance.new("Part");marker.Name="TwoTimeRitualMarker";marker.Anchored=true;marker.CanCollide=false;marker.CanTouch=false;marker.CanQuery=false;marker.Transparency=1;marker.Position=position+Vector3.new(0,3,0);marker.Parent=workspace
- local gui=Instance.new("BillboardGui");gui.Size=UDim2.fromOffset(64,64);gui.AlwaysOnTop=true;gui.Parent=marker
- local image=Instance.new("ImageLabel");image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayHighlightImage;image.Parent=gui
- a.TTMarker=marker;Debris:AddItem(marker,a.Config.PrayHighlightDuration)
+ local gui=Instance.new("BillboardGui");gui.Size=UDim2.fromOffset(120,120);gui.AlwaysOnTop=true;gui.Adornee=marker;gui.LightInfluence=0;gui.Parent=marker
+ local image=Instance.new("ImageLabel");image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayHighlightImage;image.ImageColor3=Color3.fromRGB(201,201,201);image.ImageTransparency=1;image.Parent=gui
+ local rotation=Instance.new("NumberValue");rotation.Value=900;rotation.Parent=marker
+ local render=RunService.RenderStepped:Connect(function(dt)
+  if image.Parent then image.Rotation=((image.Rotation or 0)+rotation.Value*dt)%360 end
+ end)
+ marker.Destroying:Once(function()render:Disconnect()end)
+ TweenService:Create(image,TweenInfo.new(.2),{ImageTransparency=0}):Play()
+ TweenService:Create(rotation,TweenInfo.new(2,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Value=45}):Play()
+ task.delay(a.Config.PrayHighlightDuration-.35,function()
+  if marker.Parent then TweenService:Create(image,TweenInfo.new(.35),{ImageTransparency=1}):Play();Debris:AddItem(marker,.35) end
+ end)
+ a.TTMarker=marker
 end
 function Client.Pray(a,result)
  if type(result)~="table" then return end
+ warning(a,result.Warning)
  if result.Locate then locate(a,result.Locate);return end
  if not result.Started then return end
  a.TTClientPraying=true
+ meterVisibility(a)
  a.TTClientJump=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
  Network:FireConnection("DisableSprinting","TwoTimePray",true)
@@ -10548,9 +10588,15 @@ function Client.Ritual(a,result)
  Network:FireConnection("DisableSprinting","TwoTimeRitual",true)
 end
 local function createIndicator(a)
+ local asset=Visuals.Build("LungeIndicator")
  local start=Instance.new("Attachment");start.Parent=workspace.Terrain
  local finish=Instance.new("Attachment");finish.Parent=workspace.Terrain
- local beam=Instance.new("Beam");beam.Attachment0=start;beam.Attachment1=finish;beam.Width0=.12;beam.Width1=.04;beam.FaceCamera=true;beam.Color=ColorSequence.new(Color3.fromRGB(160,160,170));beam.Transparency=NumberSequence.new(.35);beam.Enabled=false;beam.Parent=start
+ local beam=asset.Beam;beam.Attachment0=start;beam.Attachment1=finish;beam.Enabled=false;beam.Parent=start
+ a.TTIndicatorEmitters={}
+ for _,emitter in asset.EndSymbol:GetChildren() do
+  emitter.Enabled=false;emitter.Parent=finish;table.insert(a.TTIndicatorEmitters,emitter)
+ end
+ asset:Destroy()
  a.TTIndicator={start,finish,beam}
 end
 function Client.Created(a)
@@ -10578,6 +10624,7 @@ function Client.Created(a)
  a.TTOriginalSprintSpeed=Sprinting.SprintSpeed or a.Config.SprintSpeed
  local template=a.Config.HealthBar
  local display=template:Clone();display.Parent=a.Player.PlayerGui:WaitForChild("MainUI")
+ display.Visible=false;display.Position=UDim2.fromScale(1.175,.5);display.Size=UDim2.fromScale(1,.4)
  a.HealthbarDisplay=display;blood(a,rig:GetAttribute("TwoTimeOblation") or 0)
  sprite(a,display.Display,display.Display:FindFirstChild("Idle"))
  sprite(a,display.Full,display.Full:FindFirstChild("Full"))
@@ -10587,7 +10634,8 @@ function Client.Created(a)
  end
  createIndicator(a)
  Network:SetConnection("TwoTimePortState","REMOTE_EVENT",function(kind,data)
-  if kind=="Blood" then blood(a,data)
+  if kind=="Warning" then warning(a,data)
+  elseif kind=="Blood" then blood(a,data)
   elseif kind=="Pray" and not data then stopPray(a,false)
   elseif kind=="Revive" then
    stopPray(a,true)
@@ -10602,6 +10650,7 @@ function Client.Created(a)
  local pulse=0;local lastCrouch=false
  connect(a,RunService.Heartbeat,function(dt)
   if not rig.Parent or not rig.PrimaryPart then return end
+  meterVisibility(a)
   local crouched=rig:GetAttribute("Crouching")==true
   if crouched~=lastCrouch then
    lastCrouch=crouched
@@ -10629,22 +10678,44 @@ function Client.Created(a)
    if not (a.HeldAbilities and a.HeldAbilities.Pray) then stopPray(a,true)
    elseif pulse>=.2 then pulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",true) end
   end
+ end)
+ connect(a,RunService.RenderStepped,function()
+  if not rig.Parent or not rig.PrimaryPart then return end
+  local crouched=rig:GetAttribute("Crouching")==true
   local indicator=a.TTIndicator
   if indicator then
-   indicator[3].Enabled=crouched
-   if crouched then
+   local usable=true
+   if a.CanUseAbility then local ok,result=pcall(a.CanUseAbility,a,"Dagger");usable=ok and result==true end
+   local visible=crouched and rig.Humanoid.Health>0 and usable
+   indicator[3].Enabled=visible
+   for _,emitter in a.TTIndicatorEmitters do
+    if emitter.Enabled~=visible then emitter.Enabled=visible;if visible then emitter:Emit(1) else emitter:Clear() end end
+   end
+   if visible then
     local root=rig.PrimaryPart
-    local origin=root.Position-Vector3.new(0,rig.Humanoid.HipHeight+root.Size.Y/2-.1,0)
-    local distance=(a.Config.DaggerLungeForce+a.Config.DaggerLungeForce/3)/2*a.Config.DaggerCrouchMoverEndlag
-    local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={rig}
-    local hit=workspace:Raycast(origin,root.CFrame.LookVector*distance,params)
-    indicator[1].WorldPosition=origin;indicator[2].WorldPosition=hit and hit.Position or origin+root.CFrame.LookVector*distance
+    local forward=root.CFrame.LookVector*Vector3.new(1,0,1)
+    if forward.Magnitude>.01 then
+     forward=forward.Unit
+     local height=rig.Humanoid.HipHeight+root.Size.Y/2
+     local distance=(a.Config.DaggerLungeForce+a.Config.DaggerLungeForce/3)/2*a.Config.DaggerCrouchMoverEndlag
+     local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={workspace:FindFirstChild("Players") or rig}
+     local wall=workspace:Raycast(root.Position,forward*distance,params)
+     if wall then distance=math.max((wall.Position-root.Position).Magnitude-1,0) end
+     local endpoint=root.Position+forward*distance
+     local ground=workspace:Raycast(endpoint,Vector3.new(0,-(height+6),0),params)
+     indicator[1].WorldPosition=root.Position-Vector3.new(0,height-.1,0)
+     indicator[2].WorldPosition=ground and ground.Position+Vector3.new(0,.1,0) or endpoint-Vector3.new(0,height-.1,0)
+     indicator[3].Transparency=NumberSequence.new((math.sin(os.clock()*2)+1)*.15+.2,1)
+    end
    end
   end
  end)
 end
 function Client.Destroyed(a)
  a.TTClientDestroyed=true
+ a.TTMeterToken=(a.TTMeterToken or 0)+1
+ if a.TTMeterTween then a.TTMeterTween:Cancel() end
+ if a.TTBloodTween then a.TTBloodTween:Cancel() end
  for _,connection in a.TTClientConnections or {} do connection:Disconnect() end
  if a.TTHighlight then a.TTHighlight:Destroy() end
  if a.TTHighlightTween then a.TTHighlightTween:Cancel() end
@@ -10663,7 +10734,7 @@ end
 return Client
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Rules]====],before=false,after="2012:c07084eb:39174afa",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Rules]====],before=false,previous="2012:c07084eb:39174afa",after="2133:9ecb0087:4e59fcc4",source=[====[
 -- Pure kit math, shared by server, indicator, and regression tests.
 local Rules = {}
 function Rules.Oblation(config, backstab, crouched)
@@ -10677,7 +10748,9 @@ function Rules.CrouchCooldown(config, elapsed)
  return math.clamp(config.CrouchCooldown-elapsed,config.CrouchMinCooldown,config.CrouchCooldown)
 end
 function Rules.MissDuration(config, distance)
- return math.clamp(distance/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
+ if distance==math.huge then return 0 end
+ local excess=math.max(0,distance-(config.DaggerMissSlownessSafeDistance or 30))
+ return math.clamp(excess/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
 end
 function Rules.Pray(config, blood, missingHealth, elapsed)
  local requirement=config.BloodRequiredForRespawn
@@ -10699,7 +10772,7 @@ end
 return Rules
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,after="19452:b6a039bb:e64a3db6",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",after="20810:c613c66e:f0dfb625",source=[====[
 -- FCT APIs and FCT visual templates; newest UPD balance. No animation or sound calls.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -10711,6 +10784,7 @@ local Statuses=require(Modules.Statuses)
 local Hitboxes=require(Modules.Hitboxes)
 local Network=require(Modules.Network)
 local Rules=require(script.Parent.Rules)
+local Visuals=require(script.Parent.Visuals)
 local Server={}
 local function alive(a)
  return not a.TTDestroyed and a.Rig and a.Rig.Parent and a.Rig.PrimaryPart and a.Rig:FindFirstChildOfClass("Humanoid") and a.Rig.Humanoid.Health>0
@@ -10736,6 +10810,29 @@ local function knife(a,on)
   if part.Parent then part.Transparency=on and transparency or 1 end
  end
  -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
+end
+local function stopPrayVFX(a)
+ local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
+ for _,object in visuals or {} do
+  for _,item in object:GetDescendants() do
+   if item:IsA("ParticleEmitter") then item.Enabled=false
+   elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
+  end
+  if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
+  Debris:AddItem(object,4)
+ end
+end
+local function startPrayVFX(a)
+ stopPrayVFX(a)
+ local folder=Visuals.Build("Pray")
+ a.TTPrayVFX=folder:GetChildren()
+ for _,object in a.TTPrayVFX do object.Parent=a.Rig.PrimaryPart end
+ folder:Destroy()
+ for _,object in a.TTPrayVFX do
+  for _,item in object:GetDescendants() do
+   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+  end
+ end
 end
 local function nearest(a)
  local best,distance=nil,math.huge
@@ -10765,10 +10862,11 @@ end
 function Server.StopPray(a,interrupted)
  if not a.TTPraying then return end
  a.TTPraying=nil
+ stopPrayVFX(a)
  a.Rig:SetAttribute("TwoTimePraying",nil)
  lock(a,"Pray",false);removeSpeed(a,"TwoTimePray")
  if a.TTJump then a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTJump.Enabled);a.TTJump=nil end
- if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown) end
+ if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown);send(a,"Warning","Your prayer was interrupted.") end
  send(a,"Pray",false)
 end
 function Server.StopCrouch(a,manual)
@@ -10814,7 +10912,8 @@ function Server.Dagger(a)
   TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
   Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
   a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
-   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
+   Size=a.Config.DaggerHitboxSize,PredictVelocity=false,CastPoint=a.Rig,
+   CFrame=function() return a.Rig.PrimaryPart.CFrame*CFrame.new(0,0,-a.Config.DaggerHitboxOffset) end,
    Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
    Connections={Hit=function(victim)
     if hit or not current() then return end
@@ -10847,7 +10946,8 @@ function Server.Dagger(a)
    a.TTHitbox=nil
    if crouched and not hit and alive(a) then
     local _,distance=nearest(a)
-    Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=Rules.MissDuration(a.Config,distance)})
+    local penalty=Rules.MissDuration(a.Config,distance)
+    if penalty>0 then Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=penalty}) end
    end
   end)
  end)
@@ -10875,9 +10975,10 @@ function Server.Pray(a)
  if not alive(a) or blocked(a) or a.TTAttacking or a.TTRitualCasting then return {Cancelled=true} end
  if a.TTPraying then Server.StopPray(a,false);return end
  local ritual=a.RespawnLocation
- if not ritual or not ritual.Parent or a.LivesUsed~=1 then return {Cancelled=true} end
- if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position} end
- if a.Blood<=0 or a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then return {Cancelled=true} end
+ if not ritual or not ritual.Parent or a.LivesUsed~=1 then send(a,"Warning","You must place your Ritual before praying.");return {Cancelled=true} end
+ if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position,Warning="Return to your Ritual to pray."} end
+ if a.Blood<=0 then send(a,"Warning","You need Oblation to pray.");return {Cancelled=true} end
+ if a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then send(a,"Warning","You are already at full health.");return {Cancelled=true} end
  Server.StopCrouch(a,false)
  a.TTPraying=true;a.TTPrayStart=os.clock();a.TTPrayLease=os.clock()
  a.TTPrayDamage=0
@@ -10886,6 +10987,7 @@ function Server.Pray(a)
  Util:CreateSpeedMultiplier(a.Rig,0,"TwoTimePray")
  a.TTJump={Enabled=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)}
  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+ startPrayVFX(a)
  return {Started=true}
 end
 local function effect(a,name,parent)
@@ -11068,7 +11170,565 @@ end
 return Server
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",after="14133:ea0af3d6:5f27dea5",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Visuals]====],before=false,after="29729:4cf41d92:51ec7835",source=[====[
+-- Reconstructed from newest UPD instance properties. Public textures only.
+local Visuals={}
+local function enum(enumType,value) for _,item in enumType:GetEnumItems() do if item.Value==value then return item end end end
+function Visuals.Build(kind)
+ local objects={}
+ objects[59005]=Instance.new("Folder")
+ objects[59005].Name="LungeIndicator"
+ objects[59006]=Instance.new("Beam")
+ objects[59006].Name="Beam"
+ objects[59006].Brightness=4
+ objects[59006].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(0.203921571,0.250980407,0.384313732)),ColorSequenceKeypoint.new(1,Color3.new(0.203921571,0.250980407,0.384313732))})
+ objects[59006].CurveSize0=0
+ objects[59006].CurveSize1=0
+ objects[59006].Enabled=true
+ objects[59006].FaceCamera=true
+ objects[59006].LightEmission=1
+ objects[59006].LightInfluence=0
+ objects[59006].Segments=10
+ objects[59006].Texture="rbxassetid://4955566540"
+ objects[59006].TextureLength=1
+ objects[59006].TextureMode=enum(Enum.TextureMode,0)
+ objects[59006].TextureSpeed=1
+ objects[59006].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.200000003,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59006].Width0=1
+ objects[59006].Width1=1
+ objects[59006].ZOffset=0
+ objects[59007]=Instance.new("Attachment")
+ objects[59007].Name="EndSymbol"
+ objects[59007].Visible=false
+ objects[59007].CFrame=CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1)
+ objects[59008]=Instance.new("ParticleEmitter")
+ objects[59008].Name="Transparent"
+ objects[59008].Acceleration=Vector3.new(0,0,0)
+ objects[59008].Brightness=1.97000003
+ objects[59008].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59008].Drag=0
+ objects[59008].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59008].Enabled=false
+ objects[59008].FlipbookBlendFrames=true
+ objects[59008].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59008].FlipbookMode=enum(Enum.ParticleFlipbookMode,1)
+ objects[59008].FlipbookStartRandom=false
+ objects[59008].LightEmission=1
+ objects[59008].LightInfluence=0
+ objects[59008].LockedToPart=true
+ objects[59008].Orientation=enum(Enum.ParticleOrientation,3)
+ objects[59008].Rate=1.29999995
+ objects[59008].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59008].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59008].ShapePartial=1
+ objects[59008].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59008].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,2,0),NumberSequenceKeypoint.new(0.0833333358,2,0),NumberSequenceKeypoint.new(0.166666672,2,0),NumberSequenceKeypoint.new(0.25,2,0),NumberSequenceKeypoint.new(0.333333343,2,0),NumberSequenceKeypoint.new(0.416666657,2,0),NumberSequenceKeypoint.new(0.5,2,0),NumberSequenceKeypoint.new(0.583333313,2,0),NumberSequenceKeypoint.new(0.666666687,2,0),NumberSequenceKeypoint.new(0.75,2,0),NumberSequenceKeypoint.new(0.833333313,2,0),NumberSequenceKeypoint.new(0.916666687,2,0),NumberSequenceKeypoint.new(1,2,0)})
+ objects[59008].SpreadAngle=Vector2.new(0,0)
+ objects[59008].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59008].Texture="rbxassetid://75363982258016"
+ objects[59008].TimeScale=1
+ objects[59008].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.5,0.899999976,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59008].VelocityInheritance=0
+ objects[59008].WindAffectsDrag=false
+ objects[59008].ZOffset=0
+ objects[59008].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59008].Lifetime=NumberRange.new(1,1)
+ objects[59008].RotSpeed=NumberRange.new(0,0)
+ objects[59008].Rotation=NumberRange.new(0,0)
+ objects[59008].Speed=NumberRange.new(0.00100000005,0.00100000005)
+ objects[59008]:SetAttribute("EmitCount",0)
+ objects[59008]:SetAttribute("EmitDelay",0)
+ objects[59009]=Instance.new("ParticleEmitter")
+ objects[59009].Name="Shader"
+ objects[59009].Acceleration=Vector3.new(0,0,0)
+ objects[59009].Brightness=3
+ objects[59009].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(0.917647064,0.945098042,1)),ColorSequenceKeypoint.new(1,Color3.new(0.776470602,0.827450991,1))})
+ objects[59009].Drag=0
+ objects[59009].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59009].Enabled=false
+ objects[59009].FlipbookBlendFrames=true
+ objects[59009].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,3)
+ objects[59009].FlipbookMode=enum(Enum.ParticleFlipbookMode,1)
+ objects[59009].FlipbookStartRandom=false
+ objects[59009].LightEmission=1
+ objects[59009].LightInfluence=0
+ objects[59009].LockedToPart=true
+ objects[59009].Orientation=enum(Enum.ParticleOrientation,3)
+ objects[59009].Rate=1.29999995
+ objects[59009].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59009].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59009].ShapePartial=1
+ objects[59009].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59009].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,2,0),NumberSequenceKeypoint.new(0.0833333358,2,0),NumberSequenceKeypoint.new(0.166666672,2,0),NumberSequenceKeypoint.new(0.25,2,0),NumberSequenceKeypoint.new(0.333333343,2,0),NumberSequenceKeypoint.new(0.416666657,2,0),NumberSequenceKeypoint.new(0.5,2,0),NumberSequenceKeypoint.new(0.583333313,2,0),NumberSequenceKeypoint.new(0.666666687,2,0),NumberSequenceKeypoint.new(0.75,2,0),NumberSequenceKeypoint.new(0.833333313,2,0),NumberSequenceKeypoint.new(0.916666687,2,0),NumberSequenceKeypoint.new(1,2,0)})
+ objects[59009].SpreadAngle=Vector2.new(0,0)
+ objects[59009].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59009].Texture="rbxassetid://123334911850406"
+ objects[59009].TimeScale=0.5
+ objects[59009].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.498414367,0.03125,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59009].VelocityInheritance=0
+ objects[59009].WindAffectsDrag=false
+ objects[59009].ZOffset=0
+ objects[59009].FlipbookFramerate=NumberRange.new(13.8000002,13.8000002)
+ objects[59009].Lifetime=NumberRange.new(1,1)
+ objects[59009].RotSpeed=NumberRange.new(0,0)
+ objects[59009].Rotation=NumberRange.new(0,0)
+ objects[59009].Speed=NumberRange.new(0.00100000005,0.00100000005)
+ objects[59009]:SetAttribute("EmitCount",0)
+ objects[59009]:SetAttribute("EmitDelay",0)
+ objects[59036]=Instance.new("Folder")
+ objects[59036].Name="Pray"
+ objects[59037]=Instance.new("Attachment")
+ objects[59037].Name="BeamFlare"
+ objects[59037].Visible=false
+ objects[59037].CFrame=CFrame.new(0,7.12184334,1.5965271,1,0,0,0,0.984296679,-0.176521987,0,0.176521987,0.984296679)
+ objects[59038]=Instance.new("ParticleEmitter")
+ objects[59038].Name="SparkleAngle"
+ objects[59038].Acceleration=Vector3.new(0,0,0)
+ objects[59038].Brightness=1
+ objects[59038].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59038].Drag=0
+ objects[59038].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59038].Enabled=true
+ objects[59038].FlipbookBlendFrames=true
+ objects[59038].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59038].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59038].FlipbookStartRandom=false
+ objects[59038].LightEmission=0
+ objects[59038].LightInfluence=1
+ objects[59038].LockedToPart=true
+ objects[59038].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59038].Rate=5
+ objects[59038].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59038].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59038].ShapePartial=1
+ objects[59038].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59038].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,3.49999952,0)})
+ objects[59038].SpreadAngle=Vector2.new(0,0)
+ objects[59038].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,-3,0)})
+ objects[59038].Texture="rbxassetid://113600244234335"
+ objects[59038].TimeScale=1
+ objects[59038].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.490024954,0,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59038].VelocityInheritance=0
+ objects[59038].WindAffectsDrag=false
+ objects[59038].ZOffset=0
+ objects[59038].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59038].Lifetime=NumberRange.new(0.5,0.5)
+ objects[59038].RotSpeed=NumberRange.new(0,0)
+ objects[59038].Rotation=NumberRange.new(-55,-55)
+ objects[59038].Speed=NumberRange.new(0,0)
+ objects[59038]:SetAttribute("EmitDelay",0)
+ objects[59039]=Instance.new("ParticleEmitter")
+ objects[59039].Name="Sparkle"
+ objects[59039].Acceleration=Vector3.new(0,0,0)
+ objects[59039].Brightness=1
+ objects[59039].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59039].Drag=0
+ objects[59039].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59039].Enabled=true
+ objects[59039].FlipbookBlendFrames=true
+ objects[59039].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59039].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59039].FlipbookStartRandom=false
+ objects[59039].LightEmission=0
+ objects[59039].LightInfluence=1
+ objects[59039].LockedToPart=true
+ objects[59039].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59039].Rate=5
+ objects[59039].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59039].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59039].ShapePartial=1
+ objects[59039].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59039].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,3.49999952,0)})
+ objects[59039].SpreadAngle=Vector2.new(0,0)
+ objects[59039].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,-3,0)})
+ objects[59039].Texture="rbxassetid://113600244234335"
+ objects[59039].TimeScale=1
+ objects[59039].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.490024954,0,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59039].VelocityInheritance=0
+ objects[59039].WindAffectsDrag=false
+ objects[59039].ZOffset=0
+ objects[59039].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59039].Lifetime=NumberRange.new(0.5,0.5)
+ objects[59039].RotSpeed=NumberRange.new(0,0)
+ objects[59039].Rotation=NumberRange.new(0,0)
+ objects[59039].Speed=NumberRange.new(0,0)
+ objects[59039]:SetAttribute("EmitDelay",0)
+ objects[59040]=Instance.new("ParticleEmitter")
+ objects[59040].Name="Dust"
+ objects[59040].Acceleration=Vector3.new(0,0,0)
+ objects[59040].Brightness=10
+ objects[59040].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59040].Drag=0.25
+ objects[59040].EmissionDirection=enum(Enum.NormalId,4)
+ objects[59040].Enabled=true
+ objects[59040].FlipbookBlendFrames=false
+ objects[59040].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,1)
+ objects[59040].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59040].FlipbookStartRandom=true
+ objects[59040].LightEmission=1
+ objects[59040].LightInfluence=0
+ objects[59040].LockedToPart=false
+ objects[59040].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59040].Rate=4
+ objects[59040].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59040].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59040].ShapePartial=1
+ objects[59040].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59040].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(0.5,0.0500000007,0.0500000007),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59040].SpreadAngle=Vector2.new(30,30)
+ objects[59040].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59040].Texture="rbxassetid://96361210760220"
+ objects[59040].TimeScale=1
+ objects[59040].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59040].VelocityInheritance=0
+ objects[59040].WindAffectsDrag=false
+ objects[59040].ZOffset=0
+ objects[59040].FlipbookFramerate=NumberRange.new(0,0)
+ objects[59040].Lifetime=NumberRange.new(2,4)
+ objects[59040].RotSpeed=NumberRange.new(0,0)
+ objects[59040].Rotation=NumberRange.new(0,0)
+ objects[59040].Speed=NumberRange.new(4,5)
+ objects[59041]=Instance.new("Attachment")
+ objects[59041].Name="StartCenter"
+ objects[59041].Visible=false
+ objects[59041].CFrame=CFrame.new(0,0.0587131977,-0.166778564,1,0,0,0,0.970643938,-0.240521073,0,0.240521073,0.970643938)
+ objects[59042]=Instance.new("ParticleEmitter")
+ objects[59042].Name="Glow"
+ objects[59042].Acceleration=Vector3.new(0,0,0)
+ objects[59042].Brightness=1
+ objects[59042].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59042].Drag=0
+ objects[59042].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59042].Enabled=false
+ objects[59042].FlipbookBlendFrames=true
+ objects[59042].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59042].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59042].FlipbookStartRandom=false
+ objects[59042].LightEmission=0
+ objects[59042].LightInfluence=1
+ objects[59042].LockedToPart=false
+ objects[59042].Orientation=enum(Enum.ParticleOrientation,2)
+ objects[59042].Rate=20
+ objects[59042].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59042].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59042].ShapePartial=1
+ objects[59042].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59042].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,8,0),NumberSequenceKeypoint.new(1,8,0)})
+ objects[59042].SpreadAngle=Vector2.new(0,0)
+ objects[59042].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,-0.5,0),NumberSequenceKeypoint.new(1,-0.5,0)})
+ objects[59042].Texture="rbxassetid://11739864623"
+ objects[59042].TimeScale=1
+ objects[59042].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.0997506231,0.193749964,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59042].VelocityInheritance=0
+ objects[59042].WindAffectsDrag=false
+ objects[59042].ZOffset=1
+ objects[59042].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59042].Lifetime=NumberRange.new(1,1)
+ objects[59042].RotSpeed=NumberRange.new(0,0)
+ objects[59042].Rotation=NumberRange.new(0,0)
+ objects[59042].Speed=NumberRange.new(0.00499999989,0.00499999989)
+ objects[59042]:SetAttribute("EmitCount",1)
+ objects[59043]=Instance.new("Attachment")
+ objects[59043].Name="StartFloor"
+ objects[59043].Visible=false
+ objects[59043].CFrame=CFrame.new(0,-3,0,1,0,0,0,1,0,0,0,1)
+ objects[59044]=Instance.new("ParticleEmitter")
+ objects[59044].Name="Dust"
+ objects[59044].Acceleration=Vector3.new(0,20,0)
+ objects[59044].Brightness=10
+ objects[59044].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59044].Drag=4
+ objects[59044].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59044].Enabled=false
+ objects[59044].FlipbookBlendFrames=false
+ objects[59044].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,1)
+ objects[59044].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59044].FlipbookStartRandom=true
+ objects[59044].LightEmission=1
+ objects[59044].LightInfluence=0
+ objects[59044].LockedToPart=false
+ objects[59044].Orientation=enum(Enum.ParticleOrientation,2)
+ objects[59044].Rate=4
+ objects[59044].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59044].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59044].ShapePartial=1
+ objects[59044].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59044].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(0.5,0.0500000007,0.0500000007),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59044].SpreadAngle=Vector2.new(70,70)
+ objects[59044].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59044].Texture="rbxassetid://96361210760220"
+ objects[59044].TimeScale=1
+ objects[59044].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59044].VelocityInheritance=0
+ objects[59044].WindAffectsDrag=false
+ objects[59044].ZOffset=0
+ objects[59044].FlipbookFramerate=NumberRange.new(0,0)
+ objects[59044].Lifetime=NumberRange.new(0.25,1)
+ objects[59044].RotSpeed=NumberRange.new(0,0)
+ objects[59044].Rotation=NumberRange.new(-90,-90)
+ objects[59044].Speed=NumberRange.new(9,40)
+ objects[59044]:SetAttribute("EmitCount",15)
+ objects[59045]=Instance.new("ParticleEmitter")
+ objects[59045].Name="Spawn"
+ objects[59045].Acceleration=Vector3.new(0,0,0)
+ objects[59045].Brightness=5
+ objects[59045].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59045].Drag=0
+ objects[59045].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59045].Enabled=false
+ objects[59045].FlipbookBlendFrames=true
+ objects[59045].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59045].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59045].FlipbookStartRandom=false
+ objects[59045].LightEmission=1
+ objects[59045].LightInfluence=0
+ objects[59045].LockedToPart=false
+ objects[59045].Orientation=enum(Enum.ParticleOrientation,3)
+ objects[59045].Rate=2
+ objects[59045].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59045].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59045].ShapePartial=1
+ objects[59045].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59045].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,10,0),NumberSequenceKeypoint.new(0.0523690805,2.0625,0),NumberSequenceKeypoint.new(0.273067355,6.25,0),NumberSequenceKeypoint.new(1,5,0)})
+ objects[59045].SpreadAngle=Vector2.new(0,0)
+ objects[59045].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59045].Texture="rbxassetid://134399639839028"
+ objects[59045].TimeScale=1
+ objects[59045].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.0236907732,0,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59045].VelocityInheritance=0
+ objects[59045].WindAffectsDrag=false
+ objects[59045].ZOffset=0
+ objects[59045].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59045].Lifetime=NumberRange.new(1,1)
+ objects[59045].RotSpeed=NumberRange.new(-90,-90)
+ objects[59045].Rotation=NumberRange.new(0,0)
+ objects[59045].Speed=NumberRange.new(0.0500000007,0.0500000007)
+ objects[59045]:SetAttribute("EmitCount",1)
+ objects[59046]=Instance.new("Attachment")
+ objects[59046].Name="Center"
+ objects[59046].Visible=false
+ objects[59046].CFrame=CFrame.new(0,-1.00000012,0,1,0,0,0,1,0,0,0,1)
+ objects[59047]=Instance.new("ParticleEmitter")
+ objects[59047].Name="Aura"
+ objects[59047].Acceleration=Vector3.new(0,0,0)
+ objects[59047].Brightness=1
+ objects[59047].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59047].Drag=1
+ objects[59047].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59047].Enabled=true
+ objects[59047].FlipbookBlendFrames=true
+ objects[59047].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,2)
+ objects[59047].FlipbookMode=enum(Enum.ParticleFlipbookMode,1)
+ objects[59047].FlipbookStartRandom=false
+ objects[59047].LightEmission=0
+ objects[59047].LightInfluence=1
+ objects[59047].LockedToPart=false
+ objects[59047].Orientation=enum(Enum.ParticleOrientation,2)
+ objects[59047].Rate=20
+ objects[59047].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59047].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59047].ShapePartial=1
+ objects[59047].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59047].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,4.5625,0)})
+ objects[59047].SpreadAngle=Vector2.new(360,360)
+ objects[59047].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0.5,0),NumberSequenceKeypoint.new(1,0.5,0)})
+ objects[59047].Texture="rbxassetid://134494112357790"
+ objects[59047].TimeScale=1
+ objects[59047].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.9375,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59047].VelocityInheritance=0
+ objects[59047].WindAffectsDrag=false
+ objects[59047].ZOffset=0
+ objects[59047].FlipbookFramerate=NumberRange.new(17.7000008,17.7000008)
+ objects[59047].Lifetime=NumberRange.new(2,2)
+ objects[59047].RotSpeed=NumberRange.new(0,0)
+ objects[59047].Rotation=NumberRange.new(-90,-90)
+ objects[59047].Speed=NumberRange.new(2,2)
+ objects[59048]=Instance.new("Attachment")
+ objects[59048].Name="Floor"
+ objects[59048].Visible=false
+ objects[59048].CFrame=CFrame.new(0,-3,0,1,0,0,0,1,0,0,0,1)
+ objects[59049]=Instance.new("ParticleEmitter")
+ objects[59049].Name="Spawn"
+ objects[59049].Acceleration=Vector3.new(0,0,0)
+ objects[59049].Brightness=1
+ objects[59049].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59049].Drag=0
+ objects[59049].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59049].Enabled=true
+ objects[59049].FlipbookBlendFrames=true
+ objects[59049].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59049].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59049].FlipbookStartRandom=false
+ objects[59049].LightEmission=0
+ objects[59049].LightInfluence=0
+ objects[59049].LockedToPart=false
+ objects[59049].Orientation=enum(Enum.ParticleOrientation,3)
+ objects[59049].Rate=2
+ objects[59049].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59049].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59049].ShapePartial=1
+ objects[59049].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59049].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,5,0),NumberSequenceKeypoint.new(1,5,0)})
+ objects[59049].SpreadAngle=Vector2.new(0,0)
+ objects[59049].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59049].Texture="rbxassetid://134399639839028"
+ objects[59049].TimeScale=1
+ objects[59049].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.497506261,0,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59049].VelocityInheritance=0
+ objects[59049].WindAffectsDrag=false
+ objects[59049].ZOffset=0
+ objects[59049].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59049].Lifetime=NumberRange.new(1,1)
+ objects[59049].RotSpeed=NumberRange.new(-90,-90)
+ objects[59049].Rotation=NumberRange.new(0,0)
+ objects[59049].Speed=NumberRange.new(0.0500000007,0.0500000007)
+ objects[59050]=Instance.new("Attachment")
+ objects[59050].Name="BeamTop"
+ objects[59050].Visible=false
+ objects[59050].CFrame=CFrame.new(0,9.09042358,1.949646,1,0,0,0,0.984296679,-0.176521987,0,0.176521987,0.984296679)
+ objects[59051]=Instance.new("SpotLight")
+ objects[59051].Name="SpotLight"
+ objects[59051].Angle=54
+ objects[59051].Face=enum(Enum.NormalId,4)
+ objects[59051].Range=16
+ objects[59051].Brightness=1
+ objects[59051].Color=Color3.new(1,1,1)
+ objects[59051].Enabled=true
+ objects[59051].Shadows=false
+ objects[59052]=Instance.new("Attachment")
+ objects[59052].Name="StartFlare"
+ objects[59052].Visible=false
+ objects[59052].CFrame=CFrame.new(0,7.12184334,1.5965271,1,0,0,0,0.984296679,-0.176521987,0,0.176521987,0.984296679)
+ objects[59053]=Instance.new("ParticleEmitter")
+ objects[59053].Name="Spark"
+ objects[59053].Acceleration=Vector3.new(0,0,0)
+ objects[59053].Brightness=1
+ objects[59053].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59053].Drag=0
+ objects[59053].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59053].Enabled=false
+ objects[59053].FlipbookBlendFrames=true
+ objects[59053].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,2)
+ objects[59053].FlipbookMode=enum(Enum.ParticleFlipbookMode,1)
+ objects[59053].FlipbookStartRandom=false
+ objects[59053].LightEmission=0
+ objects[59053].LightInfluence=1
+ objects[59053].LockedToPart=false
+ objects[59053].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59053].Rate=1
+ objects[59053].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59053].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59053].ShapePartial=1
+ objects[59053].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59053].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,5.3125,0)})
+ objects[59053].SpreadAngle=Vector2.new(0,0)
+ objects[59053].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59053].Texture="rbxassetid://76672742852348"
+ objects[59053].TimeScale=1
+ objects[59053].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59053].VelocityInheritance=0
+ objects[59053].WindAffectsDrag=false
+ objects[59053].ZOffset=0
+ objects[59053].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59053].Lifetime=NumberRange.new(0.5,0.5)
+ objects[59053].RotSpeed=NumberRange.new(0,0)
+ objects[59053].Rotation=NumberRange.new(0,0)
+ objects[59053].Speed=NumberRange.new(0,0)
+ objects[59053]:SetAttribute("EmitCount",1)
+ objects[59054]=Instance.new("ParticleEmitter")
+ objects[59054].Name="Flash"
+ objects[59054].Acceleration=Vector3.new(0,0,0)
+ objects[59054].Brightness=1
+ objects[59054].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59054].Drag=0
+ objects[59054].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59054].Enabled=false
+ objects[59054].FlipbookBlendFrames=true
+ objects[59054].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59054].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59054].FlipbookStartRandom=false
+ objects[59054].LightEmission=0
+ objects[59054].LightInfluence=1
+ objects[59054].LockedToPart=false
+ objects[59054].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59054].Rate=20
+ objects[59054].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59054].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59054].ShapePartial=1
+ objects[59054].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59054].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,4,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59054].SpreadAngle=Vector2.new(0,0)
+ objects[59054].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59054].Texture="rbxassetid://12805835620"
+ objects[59054].TimeScale=1
+ objects[59054].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59054].VelocityInheritance=0
+ objects[59054].WindAffectsDrag=false
+ objects[59054].ZOffset=0
+ objects[59054].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59054].Lifetime=NumberRange.new(0.0500000007,0.0500000007)
+ objects[59054].RotSpeed=NumberRange.new(0,0)
+ objects[59054].Rotation=NumberRange.new(-360,360)
+ objects[59054].Speed=NumberRange.new(0,0)
+ objects[59054]:SetAttribute("EmitCount",1)
+ objects[59055]=Instance.new("Attachment")
+ objects[59055].Name="BeamBottom"
+ objects[59055].Visible=false
+ objects[59055].CFrame=CFrame.new(0,-4.0482502,-0.731002808,1,0,0,0,1,0,0,0,1)
+ objects[59056]=Instance.new("Beam")
+ objects[59056].Name="Beam"
+ objects[59056].Brightness=0.875
+ objects[59056].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59056].CurveSize0=0
+ objects[59056].CurveSize1=0
+ objects[59056].Enabled=true
+ objects[59056].FaceCamera=true
+ objects[59056].LightEmission=1
+ objects[59056].LightInfluence=0
+ objects[59056].Segments=10
+ objects[59056].Texture="rbxassetid://89750267961919"
+ objects[59056].TextureLength=140
+ objects[59056].TextureMode=enum(Enum.TextureMode,1)
+ objects[59056].TextureSpeed=0.100000001
+ objects[59056].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.507481337,0.899999976,0),NumberSequenceKeypoint.new(0.652119696,0.731249988,0),NumberSequenceKeypoint.new(0.770573616,0.46875,0),NumberSequenceKeypoint.new(0.913965106,1,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59056].Width0=0
+ objects[59056].Width1=15
+ objects[59056].ZOffset=0
+ objects[59006].Parent=objects[59005]
+ objects[59007].Parent=objects[59005]
+ objects[59008].Parent=objects[59007]
+ objects[59009].Parent=objects[59007]
+ objects[59037].Parent=objects[59036]
+ objects[59038].Parent=objects[59037]
+ objects[59039].Parent=objects[59037]
+ objects[59040].Parent=objects[59037]
+ objects[59041].Parent=objects[59036]
+ objects[59042].Parent=objects[59041]
+ objects[59043].Parent=objects[59036]
+ objects[59044].Parent=objects[59043]
+ objects[59045].Parent=objects[59043]
+ objects[59046].Parent=objects[59036]
+ objects[59047].Parent=objects[59046]
+ objects[59048].Parent=objects[59036]
+ objects[59049].Parent=objects[59048]
+ objects[59050].Parent=objects[59036]
+ objects[59051].Parent=objects[59050]
+ objects[59052].Parent=objects[59036]
+ objects[59053].Parent=objects[59052]
+ objects[59054].Parent=objects[59052]
+ objects[59055].Parent=objects[59036]
+ objects[59056].Parent=objects[59036]
+ objects[59056].Attachment0=objects[59050]
+ objects[59056].Attachment1=objects[59055]
+ local selected=kind=="Pray" and objects[59036] or objects[59005]
+ local unused=kind=="Pray" and objects[59005] or objects[59036]
+ unused:Destroy()
+ return selected
+end
+return Visuals
+]====]},
+{path=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",after="14227:c58653c9:e7f29712",source=[====[
 
 local t1 = {
 	DisplayName = "Two Time",
@@ -11336,10 +11996,12 @@ t1.Information = {
 }
 
 -- Port choices where the export lacks authoritative server code:
--- Preserve FCT's 4x6x5.5 hitbox size; apply documented latest forward offset (+1.5).
--- Miss penalty: 1s per 10 studs, capped at 8s (inferred from exported settings).
+-- Preserve FCT hitbox size but remove the close-range dead zone; raw-root placement.
+-- Miss penalty grows outside the 30-stud close range; no penalty without a killer.
 t1.DaggerHitboxSize=Vector3.new(4,6,5.5)
-t1.DaggerHitboxOffset=7
+t1.DaggerHitboxOffset=3.25
+t1.DaggerMissSlownessSafeDistance=30
+t1.WarningTemplate=script:FindFirstChild("Warning")
 t1.DaggerHitTime=.25
 t1.DaggerCrouchHitTime=.415
 t1.PraySensitiveButton=true
@@ -11350,7 +12012,7 @@ t1.SprintSpeed=26
 t1.MaxStamina=100
 t1.StaminaLoss=10
 t1.StaminaGain=20
-t1.TwoTimePortVersion="1.0.0"
+t1.TwoTimePortVersion="1.0.1"
 return t1
 ]====]},
 {path=[====[
@@ -20276,7 +20938,7 @@ Behavior.OnStunned=Behavior.OnHelpless
 return Behavior
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,after="10077:dada0ab6:c0faa1f7",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,previous="10077:dada0ab6:c0faa1f7",after="13717:fa340eb8:3e37c1cf",source=[====[
 -- Public image-based presentation only; gameplay never waits on an AnimationTrack.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -20286,20 +20948,46 @@ local Debris=game:GetService("Debris")
 local Modules=game.ReplicatedStorage.Modules
 local Network=require(Modules.Network)
 local Util=require(Modules.Util)
+local Visuals=require(script.Parent.Visuals)
 local Client={}
 local function connect(a,signal,callback)
  table.insert(a.TTClientConnections,signal:Connect(callback))
 end
 local function owner(a) return a.Player==Players.LocalPlayer end
+local function meterVisibility(a)
+ local display=a.HealthbarDisplay
+ if not display then return end
+ local shown=a.TTClientPraying or os.clock()<(a.TTMeterUntil or 0)
+ local mode=shown and (a.TTMeterFull and "full" or "partial") or "hidden"
+ if a.TTMeterMode==mode then return end
+ a.TTMeterMode=mode;a.TTMeterToken=(a.TTMeterToken or 0)+1
+ local token=a.TTMeterToken
+ if a.TTMeterTween then a.TTMeterTween:Cancel() end
+ if shown then display.Visible=true end
+ local info=TweenInfo.new(a.TTClientPraying and .05 or .65,Enum.EasingStyle.Quint,Enum.EasingDirection.Out)
+ a.TTMeterTween=TweenService:Create(display,info,{
+  Position=UDim2.fromScale(mode=="full" and 1 or shown and 1.025 or 1.175,.5),
+  Size=UDim2.fromScale(1,shown and .532 or .4)
+ })
+ a.TTMeterTween:Play()
+ if not shown then task.delay(.65,function()
+  if a.TTMeterToken==token and a.HealthbarDisplay==display and not a.TTClientDestroyed then display.Visible=false end
+ end) end
+end
 local function blood(a,value)
  local display=a.HealthbarDisplay
  if not display then return end
  local fraction=math.clamp(value/a.Config.BloodRequiredForRespawn,0,1)
- display.Bar.Inner.Size=UDim2.fromScale(1,fraction)
+ if value>0 or a.TTLastBlood and value~=a.TTLastBlood then a.TTMeterUntil=os.clock()+5 end
+ a.TTLastBlood=value;a.TTMeterFull=fraction>=1
  display.Display.Visible=fraction<1
  display.Full.Visible=fraction>=1
- display.Position=UDim2.fromScale(1,.5)
- display.Size=UDim2.fromScale(1,.532)
+ if a.TTBloodTween then a.TTBloodTween:Cancel() end
+ a.TTBloodTween=TweenService:Create(display.Bar.Inner,TweenInfo.new(a.TTClientPraying and .05 or .25),{Size=UDim2.fromScale(1,fraction)})
+ a.TTBloodTween:Play();meterVisibility(a)
+end
+local function warning(a,message)
+ if message then Util:CreateWarning("TwoTimeWarning",message,a.Config.WarningTemplate) end
 end
 local function sprite(a,image,module)
  if not image or not module then return end
@@ -20317,7 +21005,9 @@ local function sprite(a,image,module)
  end)
 end
 local function stopPray(a,notify)
+ if a.TTClientPraying then a.TTMeterUntil=os.clock()+5 end
  a.TTClientPraying=nil
+ meterVisibility(a)
  if a.TTClientJump~=nil then
   a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTClientJump);a.TTClientJump=nil
  end
@@ -20328,15 +21018,27 @@ end
 local function locate(a,position)
  if a.TTMarker then a.TTMarker:Destroy() end
  local marker=Instance.new("Part");marker.Name="TwoTimeRitualMarker";marker.Anchored=true;marker.CanCollide=false;marker.CanTouch=false;marker.CanQuery=false;marker.Transparency=1;marker.Position=position+Vector3.new(0,3,0);marker.Parent=workspace
- local gui=Instance.new("BillboardGui");gui.Size=UDim2.fromOffset(64,64);gui.AlwaysOnTop=true;gui.Parent=marker
- local image=Instance.new("ImageLabel");image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayHighlightImage;image.Parent=gui
- a.TTMarker=marker;Debris:AddItem(marker,a.Config.PrayHighlightDuration)
+ local gui=Instance.new("BillboardGui");gui.Size=UDim2.fromOffset(120,120);gui.AlwaysOnTop=true;gui.Adornee=marker;gui.LightInfluence=0;gui.Parent=marker
+ local image=Instance.new("ImageLabel");image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayHighlightImage;image.ImageColor3=Color3.fromRGB(201,201,201);image.ImageTransparency=1;image.Parent=gui
+ local rotation=Instance.new("NumberValue");rotation.Value=900;rotation.Parent=marker
+ local render=RunService.RenderStepped:Connect(function(dt)
+  if image.Parent then image.Rotation=((image.Rotation or 0)+rotation.Value*dt)%360 end
+ end)
+ marker.Destroying:Once(function()render:Disconnect()end)
+ TweenService:Create(image,TweenInfo.new(.2),{ImageTransparency=0}):Play()
+ TweenService:Create(rotation,TweenInfo.new(2,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Value=45}):Play()
+ task.delay(a.Config.PrayHighlightDuration-.35,function()
+  if marker.Parent then TweenService:Create(image,TweenInfo.new(.35),{ImageTransparency=1}):Play();Debris:AddItem(marker,.35) end
+ end)
+ a.TTMarker=marker
 end
 function Client.Pray(a,result)
  if type(result)~="table" then return end
+ warning(a,result.Warning)
  if result.Locate then locate(a,result.Locate);return end
  if not result.Started then return end
  a.TTClientPraying=true
+ meterVisibility(a)
  a.TTClientJump=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
  Network:FireConnection("DisableSprinting","TwoTimePray",true)
@@ -20353,9 +21055,15 @@ function Client.Ritual(a,result)
  Network:FireConnection("DisableSprinting","TwoTimeRitual",true)
 end
 local function createIndicator(a)
+ local asset=Visuals.Build("LungeIndicator")
  local start=Instance.new("Attachment");start.Parent=workspace.Terrain
  local finish=Instance.new("Attachment");finish.Parent=workspace.Terrain
- local beam=Instance.new("Beam");beam.Attachment0=start;beam.Attachment1=finish;beam.Width0=.12;beam.Width1=.04;beam.FaceCamera=true;beam.Color=ColorSequence.new(Color3.fromRGB(160,160,170));beam.Transparency=NumberSequence.new(.35);beam.Enabled=false;beam.Parent=start
+ local beam=asset.Beam;beam.Attachment0=start;beam.Attachment1=finish;beam.Enabled=false;beam.Parent=start
+ a.TTIndicatorEmitters={}
+ for _,emitter in asset.EndSymbol:GetChildren() do
+  emitter.Enabled=false;emitter.Parent=finish;table.insert(a.TTIndicatorEmitters,emitter)
+ end
+ asset:Destroy()
  a.TTIndicator={start,finish,beam}
 end
 function Client.Created(a)
@@ -20383,6 +21091,7 @@ function Client.Created(a)
  a.TTOriginalSprintSpeed=Sprinting.SprintSpeed or a.Config.SprintSpeed
  local template=a.Config.HealthBar
  local display=template:Clone();display.Parent=a.Player.PlayerGui:WaitForChild("MainUI")
+ display.Visible=false;display.Position=UDim2.fromScale(1.175,.5);display.Size=UDim2.fromScale(1,.4)
  a.HealthbarDisplay=display;blood(a,rig:GetAttribute("TwoTimeOblation") or 0)
  sprite(a,display.Display,display.Display:FindFirstChild("Idle"))
  sprite(a,display.Full,display.Full:FindFirstChild("Full"))
@@ -20392,7 +21101,8 @@ function Client.Created(a)
  end
  createIndicator(a)
  Network:SetConnection("TwoTimePortState","REMOTE_EVENT",function(kind,data)
-  if kind=="Blood" then blood(a,data)
+  if kind=="Warning" then warning(a,data)
+  elseif kind=="Blood" then blood(a,data)
   elseif kind=="Pray" and not data then stopPray(a,false)
   elseif kind=="Revive" then
    stopPray(a,true)
@@ -20407,6 +21117,7 @@ function Client.Created(a)
  local pulse=0;local lastCrouch=false
  connect(a,RunService.Heartbeat,function(dt)
   if not rig.Parent or not rig.PrimaryPart then return end
+  meterVisibility(a)
   local crouched=rig:GetAttribute("Crouching")==true
   if crouched~=lastCrouch then
    lastCrouch=crouched
@@ -20434,22 +21145,44 @@ function Client.Created(a)
    if not (a.HeldAbilities and a.HeldAbilities.Pray) then stopPray(a,true)
    elseif pulse>=.2 then pulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",true) end
   end
+ end)
+ connect(a,RunService.RenderStepped,function()
+  if not rig.Parent or not rig.PrimaryPart then return end
+  local crouched=rig:GetAttribute("Crouching")==true
   local indicator=a.TTIndicator
   if indicator then
-   indicator[3].Enabled=crouched
-   if crouched then
+   local usable=true
+   if a.CanUseAbility then local ok,result=pcall(a.CanUseAbility,a,"Dagger");usable=ok and result==true end
+   local visible=crouched and rig.Humanoid.Health>0 and usable
+   indicator[3].Enabled=visible
+   for _,emitter in a.TTIndicatorEmitters do
+    if emitter.Enabled~=visible then emitter.Enabled=visible;if visible then emitter:Emit(1) else emitter:Clear() end end
+   end
+   if visible then
     local root=rig.PrimaryPart
-    local origin=root.Position-Vector3.new(0,rig.Humanoid.HipHeight+root.Size.Y/2-.1,0)
-    local distance=(a.Config.DaggerLungeForce+a.Config.DaggerLungeForce/3)/2*a.Config.DaggerCrouchMoverEndlag
-    local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={rig}
-    local hit=workspace:Raycast(origin,root.CFrame.LookVector*distance,params)
-    indicator[1].WorldPosition=origin;indicator[2].WorldPosition=hit and hit.Position or origin+root.CFrame.LookVector*distance
+    local forward=root.CFrame.LookVector*Vector3.new(1,0,1)
+    if forward.Magnitude>.01 then
+     forward=forward.Unit
+     local height=rig.Humanoid.HipHeight+root.Size.Y/2
+     local distance=(a.Config.DaggerLungeForce+a.Config.DaggerLungeForce/3)/2*a.Config.DaggerCrouchMoverEndlag
+     local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={workspace:FindFirstChild("Players") or rig}
+     local wall=workspace:Raycast(root.Position,forward*distance,params)
+     if wall then distance=math.max((wall.Position-root.Position).Magnitude-1,0) end
+     local endpoint=root.Position+forward*distance
+     local ground=workspace:Raycast(endpoint,Vector3.new(0,-(height+6),0),params)
+     indicator[1].WorldPosition=root.Position-Vector3.new(0,height-.1,0)
+     indicator[2].WorldPosition=ground and ground.Position+Vector3.new(0,.1,0) or endpoint-Vector3.new(0,height-.1,0)
+     indicator[3].Transparency=NumberSequence.new((math.sin(os.clock()*2)+1)*.15+.2,1)
+    end
    end
   end
  end)
 end
 function Client.Destroyed(a)
  a.TTClientDestroyed=true
+ a.TTMeterToken=(a.TTMeterToken or 0)+1
+ if a.TTMeterTween then a.TTMeterTween:Cancel() end
+ if a.TTBloodTween then a.TTBloodTween:Cancel() end
  for _,connection in a.TTClientConnections or {} do connection:Disconnect() end
  if a.TTHighlight then a.TTHighlight:Destroy() end
  if a.TTHighlightTween then a.TTHighlightTween:Cancel() end
@@ -20468,7 +21201,7 @@ end
 return Client
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Behavior/Rules]====],before=false,after="2012:c07084eb:39174afa",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Rules]====],before=false,previous="2012:c07084eb:39174afa",after="2133:9ecb0087:4e59fcc4",source=[====[
 -- Pure kit math, shared by server, indicator, and regression tests.
 local Rules = {}
 function Rules.Oblation(config, backstab, crouched)
@@ -20482,7 +21215,9 @@ function Rules.CrouchCooldown(config, elapsed)
  return math.clamp(config.CrouchCooldown-elapsed,config.CrouchMinCooldown,config.CrouchCooldown)
 end
 function Rules.MissDuration(config, distance)
- return math.clamp(distance/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
+ if distance==math.huge then return 0 end
+ local excess=math.max(0,distance-(config.DaggerMissSlownessSafeDistance or 30))
+ return math.clamp(excess/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
 end
 function Rules.Pray(config, blood, missingHealth, elapsed)
  local requirement=config.BloodRequiredForRespawn
@@ -20504,7 +21239,7 @@ end
 return Rules
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,after="19452:b6a039bb:e64a3db6",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",after="20810:c613c66e:f0dfb625",source=[====[
 -- FCT APIs and FCT visual templates; newest UPD balance. No animation or sound calls.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -20516,6 +21251,7 @@ local Statuses=require(Modules.Statuses)
 local Hitboxes=require(Modules.Hitboxes)
 local Network=require(Modules.Network)
 local Rules=require(script.Parent.Rules)
+local Visuals=require(script.Parent.Visuals)
 local Server={}
 local function alive(a)
  return not a.TTDestroyed and a.Rig and a.Rig.Parent and a.Rig.PrimaryPart and a.Rig:FindFirstChildOfClass("Humanoid") and a.Rig.Humanoid.Health>0
@@ -20541,6 +21277,29 @@ local function knife(a,on)
   if part.Parent then part.Transparency=on and transparency or 1 end
  end
  -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
+end
+local function stopPrayVFX(a)
+ local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
+ for _,object in visuals or {} do
+  for _,item in object:GetDescendants() do
+   if item:IsA("ParticleEmitter") then item.Enabled=false
+   elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
+  end
+  if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
+  Debris:AddItem(object,4)
+ end
+end
+local function startPrayVFX(a)
+ stopPrayVFX(a)
+ local folder=Visuals.Build("Pray")
+ a.TTPrayVFX=folder:GetChildren()
+ for _,object in a.TTPrayVFX do object.Parent=a.Rig.PrimaryPart end
+ folder:Destroy()
+ for _,object in a.TTPrayVFX do
+  for _,item in object:GetDescendants() do
+   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+  end
+ end
 end
 local function nearest(a)
  local best,distance=nil,math.huge
@@ -20570,10 +21329,11 @@ end
 function Server.StopPray(a,interrupted)
  if not a.TTPraying then return end
  a.TTPraying=nil
+ stopPrayVFX(a)
  a.Rig:SetAttribute("TwoTimePraying",nil)
  lock(a,"Pray",false);removeSpeed(a,"TwoTimePray")
  if a.TTJump then a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTJump.Enabled);a.TTJump=nil end
- if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown) end
+ if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown);send(a,"Warning","Your prayer was interrupted.") end
  send(a,"Pray",false)
 end
 function Server.StopCrouch(a,manual)
@@ -20619,7 +21379,8 @@ function Server.Dagger(a)
   TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
   Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
   a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
-   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
+   Size=a.Config.DaggerHitboxSize,PredictVelocity=false,CastPoint=a.Rig,
+   CFrame=function() return a.Rig.PrimaryPart.CFrame*CFrame.new(0,0,-a.Config.DaggerHitboxOffset) end,
    Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
    Connections={Hit=function(victim)
     if hit or not current() then return end
@@ -20652,7 +21413,8 @@ function Server.Dagger(a)
    a.TTHitbox=nil
    if crouched and not hit and alive(a) then
     local _,distance=nearest(a)
-    Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=Rules.MissDuration(a.Config,distance)})
+    local penalty=Rules.MissDuration(a.Config,distance)
+    if penalty>0 then Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=penalty}) end
    end
   end)
  end)
@@ -20680,9 +21442,10 @@ function Server.Pray(a)
  if not alive(a) or blocked(a) or a.TTAttacking or a.TTRitualCasting then return {Cancelled=true} end
  if a.TTPraying then Server.StopPray(a,false);return end
  local ritual=a.RespawnLocation
- if not ritual or not ritual.Parent or a.LivesUsed~=1 then return {Cancelled=true} end
- if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position} end
- if a.Blood<=0 or a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then return {Cancelled=true} end
+ if not ritual or not ritual.Parent or a.LivesUsed~=1 then send(a,"Warning","You must place your Ritual before praying.");return {Cancelled=true} end
+ if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position,Warning="Return to your Ritual to pray."} end
+ if a.Blood<=0 then send(a,"Warning","You need Oblation to pray.");return {Cancelled=true} end
+ if a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then send(a,"Warning","You are already at full health.");return {Cancelled=true} end
  Server.StopCrouch(a,false)
  a.TTPraying=true;a.TTPrayStart=os.clock();a.TTPrayLease=os.clock()
  a.TTPrayDamage=0
@@ -20691,6 +21454,7 @@ function Server.Pray(a)
  Util:CreateSpeedMultiplier(a.Rig,0,"TwoTimePray")
  a.TTJump={Enabled=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)}
  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+ startPrayVFX(a)
  return {Started=true}
 end
 local function effect(a,name,parent)
@@ -20873,7 +21637,565 @@ end
 return Server
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",after="14133:ea0af3d6:5f27dea5",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Visuals]====],before=false,after="29729:4cf41d92:51ec7835",source=[====[
+-- Reconstructed from newest UPD instance properties. Public textures only.
+local Visuals={}
+local function enum(enumType,value) for _,item in enumType:GetEnumItems() do if item.Value==value then return item end end end
+function Visuals.Build(kind)
+ local objects={}
+ objects[59005]=Instance.new("Folder")
+ objects[59005].Name="LungeIndicator"
+ objects[59006]=Instance.new("Beam")
+ objects[59006].Name="Beam"
+ objects[59006].Brightness=4
+ objects[59006].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(0.203921571,0.250980407,0.384313732)),ColorSequenceKeypoint.new(1,Color3.new(0.203921571,0.250980407,0.384313732))})
+ objects[59006].CurveSize0=0
+ objects[59006].CurveSize1=0
+ objects[59006].Enabled=true
+ objects[59006].FaceCamera=true
+ objects[59006].LightEmission=1
+ objects[59006].LightInfluence=0
+ objects[59006].Segments=10
+ objects[59006].Texture="rbxassetid://4955566540"
+ objects[59006].TextureLength=1
+ objects[59006].TextureMode=enum(Enum.TextureMode,0)
+ objects[59006].TextureSpeed=1
+ objects[59006].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.200000003,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59006].Width0=1
+ objects[59006].Width1=1
+ objects[59006].ZOffset=0
+ objects[59007]=Instance.new("Attachment")
+ objects[59007].Name="EndSymbol"
+ objects[59007].Visible=false
+ objects[59007].CFrame=CFrame.new(0,0,0,1,0,0,0,1,0,0,0,1)
+ objects[59008]=Instance.new("ParticleEmitter")
+ objects[59008].Name="Transparent"
+ objects[59008].Acceleration=Vector3.new(0,0,0)
+ objects[59008].Brightness=1.97000003
+ objects[59008].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59008].Drag=0
+ objects[59008].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59008].Enabled=false
+ objects[59008].FlipbookBlendFrames=true
+ objects[59008].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59008].FlipbookMode=enum(Enum.ParticleFlipbookMode,1)
+ objects[59008].FlipbookStartRandom=false
+ objects[59008].LightEmission=1
+ objects[59008].LightInfluence=0
+ objects[59008].LockedToPart=true
+ objects[59008].Orientation=enum(Enum.ParticleOrientation,3)
+ objects[59008].Rate=1.29999995
+ objects[59008].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59008].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59008].ShapePartial=1
+ objects[59008].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59008].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,2,0),NumberSequenceKeypoint.new(0.0833333358,2,0),NumberSequenceKeypoint.new(0.166666672,2,0),NumberSequenceKeypoint.new(0.25,2,0),NumberSequenceKeypoint.new(0.333333343,2,0),NumberSequenceKeypoint.new(0.416666657,2,0),NumberSequenceKeypoint.new(0.5,2,0),NumberSequenceKeypoint.new(0.583333313,2,0),NumberSequenceKeypoint.new(0.666666687,2,0),NumberSequenceKeypoint.new(0.75,2,0),NumberSequenceKeypoint.new(0.833333313,2,0),NumberSequenceKeypoint.new(0.916666687,2,0),NumberSequenceKeypoint.new(1,2,0)})
+ objects[59008].SpreadAngle=Vector2.new(0,0)
+ objects[59008].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59008].Texture="rbxassetid://75363982258016"
+ objects[59008].TimeScale=1
+ objects[59008].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.5,0.899999976,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59008].VelocityInheritance=0
+ objects[59008].WindAffectsDrag=false
+ objects[59008].ZOffset=0
+ objects[59008].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59008].Lifetime=NumberRange.new(1,1)
+ objects[59008].RotSpeed=NumberRange.new(0,0)
+ objects[59008].Rotation=NumberRange.new(0,0)
+ objects[59008].Speed=NumberRange.new(0.00100000005,0.00100000005)
+ objects[59008]:SetAttribute("EmitCount",0)
+ objects[59008]:SetAttribute("EmitDelay",0)
+ objects[59009]=Instance.new("ParticleEmitter")
+ objects[59009].Name="Shader"
+ objects[59009].Acceleration=Vector3.new(0,0,0)
+ objects[59009].Brightness=3
+ objects[59009].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(0.917647064,0.945098042,1)),ColorSequenceKeypoint.new(1,Color3.new(0.776470602,0.827450991,1))})
+ objects[59009].Drag=0
+ objects[59009].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59009].Enabled=false
+ objects[59009].FlipbookBlendFrames=true
+ objects[59009].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,3)
+ objects[59009].FlipbookMode=enum(Enum.ParticleFlipbookMode,1)
+ objects[59009].FlipbookStartRandom=false
+ objects[59009].LightEmission=1
+ objects[59009].LightInfluence=0
+ objects[59009].LockedToPart=true
+ objects[59009].Orientation=enum(Enum.ParticleOrientation,3)
+ objects[59009].Rate=1.29999995
+ objects[59009].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59009].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59009].ShapePartial=1
+ objects[59009].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59009].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,2,0),NumberSequenceKeypoint.new(0.0833333358,2,0),NumberSequenceKeypoint.new(0.166666672,2,0),NumberSequenceKeypoint.new(0.25,2,0),NumberSequenceKeypoint.new(0.333333343,2,0),NumberSequenceKeypoint.new(0.416666657,2,0),NumberSequenceKeypoint.new(0.5,2,0),NumberSequenceKeypoint.new(0.583333313,2,0),NumberSequenceKeypoint.new(0.666666687,2,0),NumberSequenceKeypoint.new(0.75,2,0),NumberSequenceKeypoint.new(0.833333313,2,0),NumberSequenceKeypoint.new(0.916666687,2,0),NumberSequenceKeypoint.new(1,2,0)})
+ objects[59009].SpreadAngle=Vector2.new(0,0)
+ objects[59009].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59009].Texture="rbxassetid://123334911850406"
+ objects[59009].TimeScale=0.5
+ objects[59009].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.498414367,0.03125,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59009].VelocityInheritance=0
+ objects[59009].WindAffectsDrag=false
+ objects[59009].ZOffset=0
+ objects[59009].FlipbookFramerate=NumberRange.new(13.8000002,13.8000002)
+ objects[59009].Lifetime=NumberRange.new(1,1)
+ objects[59009].RotSpeed=NumberRange.new(0,0)
+ objects[59009].Rotation=NumberRange.new(0,0)
+ objects[59009].Speed=NumberRange.new(0.00100000005,0.00100000005)
+ objects[59009]:SetAttribute("EmitCount",0)
+ objects[59009]:SetAttribute("EmitDelay",0)
+ objects[59036]=Instance.new("Folder")
+ objects[59036].Name="Pray"
+ objects[59037]=Instance.new("Attachment")
+ objects[59037].Name="BeamFlare"
+ objects[59037].Visible=false
+ objects[59037].CFrame=CFrame.new(0,7.12184334,1.5965271,1,0,0,0,0.984296679,-0.176521987,0,0.176521987,0.984296679)
+ objects[59038]=Instance.new("ParticleEmitter")
+ objects[59038].Name="SparkleAngle"
+ objects[59038].Acceleration=Vector3.new(0,0,0)
+ objects[59038].Brightness=1
+ objects[59038].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59038].Drag=0
+ objects[59038].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59038].Enabled=true
+ objects[59038].FlipbookBlendFrames=true
+ objects[59038].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59038].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59038].FlipbookStartRandom=false
+ objects[59038].LightEmission=0
+ objects[59038].LightInfluence=1
+ objects[59038].LockedToPart=true
+ objects[59038].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59038].Rate=5
+ objects[59038].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59038].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59038].ShapePartial=1
+ objects[59038].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59038].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,3.49999952,0)})
+ objects[59038].SpreadAngle=Vector2.new(0,0)
+ objects[59038].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,-3,0)})
+ objects[59038].Texture="rbxassetid://113600244234335"
+ objects[59038].TimeScale=1
+ objects[59038].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.490024954,0,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59038].VelocityInheritance=0
+ objects[59038].WindAffectsDrag=false
+ objects[59038].ZOffset=0
+ objects[59038].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59038].Lifetime=NumberRange.new(0.5,0.5)
+ objects[59038].RotSpeed=NumberRange.new(0,0)
+ objects[59038].Rotation=NumberRange.new(-55,-55)
+ objects[59038].Speed=NumberRange.new(0,0)
+ objects[59038]:SetAttribute("EmitDelay",0)
+ objects[59039]=Instance.new("ParticleEmitter")
+ objects[59039].Name="Sparkle"
+ objects[59039].Acceleration=Vector3.new(0,0,0)
+ objects[59039].Brightness=1
+ objects[59039].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59039].Drag=0
+ objects[59039].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59039].Enabled=true
+ objects[59039].FlipbookBlendFrames=true
+ objects[59039].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59039].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59039].FlipbookStartRandom=false
+ objects[59039].LightEmission=0
+ objects[59039].LightInfluence=1
+ objects[59039].LockedToPart=true
+ objects[59039].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59039].Rate=5
+ objects[59039].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59039].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59039].ShapePartial=1
+ objects[59039].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59039].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,3.49999952,0)})
+ objects[59039].SpreadAngle=Vector2.new(0,0)
+ objects[59039].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,-3,0)})
+ objects[59039].Texture="rbxassetid://113600244234335"
+ objects[59039].TimeScale=1
+ objects[59039].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.490024954,0,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59039].VelocityInheritance=0
+ objects[59039].WindAffectsDrag=false
+ objects[59039].ZOffset=0
+ objects[59039].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59039].Lifetime=NumberRange.new(0.5,0.5)
+ objects[59039].RotSpeed=NumberRange.new(0,0)
+ objects[59039].Rotation=NumberRange.new(0,0)
+ objects[59039].Speed=NumberRange.new(0,0)
+ objects[59039]:SetAttribute("EmitDelay",0)
+ objects[59040]=Instance.new("ParticleEmitter")
+ objects[59040].Name="Dust"
+ objects[59040].Acceleration=Vector3.new(0,0,0)
+ objects[59040].Brightness=10
+ objects[59040].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59040].Drag=0.25
+ objects[59040].EmissionDirection=enum(Enum.NormalId,4)
+ objects[59040].Enabled=true
+ objects[59040].FlipbookBlendFrames=false
+ objects[59040].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,1)
+ objects[59040].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59040].FlipbookStartRandom=true
+ objects[59040].LightEmission=1
+ objects[59040].LightInfluence=0
+ objects[59040].LockedToPart=false
+ objects[59040].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59040].Rate=4
+ objects[59040].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59040].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59040].ShapePartial=1
+ objects[59040].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59040].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(0.5,0.0500000007,0.0500000007),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59040].SpreadAngle=Vector2.new(30,30)
+ objects[59040].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59040].Texture="rbxassetid://96361210760220"
+ objects[59040].TimeScale=1
+ objects[59040].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59040].VelocityInheritance=0
+ objects[59040].WindAffectsDrag=false
+ objects[59040].ZOffset=0
+ objects[59040].FlipbookFramerate=NumberRange.new(0,0)
+ objects[59040].Lifetime=NumberRange.new(2,4)
+ objects[59040].RotSpeed=NumberRange.new(0,0)
+ objects[59040].Rotation=NumberRange.new(0,0)
+ objects[59040].Speed=NumberRange.new(4,5)
+ objects[59041]=Instance.new("Attachment")
+ objects[59041].Name="StartCenter"
+ objects[59041].Visible=false
+ objects[59041].CFrame=CFrame.new(0,0.0587131977,-0.166778564,1,0,0,0,0.970643938,-0.240521073,0,0.240521073,0.970643938)
+ objects[59042]=Instance.new("ParticleEmitter")
+ objects[59042].Name="Glow"
+ objects[59042].Acceleration=Vector3.new(0,0,0)
+ objects[59042].Brightness=1
+ objects[59042].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59042].Drag=0
+ objects[59042].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59042].Enabled=false
+ objects[59042].FlipbookBlendFrames=true
+ objects[59042].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59042].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59042].FlipbookStartRandom=false
+ objects[59042].LightEmission=0
+ objects[59042].LightInfluence=1
+ objects[59042].LockedToPart=false
+ objects[59042].Orientation=enum(Enum.ParticleOrientation,2)
+ objects[59042].Rate=20
+ objects[59042].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59042].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59042].ShapePartial=1
+ objects[59042].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59042].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,8,0),NumberSequenceKeypoint.new(1,8,0)})
+ objects[59042].SpreadAngle=Vector2.new(0,0)
+ objects[59042].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,-0.5,0),NumberSequenceKeypoint.new(1,-0.5,0)})
+ objects[59042].Texture="rbxassetid://11739864623"
+ objects[59042].TimeScale=1
+ objects[59042].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.0997506231,0.193749964,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59042].VelocityInheritance=0
+ objects[59042].WindAffectsDrag=false
+ objects[59042].ZOffset=1
+ objects[59042].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59042].Lifetime=NumberRange.new(1,1)
+ objects[59042].RotSpeed=NumberRange.new(0,0)
+ objects[59042].Rotation=NumberRange.new(0,0)
+ objects[59042].Speed=NumberRange.new(0.00499999989,0.00499999989)
+ objects[59042]:SetAttribute("EmitCount",1)
+ objects[59043]=Instance.new("Attachment")
+ objects[59043].Name="StartFloor"
+ objects[59043].Visible=false
+ objects[59043].CFrame=CFrame.new(0,-3,0,1,0,0,0,1,0,0,0,1)
+ objects[59044]=Instance.new("ParticleEmitter")
+ objects[59044].Name="Dust"
+ objects[59044].Acceleration=Vector3.new(0,20,0)
+ objects[59044].Brightness=10
+ objects[59044].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59044].Drag=4
+ objects[59044].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59044].Enabled=false
+ objects[59044].FlipbookBlendFrames=false
+ objects[59044].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,1)
+ objects[59044].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59044].FlipbookStartRandom=true
+ objects[59044].LightEmission=1
+ objects[59044].LightInfluence=0
+ objects[59044].LockedToPart=false
+ objects[59044].Orientation=enum(Enum.ParticleOrientation,2)
+ objects[59044].Rate=4
+ objects[59044].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59044].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59044].ShapePartial=1
+ objects[59044].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59044].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(0.5,0.0500000007,0.0500000007),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59044].SpreadAngle=Vector2.new(70,70)
+ objects[59044].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59044].Texture="rbxassetid://96361210760220"
+ objects[59044].TimeScale=1
+ objects[59044].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59044].VelocityInheritance=0
+ objects[59044].WindAffectsDrag=false
+ objects[59044].ZOffset=0
+ objects[59044].FlipbookFramerate=NumberRange.new(0,0)
+ objects[59044].Lifetime=NumberRange.new(0.25,1)
+ objects[59044].RotSpeed=NumberRange.new(0,0)
+ objects[59044].Rotation=NumberRange.new(-90,-90)
+ objects[59044].Speed=NumberRange.new(9,40)
+ objects[59044]:SetAttribute("EmitCount",15)
+ objects[59045]=Instance.new("ParticleEmitter")
+ objects[59045].Name="Spawn"
+ objects[59045].Acceleration=Vector3.new(0,0,0)
+ objects[59045].Brightness=5
+ objects[59045].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59045].Drag=0
+ objects[59045].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59045].Enabled=false
+ objects[59045].FlipbookBlendFrames=true
+ objects[59045].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59045].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59045].FlipbookStartRandom=false
+ objects[59045].LightEmission=1
+ objects[59045].LightInfluence=0
+ objects[59045].LockedToPart=false
+ objects[59045].Orientation=enum(Enum.ParticleOrientation,3)
+ objects[59045].Rate=2
+ objects[59045].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59045].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59045].ShapePartial=1
+ objects[59045].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59045].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,10,0),NumberSequenceKeypoint.new(0.0523690805,2.0625,0),NumberSequenceKeypoint.new(0.273067355,6.25,0),NumberSequenceKeypoint.new(1,5,0)})
+ objects[59045].SpreadAngle=Vector2.new(0,0)
+ objects[59045].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59045].Texture="rbxassetid://134399639839028"
+ objects[59045].TimeScale=1
+ objects[59045].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.0236907732,0,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59045].VelocityInheritance=0
+ objects[59045].WindAffectsDrag=false
+ objects[59045].ZOffset=0
+ objects[59045].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59045].Lifetime=NumberRange.new(1,1)
+ objects[59045].RotSpeed=NumberRange.new(-90,-90)
+ objects[59045].Rotation=NumberRange.new(0,0)
+ objects[59045].Speed=NumberRange.new(0.0500000007,0.0500000007)
+ objects[59045]:SetAttribute("EmitCount",1)
+ objects[59046]=Instance.new("Attachment")
+ objects[59046].Name="Center"
+ objects[59046].Visible=false
+ objects[59046].CFrame=CFrame.new(0,-1.00000012,0,1,0,0,0,1,0,0,0,1)
+ objects[59047]=Instance.new("ParticleEmitter")
+ objects[59047].Name="Aura"
+ objects[59047].Acceleration=Vector3.new(0,0,0)
+ objects[59047].Brightness=1
+ objects[59047].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59047].Drag=1
+ objects[59047].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59047].Enabled=true
+ objects[59047].FlipbookBlendFrames=true
+ objects[59047].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,2)
+ objects[59047].FlipbookMode=enum(Enum.ParticleFlipbookMode,1)
+ objects[59047].FlipbookStartRandom=false
+ objects[59047].LightEmission=0
+ objects[59047].LightInfluence=1
+ objects[59047].LockedToPart=false
+ objects[59047].Orientation=enum(Enum.ParticleOrientation,2)
+ objects[59047].Rate=20
+ objects[59047].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59047].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59047].ShapePartial=1
+ objects[59047].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59047].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,4.5625,0)})
+ objects[59047].SpreadAngle=Vector2.new(360,360)
+ objects[59047].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0.5,0),NumberSequenceKeypoint.new(1,0.5,0)})
+ objects[59047].Texture="rbxassetid://134494112357790"
+ objects[59047].TimeScale=1
+ objects[59047].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0.9375,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59047].VelocityInheritance=0
+ objects[59047].WindAffectsDrag=false
+ objects[59047].ZOffset=0
+ objects[59047].FlipbookFramerate=NumberRange.new(17.7000008,17.7000008)
+ objects[59047].Lifetime=NumberRange.new(2,2)
+ objects[59047].RotSpeed=NumberRange.new(0,0)
+ objects[59047].Rotation=NumberRange.new(-90,-90)
+ objects[59047].Speed=NumberRange.new(2,2)
+ objects[59048]=Instance.new("Attachment")
+ objects[59048].Name="Floor"
+ objects[59048].Visible=false
+ objects[59048].CFrame=CFrame.new(0,-3,0,1,0,0,0,1,0,0,0,1)
+ objects[59049]=Instance.new("ParticleEmitter")
+ objects[59049].Name="Spawn"
+ objects[59049].Acceleration=Vector3.new(0,0,0)
+ objects[59049].Brightness=1
+ objects[59049].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59049].Drag=0
+ objects[59049].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59049].Enabled=true
+ objects[59049].FlipbookBlendFrames=true
+ objects[59049].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59049].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59049].FlipbookStartRandom=false
+ objects[59049].LightEmission=0
+ objects[59049].LightInfluence=0
+ objects[59049].LockedToPart=false
+ objects[59049].Orientation=enum(Enum.ParticleOrientation,3)
+ objects[59049].Rate=2
+ objects[59049].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59049].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59049].ShapePartial=1
+ objects[59049].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59049].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,5,0),NumberSequenceKeypoint.new(1,5,0)})
+ objects[59049].SpreadAngle=Vector2.new(0,0)
+ objects[59049].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59049].Texture="rbxassetid://134399639839028"
+ objects[59049].TimeScale=1
+ objects[59049].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.497506261,0,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59049].VelocityInheritance=0
+ objects[59049].WindAffectsDrag=false
+ objects[59049].ZOffset=0
+ objects[59049].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59049].Lifetime=NumberRange.new(1,1)
+ objects[59049].RotSpeed=NumberRange.new(-90,-90)
+ objects[59049].Rotation=NumberRange.new(0,0)
+ objects[59049].Speed=NumberRange.new(0.0500000007,0.0500000007)
+ objects[59050]=Instance.new("Attachment")
+ objects[59050].Name="BeamTop"
+ objects[59050].Visible=false
+ objects[59050].CFrame=CFrame.new(0,9.09042358,1.949646,1,0,0,0,0.984296679,-0.176521987,0,0.176521987,0.984296679)
+ objects[59051]=Instance.new("SpotLight")
+ objects[59051].Name="SpotLight"
+ objects[59051].Angle=54
+ objects[59051].Face=enum(Enum.NormalId,4)
+ objects[59051].Range=16
+ objects[59051].Brightness=1
+ objects[59051].Color=Color3.new(1,1,1)
+ objects[59051].Enabled=true
+ objects[59051].Shadows=false
+ objects[59052]=Instance.new("Attachment")
+ objects[59052].Name="StartFlare"
+ objects[59052].Visible=false
+ objects[59052].CFrame=CFrame.new(0,7.12184334,1.5965271,1,0,0,0,0.984296679,-0.176521987,0,0.176521987,0.984296679)
+ objects[59053]=Instance.new("ParticleEmitter")
+ objects[59053].Name="Spark"
+ objects[59053].Acceleration=Vector3.new(0,0,0)
+ objects[59053].Brightness=1
+ objects[59053].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59053].Drag=0
+ objects[59053].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59053].Enabled=false
+ objects[59053].FlipbookBlendFrames=true
+ objects[59053].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,2)
+ objects[59053].FlipbookMode=enum(Enum.ParticleFlipbookMode,1)
+ objects[59053].FlipbookStartRandom=false
+ objects[59053].LightEmission=0
+ objects[59053].LightInfluence=1
+ objects[59053].LockedToPart=false
+ objects[59053].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59053].Rate=1
+ objects[59053].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59053].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59053].ShapePartial=1
+ objects[59053].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59053].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,5.3125,0)})
+ objects[59053].SpreadAngle=Vector2.new(0,0)
+ objects[59053].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59053].Texture="rbxassetid://76672742852348"
+ objects[59053].TimeScale=1
+ objects[59053].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59053].VelocityInheritance=0
+ objects[59053].WindAffectsDrag=false
+ objects[59053].ZOffset=0
+ objects[59053].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59053].Lifetime=NumberRange.new(0.5,0.5)
+ objects[59053].RotSpeed=NumberRange.new(0,0)
+ objects[59053].Rotation=NumberRange.new(0,0)
+ objects[59053].Speed=NumberRange.new(0,0)
+ objects[59053]:SetAttribute("EmitCount",1)
+ objects[59054]=Instance.new("ParticleEmitter")
+ objects[59054].Name="Flash"
+ objects[59054].Acceleration=Vector3.new(0,0,0)
+ objects[59054].Brightness=1
+ objects[59054].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59054].Drag=0
+ objects[59054].EmissionDirection=enum(Enum.NormalId,1)
+ objects[59054].Enabled=false
+ objects[59054].FlipbookBlendFrames=true
+ objects[59054].FlipbookLayout=enum(Enum.ParticleFlipbookLayout,0)
+ objects[59054].FlipbookMode=enum(Enum.ParticleFlipbookMode,0)
+ objects[59054].FlipbookStartRandom=false
+ objects[59054].LightEmission=0
+ objects[59054].LightInfluence=1
+ objects[59054].LockedToPart=false
+ objects[59054].Orientation=enum(Enum.ParticleOrientation,0)
+ objects[59054].Rate=20
+ objects[59054].Shape=enum(Enum.ParticleEmitterShape,0)
+ objects[59054].ShapeInOut=enum(Enum.ParticleEmitterShapeInOut,0)
+ objects[59054].ShapePartial=1
+ objects[59054].ShapeStyle=enum(Enum.ParticleEmitterShapeStyle,0)
+ objects[59054].Size=NumberSequence.new({NumberSequenceKeypoint.new(0,4,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59054].SpreadAngle=Vector2.new(0,0)
+ objects[59054].Squash=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59054].Texture="rbxassetid://12805835620"
+ objects[59054].TimeScale=1
+ objects[59054].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0,0),NumberSequenceKeypoint.new(1,0,0)})
+ objects[59054].VelocityInheritance=0
+ objects[59054].WindAffectsDrag=false
+ objects[59054].ZOffset=0
+ objects[59054].FlipbookFramerate=NumberRange.new(1,1)
+ objects[59054].Lifetime=NumberRange.new(0.0500000007,0.0500000007)
+ objects[59054].RotSpeed=NumberRange.new(0,0)
+ objects[59054].Rotation=NumberRange.new(-360,360)
+ objects[59054].Speed=NumberRange.new(0,0)
+ objects[59054]:SetAttribute("EmitCount",1)
+ objects[59055]=Instance.new("Attachment")
+ objects[59055].Name="BeamBottom"
+ objects[59055].Visible=false
+ objects[59055].CFrame=CFrame.new(0,-4.0482502,-0.731002808,1,0,0,0,1,0,0,0,1)
+ objects[59056]=Instance.new("Beam")
+ objects[59056].Name="Beam"
+ objects[59056].Brightness=0.875
+ objects[59056].Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),ColorSequenceKeypoint.new(1,Color3.new(1,1,1))})
+ objects[59056].CurveSize0=0
+ objects[59056].CurveSize1=0
+ objects[59056].Enabled=true
+ objects[59056].FaceCamera=true
+ objects[59056].LightEmission=1
+ objects[59056].LightInfluence=0
+ objects[59056].Segments=10
+ objects[59056].Texture="rbxassetid://89750267961919"
+ objects[59056].TextureLength=140
+ objects[59056].TextureMode=enum(Enum.TextureMode,1)
+ objects[59056].TextureSpeed=0.100000001
+ objects[59056].Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(0.507481337,0.899999976,0),NumberSequenceKeypoint.new(0.652119696,0.731249988,0),NumberSequenceKeypoint.new(0.770573616,0.46875,0),NumberSequenceKeypoint.new(0.913965106,1,0),NumberSequenceKeypoint.new(1,1,0)})
+ objects[59056].Width0=0
+ objects[59056].Width1=15
+ objects[59056].ZOffset=0
+ objects[59006].Parent=objects[59005]
+ objects[59007].Parent=objects[59005]
+ objects[59008].Parent=objects[59007]
+ objects[59009].Parent=objects[59007]
+ objects[59037].Parent=objects[59036]
+ objects[59038].Parent=objects[59037]
+ objects[59039].Parent=objects[59037]
+ objects[59040].Parent=objects[59037]
+ objects[59041].Parent=objects[59036]
+ objects[59042].Parent=objects[59041]
+ objects[59043].Parent=objects[59036]
+ objects[59044].Parent=objects[59043]
+ objects[59045].Parent=objects[59043]
+ objects[59046].Parent=objects[59036]
+ objects[59047].Parent=objects[59046]
+ objects[59048].Parent=objects[59036]
+ objects[59049].Parent=objects[59048]
+ objects[59050].Parent=objects[59036]
+ objects[59051].Parent=objects[59050]
+ objects[59052].Parent=objects[59036]
+ objects[59053].Parent=objects[59052]
+ objects[59054].Parent=objects[59052]
+ objects[59055].Parent=objects[59036]
+ objects[59056].Parent=objects[59036]
+ objects[59056].Attachment0=objects[59050]
+ objects[59056].Attachment1=objects[59055]
+ local selected=kind=="Pray" and objects[59036] or objects[59005]
+ local unused=kind=="Pray" and objects[59005] or objects[59036]
+ unused:Destroy()
+ return selected
+end
+return Visuals
+]====]},
+{path=[====[
+ServerStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",after="14227:c58653c9:e7f29712",source=[====[
 
 local t1 = {
 	DisplayName = "Two Time",
@@ -21141,10 +22463,12 @@ t1.Information = {
 }
 
 -- Port choices where the export lacks authoritative server code:
--- Preserve FCT's 4x6x5.5 hitbox size; apply documented latest forward offset (+1.5).
--- Miss penalty: 1s per 10 studs, capped at 8s (inferred from exported settings).
+-- Preserve FCT hitbox size but remove the close-range dead zone; raw-root placement.
+-- Miss penalty grows outside the 30-stud close range; no penalty without a killer.
 t1.DaggerHitboxSize=Vector3.new(4,6,5.5)
-t1.DaggerHitboxOffset=7
+t1.DaggerHitboxOffset=3.25
+t1.DaggerMissSlownessSafeDistance=30
+t1.WarningTemplate=script:FindFirstChild("Warning")
 t1.DaggerHitTime=.25
 t1.DaggerCrouchHitTime=.415
 t1.PraySensitiveButton=true
@@ -21155,7 +22479,7 @@ t1.SprintSpeed=26
 t1.MaxStamina=100
 t1.StaminaLoss=10
 t1.StaminaGain=20
-t1.TwoTimePortVersion="1.0.0"
+t1.TwoTimePortVersion="1.0.1"
 return t1
 ]====]}
 }
@@ -21168,7 +22492,7 @@ for _,plan in plans do
   assert(target:IsA("ModuleScript"),"Expected ModuleScript at "..plan.path..". Nothing changed.")
   local current=fingerprint(target.Source)
   if current~=plan.after then
-   assert(plan.before and current==plan.before,"Unexpected edited source at "..plan.path..". Nothing changed; keep your edits and send that module for reconciliation.")
+   assert((plan.before and current==plan.before) or (plan.previous and current==plan.previous),"Unexpected edited source at "..plan.path..". Nothing changed; keep your edits and send that module for reconciliation.")
    table.insert(pending,{target=target,plan=plan,before=target.Source})
   end
  else

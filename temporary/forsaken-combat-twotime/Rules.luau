@@ -11,7 +11,9 @@ function Rules.CrouchCooldown(config, elapsed)
  return math.clamp(config.CrouchCooldown-elapsed,config.CrouchMinCooldown,config.CrouchCooldown)
 end
 function Rules.MissDuration(config, distance)
- return math.clamp(distance/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
+ if distance==math.huge then return 0 end
+ local excess=math.max(0,distance-(config.DaggerMissSlownessSafeDistance or 30))
+ return math.clamp(excess/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
 end
 function Rules.Pray(config, blood, missingHealth, elapsed)
  local requirement=config.BloodRequiredForRespawn

@@ -77,6 +77,7 @@ function Util:ApplyVelocity(root,value)local v=object();v.LineVelocity=value;ret
 function Util:ApplyDamage(victim,damage)victim.Humanoid.Health-=damage end
 function Util:GiveInvincible(rig,_,duration)rig.invincibility=duration end
 function Util:GetDistanceFromGround()return 3 end
+local Visuals={Build=function()return {GetChildren=function()return {}end,Destroy=function()end}end}
 local Hitboxes={}
 function Hitboxes:CreateHitbox(_,settings)
  self.last=settings;self.count=(self.count or 0)+1
@@ -95,7 +96,9 @@ function Rules.CrouchCooldown(config, elapsed)
  return math.clamp(config.CrouchCooldown-elapsed,config.CrouchMinCooldown,config.CrouchCooldown)
 end
 function Rules.MissDuration(config, distance)
- return math.clamp(distance/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
+ if distance==math.huge then return 0 end
+ local excess=math.max(0,distance-(config.DaggerMissSlownessSafeDistance or 30))
+ return math.clamp(excess/config.DaggerMissSlownessDistanceInterval*config.DaggerMissSlownessDurationMultiplier,0,config.DaggerMissSlownessMaxDuration)
 end
 function Rules.Pray(config, blood, missingHealth, elapsed)
  local requirement=config.BloodRequiredForRespawn
@@ -115,7 +118,7 @@ function Rules.Backstab(attackerPosition, attackerLook, victimPosition, victimLo
  return offset.Unit:Dot(facing.Unit)>math.cos(math.rad(config.DaggerBackstabThreshold)) and aim.Unit:Dot(facing.Unit)>math.cos(math.rad(config.DaggerLookDirectionAngle))
 end
 
-local config={Price=500,Health=80,Speed=12,DaggerCooldown=30,DaggerWindup=0.3,DaggerDamage=10,DaggerBackstabDamage=20,DaggerLungeForce=110,DaggerUncrouchedLungeForce=50,DaggerBackstabThreshold=70,DaggerLookDirectionAngle=70,DaggerStatusTime=1,DaggerBackstabStatusTime=3.5,DaggerCrouchMinStunTime=2,DaggerCrouchStunChargeTime=1,DaggerLifestealFromFront=0,DaggerLifestealFromBack=0,DaggerCrouchEndlag=0.225,DaggerCrouchEndlagTweenTime=0.15,DaggerCrouchMoverEndlag=0.4,DaggerCrouchSprintLockTime=1,DaggerUncrouchedSprintLockTime=1,DaggerMissSlownessDistanceInterval=10,DaggerMissSlownessDurationMultiplier=1,DaggerMissSlownessMaxDuration=8,DaggerMissSlownessLevel=2,PrayRange=10,PrayHighlightDuration=4,PrayHealthPerFullOblation=66.66666666666667,PrayFullConversionTime=10,PrayInterruptDamage=5,PrayInterruptCooldown=6,DaggerResLevel=1,DaggerResDuration=0.7,BloodReqIncreasePerTwoTime=1,CrouchCooldown=30,CrouchMinCooldown=15,CrouchDuration=15,CrouchSpeed=10,CrouchRunSpeed=23,CrouchInvisibilityLevel=3,CrouchUndetectableLevel=1,CrouchSpeedCloseTime=1,CrouchStabAmplifyTime=4,CrouchRevealTime=2,CrouchSpeedBoostMax=1.5,CrouchSpeedBoostTime=4,CrouchSpeedBoostDot=0.2,CrouchSpeedBoostDistance=105,CrouchTeammateRevealDistance=100,CrouchTeammateRevealFadeTime=1.25,CrouchOblationMultiplier=1.25,CrouchSlownessDebuffMax=150,Lives=2,BloodRequiredForRespawn=8,BloodFromFront=1.6,BloodFromBack=3.2,RespawnLocationDistance=10,NextLifeHealthDivisor=1.6,InvincibilityDuration=2,LastSurvivorMaxHealth=110,LastSurvivorHealthBonus=50,DaggerHitboxOffset=7,DaggerHitTime=.25,DaggerCrouchHitTime=.415,SprintSpeed=26,MaxStamina=100,StaminaLoss=10,StaminaGain=20,TwoTimeRoundHooks=false,DaggerHitboxSize=Vector3.new(4,6,5.5)}
+local config={Price=500,Health=80,Speed=12,DaggerCooldown=30,DaggerWindup=0.3,DaggerDamage=10,DaggerBackstabDamage=20,DaggerLungeForce=110,DaggerUncrouchedLungeForce=50,DaggerBackstabThreshold=70,DaggerLookDirectionAngle=70,DaggerStatusTime=1,DaggerBackstabStatusTime=3.5,DaggerCrouchMinStunTime=2,DaggerCrouchStunChargeTime=1,DaggerLifestealFromFront=0,DaggerLifestealFromBack=0,DaggerCrouchEndlag=0.225,DaggerCrouchEndlagTweenTime=0.15,DaggerCrouchMoverEndlag=0.4,DaggerCrouchSprintLockTime=1,DaggerUncrouchedSprintLockTime=1,DaggerMissSlownessDistanceInterval=10,DaggerMissSlownessDurationMultiplier=1,DaggerMissSlownessMaxDuration=8,DaggerMissSlownessLevel=2,PrayRange=10,PrayHighlightDuration=4,PrayHealthPerFullOblation=66.66666666666667,PrayFullConversionTime=10,PrayInterruptDamage=5,PrayInterruptCooldown=6,DaggerResLevel=1,DaggerResDuration=0.7,BloodReqIncreasePerTwoTime=1,CrouchCooldown=30,CrouchMinCooldown=15,CrouchDuration=15,CrouchSpeed=10,CrouchRunSpeed=23,CrouchInvisibilityLevel=3,CrouchUndetectableLevel=1,CrouchSpeedCloseTime=1,CrouchStabAmplifyTime=4,CrouchRevealTime=2,CrouchSpeedBoostMax=1.5,CrouchSpeedBoostTime=4,CrouchSpeedBoostDot=0.2,CrouchSpeedBoostDistance=105,CrouchTeammateRevealDistance=100,CrouchTeammateRevealFadeTime=1.25,CrouchOblationMultiplier=1.25,CrouchSlownessDebuffMax=150,Lives=2,BloodRequiredForRespawn=8,BloodFromFront=1.6,BloodFromBack=3.2,RespawnLocationDistance=10,NextLifeHealthDivisor=1.6,InvincibilityDuration=2,LastSurvivorMaxHealth=110,LastSurvivorHealthBonus=50,DaggerHitboxOffset=3.25,DaggerMissSlownessSafeDistance=30,DaggerHitTime=.25,DaggerCrouchHitTime=.415,SprintSpeed=26,MaxStamina=100,StaminaLoss=10,StaminaGain=20,TwoTimeRoundHooks=false,DaggerHitboxSize=Vector3.new(4,6,5.5)}
 local Server={}
 local function alive(a)
  return not a.TTDestroyed and a.Rig and a.Rig.Parent and a.Rig.PrimaryPart and a.Rig:FindFirstChildOfClass("Humanoid") and a.Rig.Humanoid.Health>0
@@ -141,6 +144,29 @@ local function knife(a,on)
   if part.Parent then part.Transparency=on and transparency or 1 end
  end
  -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
+end
+local function stopPrayVFX(a)
+ local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
+ for _,object in visuals or {} do
+  for _,item in object:GetDescendants() do
+   if item:IsA("ParticleEmitter") then item.Enabled=false
+   elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
+  end
+  if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
+  Debris:AddItem(object,4)
+ end
+end
+local function startPrayVFX(a)
+ stopPrayVFX(a)
+ local folder=Visuals.Build("Pray")
+ a.TTPrayVFX=folder:GetChildren()
+ for _,object in a.TTPrayVFX do object.Parent=a.Rig.PrimaryPart end
+ folder:Destroy()
+ for _,object in a.TTPrayVFX do
+  for _,item in object:GetDescendants() do
+   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+  end
+ end
 end
 local function nearest(a)
  local best,distance=nil,math.huge
@@ -170,10 +196,11 @@ end
 function Server.StopPray(a,interrupted)
  if not a.TTPraying then return end
  a.TTPraying=nil
+ stopPrayVFX(a)
  a.Rig:SetAttribute("TwoTimePraying",nil)
  lock(a,"Pray",false);removeSpeed(a,"TwoTimePray")
  if a.TTJump then a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,a.TTJump.Enabled);a.TTJump=nil end
- if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown) end
+ if interrupted then a:SetCooldownOf("Pray",a.Config.PrayInterruptCooldown);send(a,"Warning","Your prayer was interrupted.") end
  send(a,"Pray",false)
 end
 function Server.StopCrouch(a,manual)
@@ -219,7 +246,8 @@ function Server.Dagger(a)
   TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
   Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
   a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
-   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
+   Size=a.Config.DaggerHitboxSize,PredictVelocity=false,CastPoint=a.Rig,
+   CFrame=function() return a.Rig.PrimaryPart.CFrame*CFrame.new(0,0,-a.Config.DaggerHitboxOffset) end,
    Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
    Connections={Hit=function(victim)
     if hit or not current() then return end
@@ -252,7 +280,8 @@ function Server.Dagger(a)
    a.TTHitbox=nil
    if crouched and not hit and alive(a) then
     local _,distance=nearest(a)
-    Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=Rules.MissDuration(a.Config,distance)})
+    local penalty=Rules.MissDuration(a.Config,distance)
+    if penalty>0 then Statuses:ApplyStatus(a.Player,"Slowness",{Level=a.Config.DaggerMissSlownessLevel,Duration=penalty}) end
    end
   end)
  end)
@@ -280,9 +309,10 @@ function Server.Pray(a)
  if not alive(a) or blocked(a) or a.TTAttacking or a.TTRitualCasting then return {Cancelled=true} end
  if a.TTPraying then Server.StopPray(a,false);return end
  local ritual=a.RespawnLocation
- if not ritual or not ritual.Parent or a.LivesUsed~=1 then return {Cancelled=true} end
- if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position} end
- if a.Blood<=0 or a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then return {Cancelled=true} end
+ if not ritual or not ritual.Parent or a.LivesUsed~=1 then send(a,"Warning","You must place your Ritual before praying.");return {Cancelled=true} end
+ if (ritual.Position-a.Rig.PrimaryPart.Position).Magnitude>a.Config.PrayRange then return {Locate=ritual.Position,Warning="Return to your Ritual to pray."} end
+ if a.Blood<=0 then send(a,"Warning","You need Oblation to pray.");return {Cancelled=true} end
+ if a.Rig.Humanoid.Health>=a.Rig.Humanoid.MaxHealth then send(a,"Warning","You are already at full health.");return {Cancelled=true} end
  Server.StopCrouch(a,false)
  a.TTPraying=true;a.TTPrayStart=os.clock();a.TTPrayLease=os.clock()
  a.TTPrayDamage=0
@@ -291,6 +321,7 @@ function Server.Pray(a)
  Util:CreateSpeedMultiplier(a.Rig,0,"TwoTimePray")
  a.TTJump={Enabled=a.Rig.Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)}
  a.Rig.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+ startPrayVFX(a)
  return {Started=true}
 end
 local function effect(a,name,parent)
@@ -491,8 +522,10 @@ near(Rules.Stun(config,true,15),3.5)
 near(Rules.CrouchCooldown(config,0),30)
 near(Rules.CrouchCooldown(config,15),15)
 near(Rules.CrouchCooldown(config,50),15)
-near(Rules.MissDuration(config,20),2)
-near(Rules.MissDuration(config,100),8)
+near(Rules.MissDuration(config,20),0)
+near(Rules.MissDuration(config,50),2)
+near(Rules.MissDuration(config,110),8)
+near(Rules.MissDuration(config,math.huge),0)
 local spent,healing=Rules.Pray(config,8,80,10)
 near(spent,8);near(healing,66.66666666666667)
 spent,healing=Rules.Pray(config,8,1,10);near(healing,1);near(spent,.12)
@@ -505,6 +538,8 @@ local a=actor();a.Rig.Humanoid.Health=40
 local result=Server.Dagger(a);assert(result and not result.Crouched)
 advance(.299);assert(Hitboxes.last==nil)
 advance(.002);assert(Hitboxes.last)
+assert(Hitboxes.last.PredictVelocity==false and Hitboxes.last.CFrame)
+near(config.DaggerHitboxOffset-config.DaggerHitboxSize.Z/2,.5)
 local victim=rig(Vector3.new(0,0,-2));victim.Humanoid.Health=100
 Hitboxes.last.Connections.Hit(victim)
 near(victim.Humanoid.Health,80);near(a.Blood,3.2);near(a.Rig.Humanoid.Health,40)
@@ -534,7 +569,7 @@ advance(2)
 -- Miss endlag and penalty release both locks even with no animation callbacks.
 a=actor();Server.Crouch(a);advance(1);Server.Dagger(a);advance(2)
 assert(not a.TTAttacking and not a.AbilityDisablers.TwoTimePortDagger)
-near(Statuses.applied[#Statuses.applied].data.Duration,8)
+assert(not a.AbilityDisablers.TwoTimePortDagger) -- No killer means no miss penalty.
 -- Pray consumes a full meter, locks movement, refuses full-health and out-of-range healing.
 a=actor();a.Blood=8;a.Rig.Humanoid.Health=30
 local ritual={Parent=true,Position=Vector3.new(0,0,0),FindFirstChild=function()return nil end,Destroy=function(self)self.Parent=nil end,CFrame=Vector3.new(0,0,0)}
