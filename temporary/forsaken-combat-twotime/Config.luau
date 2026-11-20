@@ -265,10 +265,10 @@ t1.Information = {
 }
 
 -- Port choices where the export lacks authoritative server code:
--- Preserve FCT hitbox size but remove the close-range dead zone; raw-root placement.
+-- Restore the first working port: original size, offset and shared hitbox prediction path.
 -- Miss penalty grows outside the 30-stud close range; no penalty without a killer.
 t1.DaggerHitboxSize=Vector3.new(4,6,5.5)
-t1.DaggerHitboxOffset=3.25
+t1.DaggerHitboxOffset=7
 t1.DaggerMissSlownessSafeDistance=30
 t1.WarningTemplate=script:FindFirstChild("Warning")
 t1.DaggerHitTime=.25
@@ -281,5 +281,5 @@ t1.SprintSpeed=26
 t1.MaxStamina=100
 t1.StaminaLoss=10
 t1.StaminaGain=20
-t1.TwoTimePortVersion="1.0.1"
+t1.TwoTimePortVersion="1.0.2"
 return t1

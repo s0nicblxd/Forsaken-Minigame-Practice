@@ -36,6 +36,7 @@ function methods:GetDescendants()
 end
 function methods:IsA(class)return self._class==class or class=='Light' and self._class=='SpotLight' end
 function methods:Destroy()for _,child in self:GetChildren()do child:Destroy()end;self.Parent=nil;self.destroyed=true end
+function methods:Clear()self.cleared=true end
 function methods:Emit(count)self.emitted=(self.emitted or 0)+count end
 local function find(root,name)for _,item in root:GetDescendants()do if item.Name==name then return item end end end
 local Visuals=(function()
@@ -603,7 +604,9 @@ local function stopPrayVFX(a)
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") then item.Enabled=false
+   if item:IsA("ParticleEmitter") then
+    item.Enabled=false
+    if item.Name=="Spawn" and (object.Name=="Floor" or object.Name=="StartFloor") then item:Clear() end
    elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
   end
   if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
@@ -618,7 +621,11 @@ local function startPrayVFX(a)
  folder:Destroy()
  for _,object in a.TTPrayVFX do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   if item:IsA("ParticleEmitter") then
+    -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
+    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
+    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   end
   end
  end
 end
@@ -636,7 +643,11 @@ local actor={Rig={PrimaryPart=Instance.new('Part')}}
 startPrayVFX(actor);assert(#actor.TTPrayVFX>0)
 local startedGlow=find(actor.Rig.PrimaryPart,'Glow');assert(startedGlow.emitted==1)
 local aura=find(actor.Rig.PrimaryPart,'Aura');assert(aura.Enabled)
+local glyph
+for _,object in actor.TTPrayVFX do if object.Name=='StartFloor' then glyph=find(object,'Spawn')end end
+assert(glyph and glyph.Enabled and glyph.Rate>=2,'Spawn glyph must continuously emit during the hold')
 local retained=actor.TTPrayVFX
 stopPrayVFX(actor);assert(actor.TTPrayVFX==nil and not aura.Enabled)
+assert(not glyph.Enabled and glyph.cleared,"releasing must stop and clear the looping Spawn glyph")
 for _,object in retained do assert(object.debrisDelay==4)end
 print('Actual UPD visual factory, attachment references, startup emission and Pray cleanup passed')

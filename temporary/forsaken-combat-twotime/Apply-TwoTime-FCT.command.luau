@@ -10772,7 +10772,7 @@ end
 return Rules
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",after="20810:c613c66e:f0dfb625",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",previous2="20810:c613c66e:f0dfb625",after="21058:1dfac0b0:ba740893",source=[====[
 -- FCT APIs and FCT visual templates; newest UPD balance. No animation or sound calls.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -10815,7 +10815,9 @@ local function stopPrayVFX(a)
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") then item.Enabled=false
+   if item:IsA("ParticleEmitter") then
+    item.Enabled=false
+    if item.Name=="Spawn" and (object.Name=="Floor" or object.Name=="StartFloor") then item:Clear() end
    elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
   end
   if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
@@ -10830,7 +10832,11 @@ local function startPrayVFX(a)
  folder:Destroy()
  for _,object in a.TTPrayVFX do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   if item:IsA("ParticleEmitter") then
+    -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
+    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
+    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   end
   end
  end
 end
@@ -10912,8 +10918,7 @@ function Server.Dagger(a)
   TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
   Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
   a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
-   Size=a.Config.DaggerHitboxSize,PredictVelocity=false,CastPoint=a.Rig,
-   CFrame=function() return a.Rig.PrimaryPart.CFrame*CFrame.new(0,0,-a.Config.DaggerHitboxOffset) end,
+   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
    Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
    Connections={Hit=function(victim)
     if hit or not current() then return end
@@ -11728,7 +11733,7 @@ end
 return Visuals
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",after="14227:c58653c9:e7f29712",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",previous2="14227:c58653c9:e7f29712",after="14230:47aec50a:a06c72a7",source=[====[
 
 local t1 = {
 	DisplayName = "Two Time",
@@ -11996,10 +12001,10 @@ t1.Information = {
 }
 
 -- Port choices where the export lacks authoritative server code:
--- Preserve FCT hitbox size but remove the close-range dead zone; raw-root placement.
+-- Restore the first working port: original size, offset and shared hitbox prediction path.
 -- Miss penalty grows outside the 30-stud close range; no penalty without a killer.
 t1.DaggerHitboxSize=Vector3.new(4,6,5.5)
-t1.DaggerHitboxOffset=3.25
+t1.DaggerHitboxOffset=7
 t1.DaggerMissSlownessSafeDistance=30
 t1.WarningTemplate=script:FindFirstChild("Warning")
 t1.DaggerHitTime=.25
@@ -12012,7 +12017,7 @@ t1.SprintSpeed=26
 t1.MaxStamina=100
 t1.StaminaLoss=10
 t1.StaminaGain=20
-t1.TwoTimePortVersion="1.0.1"
+t1.TwoTimePortVersion="1.0.2"
 return t1
 ]====]},
 {path=[====[
@@ -21239,7 +21244,7 @@ end
 return Rules
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",after="20810:c613c66e:f0dfb625",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",previous2="20810:c613c66e:f0dfb625",after="21058:1dfac0b0:ba740893",source=[====[
 -- FCT APIs and FCT visual templates; newest UPD balance. No animation or sound calls.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -21282,7 +21287,9 @@ local function stopPrayVFX(a)
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") then item.Enabled=false
+   if item:IsA("ParticleEmitter") then
+    item.Enabled=false
+    if item.Name=="Spawn" and (object.Name=="Floor" or object.Name=="StartFloor") then item:Clear() end
    elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
   end
   if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
@@ -21297,7 +21304,11 @@ local function startPrayVFX(a)
  folder:Destroy()
  for _,object in a.TTPrayVFX do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   if item:IsA("ParticleEmitter") then
+    -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
+    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
+    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   end
   end
  end
 end
@@ -21379,8 +21390,7 @@ function Server.Dagger(a)
   TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
   Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
   a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
-   Size=a.Config.DaggerHitboxSize,PredictVelocity=false,CastPoint=a.Rig,
-   CFrame=function() return a.Rig.PrimaryPart.CFrame*CFrame.new(0,0,-a.Config.DaggerHitboxOffset) end,
+   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
    Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
    Connections={Hit=function(victim)
     if hit or not current() then return end
@@ -22195,7 +22205,7 @@ end
 return Visuals
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",after="14227:c58653c9:e7f29712",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",previous2="14227:c58653c9:e7f29712",after="14230:47aec50a:a06c72a7",source=[====[
 
 local t1 = {
 	DisplayName = "Two Time",
@@ -22463,10 +22473,10 @@ t1.Information = {
 }
 
 -- Port choices where the export lacks authoritative server code:
--- Preserve FCT hitbox size but remove the close-range dead zone; raw-root placement.
+-- Restore the first working port: original size, offset and shared hitbox prediction path.
 -- Miss penalty grows outside the 30-stud close range; no penalty without a killer.
 t1.DaggerHitboxSize=Vector3.new(4,6,5.5)
-t1.DaggerHitboxOffset=3.25
+t1.DaggerHitboxOffset=7
 t1.DaggerMissSlownessSafeDistance=30
 t1.WarningTemplate=script:FindFirstChild("Warning")
 t1.DaggerHitTime=.25
@@ -22479,7 +22489,7 @@ t1.SprintSpeed=26
 t1.MaxStamina=100
 t1.StaminaLoss=10
 t1.StaminaGain=20
-t1.TwoTimePortVersion="1.0.1"
+t1.TwoTimePortVersion="1.0.2"
 return t1
 ]====]}
 }
@@ -22492,7 +22502,7 @@ for _,plan in plans do
   assert(target:IsA("ModuleScript"),"Expected ModuleScript at "..plan.path..". Nothing changed.")
   local current=fingerprint(target.Source)
   if current~=plan.after then
-   assert((plan.before and current==plan.before) or (plan.previous and current==plan.previous),"Unexpected edited source at "..plan.path..". Nothing changed; keep your edits and send that module for reconciliation.")
+   assert((plan.before and current==plan.before) or (plan.previous and current==plan.previous) or (plan.previous2 and current==plan.previous2),"Unexpected edited source at "..plan.path..". Nothing changed; keep your edits and send that module for reconciliation.")
    table.insert(pending,{target=target,plan=plan,before=target.Source})
   end
  else

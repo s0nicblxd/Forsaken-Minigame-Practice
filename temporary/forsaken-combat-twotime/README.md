@@ -2,11 +2,17 @@
 
 Studio Command Bar installer for the current FCT combat build, following the newest supplied UPD configuration and the user's ordered patch notes. No new kit animation IDs are loaded and no kit sounds are played. Existing generic locomotion remains in use. Public ability icons, expressions, FCT life models, dagger, Ritual effects and Oblation UI are retained.
 
+## Latest repair: hitbox revert and held Pray symbol
+
+If you installed the polish repair, stop Play and run **Raw** `Repair-TwoTime-Hitboxes-Pray.command.luau` in Studio’s **Edit-mode Command Bar**. It updates four modules (Config and Server in both snapshots), with backups and repeat-run protection. The first working port’s hitbox setup is restored for standing and crouched stabs: 4 × 6 × 5.5, offset 7, shared prediction/placement, and default line-of-sight origin. The actual-transform backstab test is retained. This deliberately reverts the unsuccessful close-range geometry adjustment; it does not claim verified live-game hitbox geometry.
+
+Pray’s startup floor Spawn glyph now emits continuously for the whole hold alongside the existing looping effects. Release, interruption and other stop paths disable and clear floor glyph particles. The softer miss penalty, messages, VFX, indicator and meter polish stay in place.
+
 ## Upgrade the already-working port
 
 Stop Play, copy the entire **Raw** `Repair-TwoTime-Polish.command.luau` file into Studio's **Edit-mode Command Bar**, and save/start a fresh playtest. It updates 10 Two Time modules, imports the exported visual properties, and leaves the installed shared Weakness/Azure/Guest changes alone. A fresh installation can use the full installer below; it also accepts the previously published working port.
 
-This repair fixes the close-range stab dead zone, makes miss Slowness start beyond 30 studs, restores UPD's one-stud-wide textured indicator and endpoint particles, adds Pray's exported VFX and warning feedback, and restores conditional meter visibility. Animations/audio remain omitted.
+The current repair includes the hitbox revert above, makes miss Slowness start beyond 30 studs, restores UPD's one-stud-wide textured indicator and endpoint particles, adds Pray's exported VFX and warning feedback, and restores conditional meter visibility. Animations/audio remain omitted.
 
 ## Apply
 
@@ -48,7 +54,7 @@ Chance's existing penalty and Slateskin's old status removal now target Vulnerab
 
 The exported UPD does not contain full authoritative ability callbacks. Several gameplay details therefore had to be rebuilt:
 
-- Hitbox size remains FCT’s 4 × 6 × 5.5, now centered 3.25 studs forward so its near edge starts 0.5 studs ahead instead of leaving a 4.25-stud gap. It follows the actual root without prediction and retains line-of-sight checks from the attacker. Exact live-game geometry cannot be verified from these exports.
+- Hitbox size, offset and shared placement/prediction are restored to the first working port after the polish geometry failed Studio testing. Exact live-game geometry cannot be verified from these exports.
 - The 30-stud grace distance is a deliberate fairness adjustment after playtest feedback; the export does not reveal the authoritative miss formula. Beyond it, the exported interval/multiplier/cap settings are used.
 - Prayer damage interruption uses cumulative damage during a channel. The exported setting supplies the threshold but not the complete implementation.
 - Visuals.luau reconstructs the actual UPD Beam, endpoint emitters and Pray hierarchy from typed instance properties, including attachment transforms and references. Public textures are used directly; no external model download or restricted media is required. Warning wording and VFX activation timing are reconstructed because the export lacks those server callbacks.

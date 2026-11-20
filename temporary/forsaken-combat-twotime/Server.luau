@@ -40,7 +40,9 @@ local function stopPrayVFX(a)
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") then item.Enabled=false
+   if item:IsA("ParticleEmitter") then
+    item.Enabled=false
+    if item.Name=="Spawn" and (object.Name=="Floor" or object.Name=="StartFloor") then item:Clear() end
    elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
   end
   if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
@@ -55,7 +57,11 @@ local function startPrayVFX(a)
  folder:Destroy()
  for _,object in a.TTPrayVFX do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   if item:IsA("ParticleEmitter") then
+    -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
+    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
+    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   end
   end
  end
 end
@@ -137,8 +143,7 @@ function Server.Dagger(a)
   TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
   Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
   a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
-   Size=a.Config.DaggerHitboxSize,PredictVelocity=false,CastPoint=a.Rig,
-   CFrame=function() return a.Rig.PrimaryPart.CFrame*CFrame.new(0,0,-a.Config.DaggerHitboxOffset) end,
+   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
    Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
    Connections={Hit=function(victim)
     if hit or not current() then return end

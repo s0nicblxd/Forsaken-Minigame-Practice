@@ -118,7 +118,7 @@ function Rules.Backstab(attackerPosition, attackerLook, victimPosition, victimLo
  return offset.Unit:Dot(facing.Unit)>math.cos(math.rad(config.DaggerBackstabThreshold)) and aim.Unit:Dot(facing.Unit)>math.cos(math.rad(config.DaggerLookDirectionAngle))
 end
 
-local config={Price=500,Health=80,Speed=12,DaggerCooldown=30,DaggerWindup=0.3,DaggerDamage=10,DaggerBackstabDamage=20,DaggerLungeForce=110,DaggerUncrouchedLungeForce=50,DaggerBackstabThreshold=70,DaggerLookDirectionAngle=70,DaggerStatusTime=1,DaggerBackstabStatusTime=3.5,DaggerCrouchMinStunTime=2,DaggerCrouchStunChargeTime=1,DaggerLifestealFromFront=0,DaggerLifestealFromBack=0,DaggerCrouchEndlag=0.225,DaggerCrouchEndlagTweenTime=0.15,DaggerCrouchMoverEndlag=0.4,DaggerCrouchSprintLockTime=1,DaggerUncrouchedSprintLockTime=1,DaggerMissSlownessDistanceInterval=10,DaggerMissSlownessDurationMultiplier=1,DaggerMissSlownessMaxDuration=8,DaggerMissSlownessLevel=2,PrayRange=10,PrayHighlightDuration=4,PrayHealthPerFullOblation=66.66666666666667,PrayFullConversionTime=10,PrayInterruptDamage=5,PrayInterruptCooldown=6,DaggerResLevel=1,DaggerResDuration=0.7,BloodReqIncreasePerTwoTime=1,CrouchCooldown=30,CrouchMinCooldown=15,CrouchDuration=15,CrouchSpeed=10,CrouchRunSpeed=23,CrouchInvisibilityLevel=3,CrouchUndetectableLevel=1,CrouchSpeedCloseTime=1,CrouchStabAmplifyTime=4,CrouchRevealTime=2,CrouchSpeedBoostMax=1.5,CrouchSpeedBoostTime=4,CrouchSpeedBoostDot=0.2,CrouchSpeedBoostDistance=105,CrouchTeammateRevealDistance=100,CrouchTeammateRevealFadeTime=1.25,CrouchOblationMultiplier=1.25,CrouchSlownessDebuffMax=150,Lives=2,BloodRequiredForRespawn=8,BloodFromFront=1.6,BloodFromBack=3.2,RespawnLocationDistance=10,NextLifeHealthDivisor=1.6,InvincibilityDuration=2,LastSurvivorMaxHealth=110,LastSurvivorHealthBonus=50,DaggerHitboxOffset=3.25,DaggerMissSlownessSafeDistance=30,DaggerHitTime=.25,DaggerCrouchHitTime=.415,SprintSpeed=26,MaxStamina=100,StaminaLoss=10,StaminaGain=20,TwoTimeRoundHooks=false,DaggerHitboxSize=Vector3.new(4,6,5.5)}
+local config={Price=500,Health=80,Speed=12,DaggerCooldown=30,DaggerWindup=0.3,DaggerDamage=10,DaggerBackstabDamage=20,DaggerLungeForce=110,DaggerUncrouchedLungeForce=50,DaggerBackstabThreshold=70,DaggerLookDirectionAngle=70,DaggerStatusTime=1,DaggerBackstabStatusTime=3.5,DaggerCrouchMinStunTime=2,DaggerCrouchStunChargeTime=1,DaggerLifestealFromFront=0,DaggerLifestealFromBack=0,DaggerCrouchEndlag=0.225,DaggerCrouchEndlagTweenTime=0.15,DaggerCrouchMoverEndlag=0.4,DaggerCrouchSprintLockTime=1,DaggerUncrouchedSprintLockTime=1,DaggerMissSlownessDistanceInterval=10,DaggerMissSlownessDurationMultiplier=1,DaggerMissSlownessMaxDuration=8,DaggerMissSlownessLevel=2,PrayRange=10,PrayHighlightDuration=4,PrayHealthPerFullOblation=66.66666666666667,PrayFullConversionTime=10,PrayInterruptDamage=5,PrayInterruptCooldown=6,DaggerResLevel=1,DaggerResDuration=0.7,BloodReqIncreasePerTwoTime=1,CrouchCooldown=30,CrouchMinCooldown=15,CrouchDuration=15,CrouchSpeed=10,CrouchRunSpeed=23,CrouchInvisibilityLevel=3,CrouchUndetectableLevel=1,CrouchSpeedCloseTime=1,CrouchStabAmplifyTime=4,CrouchRevealTime=2,CrouchSpeedBoostMax=1.5,CrouchSpeedBoostTime=4,CrouchSpeedBoostDot=0.2,CrouchSpeedBoostDistance=105,CrouchTeammateRevealDistance=100,CrouchTeammateRevealFadeTime=1.25,CrouchOblationMultiplier=1.25,CrouchSlownessDebuffMax=150,Lives=2,BloodRequiredForRespawn=8,BloodFromFront=1.6,BloodFromBack=3.2,RespawnLocationDistance=10,NextLifeHealthDivisor=1.6,InvincibilityDuration=2,LastSurvivorMaxHealth=110,LastSurvivorHealthBonus=50,DaggerHitboxOffset=7,DaggerMissSlownessSafeDistance=30,DaggerHitTime=.25,DaggerCrouchHitTime=.415,SprintSpeed=26,MaxStamina=100,StaminaLoss=10,StaminaGain=20,TwoTimeRoundHooks=false,DaggerHitboxSize=Vector3.new(4,6,5.5)}
 local Server={}
 local function alive(a)
  return not a.TTDestroyed and a.Rig and a.Rig.Parent and a.Rig.PrimaryPart and a.Rig:FindFirstChildOfClass("Humanoid") and a.Rig.Humanoid.Health>0
@@ -149,7 +149,9 @@ local function stopPrayVFX(a)
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") then item.Enabled=false
+   if item:IsA("ParticleEmitter") then
+    item.Enabled=false
+    if item.Name=="Spawn" and (object.Name=="Floor" or object.Name=="StartFloor") then item:Clear() end
    elseif item:IsA("Light") then TweenService:Create(item,TweenInfo.new(.2),{Brightness=0}):Play() end
   end
   if object:IsA("Beam") then TweenService:Create(object,TweenInfo.new(.2),{Width1=0}):Play() end
@@ -164,7 +166,11 @@ local function startPrayVFX(a)
  folder:Destroy()
  for _,object in a.TTPrayVFX do
   for _,item in object:GetDescendants() do
-   if item:IsA("ParticleEmitter") and item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   if item:IsA("ParticleEmitter") then
+    -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
+    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
+    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+   end
   end
  end
 end
@@ -246,8 +252,7 @@ function Server.Dagger(a)
   TweenService:Create(velocity,TweenInfo.new(crouched and a.Config.DaggerCrouchMoverEndlag or .2),{LineVelocity=velocity.LineVelocity/3}):Play()
   Debris:AddItem(velocity,crouched and a.Config.DaggerCrouchMoverEndlag or .2)
   a.TTHitbox=Hitboxes:CreateHitbox(a.Player,{
-   Size=a.Config.DaggerHitboxSize,PredictVelocity=false,CastPoint=a.Rig,
-   CFrame=function() return a.Rig.PrimaryPart.CFrame*CFrame.new(0,0,-a.Config.DaggerHitboxOffset) end,
+   Size=a.Config.DaggerHitboxSize,CFrameOffset=CFrame.new(0,0,-a.Config.DaggerHitboxOffset),
    Damage=0,Time=duration,Knockback=0,HitMultiple=false,FriendlyFire=true,
    Connections={Hit=function(victim)
     if hit or not current() then return end
@@ -538,8 +543,9 @@ local a=actor();a.Rig.Humanoid.Health=40
 local result=Server.Dagger(a);assert(result and not result.Crouched)
 advance(.299);assert(Hitboxes.last==nil)
 advance(.002);assert(Hitboxes.last)
-assert(Hitboxes.last.PredictVelocity==false and Hitboxes.last.CFrame)
-near(config.DaggerHitboxOffset-config.DaggerHitboxSize.Z/2,.5)
+assert(Hitboxes.last.PredictVelocity==nil and Hitboxes.last.CFrame==nil and Hitboxes.last.CFrameOffset)
+near(config.DaggerHitboxOffset,7)
+near(config.DaggerHitboxSize.Z,5.5)
 local victim=rig(Vector3.new(0,0,-2));victim.Humanoid.Health=100
 Hitboxes.last.Connections.Hit(victim)
 near(victim.Humanoid.Health,80);near(a.Blood,3.2);near(a.Rig.Humanoid.Health,40)
