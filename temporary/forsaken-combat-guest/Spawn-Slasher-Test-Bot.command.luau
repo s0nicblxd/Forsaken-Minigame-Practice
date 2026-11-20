@@ -27,6 +27,9 @@ local config = require(ReplicatedStorage.Assets.Killers.Slasher.Config)
 local random = Random.new()
 local alive, rig, actor, currentHitbox = true, nil, nil, nil
 local targetPlayer
+local tracks = {}
+local attackGeneration = 0
+local abilityTimers = {}
 local function cleanup()
     if not alive then return end
     alive = false
@@ -81,9 +84,36 @@ rig:PivotTo(target.PrimaryPart.CFrame * CFrame.new(0, 0, -9))
 root:SetNetworkOwner(nil)
 actor = {Rig = rig, Player = rig, Config = config, ActorName = "Slasher", ActorType = "Killer", ActorSkin = "Default", Behavior = {}, Cache = {}, AbilityDisablers = {}}
 function actor:GetPivot() return rig:GetPivot() end
+function actor:DisableAbilities(source, active, duration)
+    local token = {}
+    abilityTimers[source] = token
+    self.AbilityDisablers[source] = active and true or nil
+    if active then
+        attackGeneration += 1
+        if currentHitbox then currentHitbox:Cancel(); currentHitbox = nil end
+        for _, name in ipairs({"Slash", "Behead"}) do
+            local track = tracks[name]
+            if track then track:Stop(.05) end
+        end
+        if source == "Stunned" and rig.Parent then
+            humanoid.WalkSpeed = 0
+            humanoid:MoveTo(root.Position)
+            humanoid.AutoRotate = true
+        end
+    end
+    if duration then
+        task.delay(duration, function()
+            if alive and abilityTimers[source] == token then self:DisableAbilities(source, not active) end
+        end)
+    end
+end
+local function abilitiesBlocked()
+    if actor.AbilitiesDisabled or rig:GetAttribute("AbilitiesDisabled") then return true end
+    for _, disabled in pairs(actor.AbilityDisablers) do if disabled then return true end end
+    return false
+end
 Actors.CurrentActors[rig] = actor
 local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
-local tracks = {}
 for _, name in ipairs({"Idle", "Walk", "Slash", "Behead"}) do
     local id = config.Animations[name]
     if typeof(id) == "string" and id ~= "" then
@@ -115,6 +145,8 @@ local function face(character)
     if (flat - root.Position).Magnitude > .01 then root.CFrame = CFrame.lookAt(root.Position, flat) end
 end
 local function trainAttack(character)
+    if abilitiesBlocked() or stunned() or hasStatus("Helpless") then return end
+    local generation = attackGeneration
     -- A fresh, independent 50/50 roll for every attack.
     local move = random:NextInteger(1, 2) == 1 and "Slash" or "Behead"
     rig:SetAttribute("LastAttack", move)
@@ -126,7 +158,7 @@ local function trainAttack(character)
     Sounds:Play(config.Sounds.Swing, {Parent = root})
     task.wait(config[move .. "Windup"] or (move == "Slash" and .2 or .45))
     if not alive or not rig.Parent or humanoid.Health <= 0 then return end
-    if stunned() or hasStatus("Helpless") then humanoid.AutoRotate = true; return end
+    if generation ~= attackGeneration or abilitiesBlocked() or stunned() or hasStatus("Helpless") then humanoid.AutoRotate = true; return end
     local slash = move == "Slash"
     currentHitbox = Hitboxes:CreateHitbox(rig, {
         Size = slash and Vector3.new(4.5, 6, 7.5) or Vector3.new(8, 2, 7),
@@ -175,7 +207,7 @@ while alive and rig.Parent and humanoid.Health > 0 do
         else
             humanoid:MoveTo(root.Position)
             locomotion(false)
-            if os.clock() >= nextAttack and not stunned() and not hasStatus("Helpless") then
+            if os.clock() >= nextAttack and not abilitiesBlocked() and not stunned() and not hasStatus("Helpless") then
                 local ok, err = pcall(trainAttack, target)
                 if not ok then warn("[Slasher Test Bot] Attack failed: " .. tostring(err)); break end
                 nextAttack = os.clock() + 2.5

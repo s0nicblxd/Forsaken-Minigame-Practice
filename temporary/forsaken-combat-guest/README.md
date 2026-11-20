@@ -58,3 +58,13 @@ A custom bot attack that constructs its own hitbox must pass `AbilityType = "Mai
 - Exercised the installer: all 12 resulting sources match the intended output; repeat application changes nothing; an edited source rejects the whole patch without partial writes.
 
 Roblox Studio multiplayer, physics, replication, animation playback, and asset permissions still need the playtest above; they cannot be validated by the standalone Luau runtime.
+
+### Slasher tester stun compatibility
+
+The bot implements the actor `DisableAbilities(source, active, duration)` contract used by `StatusEffects.Stunned.Applied` and `.Removed`. Previously it was registered in `Actors.CurrentActors` without this method, causing errors at both stun entry and recovery. This fix changes only the tester and its spawner; Guest and the shared Stunned module are unchanged.
+
+Ability locks are tracked independently by source. Applying a lock interrupts a pending attack, cancels an active hitbox, and stops Slash/Behead tracks. A stun additionally stops the bot's movement. Releasing the Stunned lock leaves other locks intact, and an outdated duration callback cannot clear a newer lock. The attack loop checks locks both before starting and after windup, so a short stun that ends during windup still cancels that attack.
+
+For a bot spawned with the Command Bar, rerun the updated `Spawn-Slasher-Test-Bot.command.luau` in the **Server Command Bar during Play** to replace it. If you saved the bot as a Script in ServerScriptService, replace that Script's Source with the updated `Slasher-Test-Bot.server.luau` before the next playtest.
+
+Executed Luau regression checks reproduced the original Applied and Removed failures with the old bot actor, then passed both callbacks with the repaired actor. Checks also covered stun during windup, active-hitbox cancellation, recovery to both M1 and Behead, independent locks, and stale duration callbacks. Both bot scripts compile. Studio physics and live hit reactions still require playtesting.
