@@ -47,13 +47,13 @@ For cross-killer grabbing such as Sixer, use the build's existing FriendlyFire s
 
 ## Verification completed here
 
-- All 15 resulting scripts and both command scripts compile with Luau.
+- All 17 resulting scripts and both command scripts compile with Luau.
 - Executed the actual Config: previous balance values and uploaded grab animation IDs match.
 - Executed Atropa callbacks: cap, expiry awards for 1–6 stacks, and no expiry bonus on consumption/manual removal/death.
 - Executed sprint helpers: independent stamina-freeze owners and held-key recovery.
 - Executed grab cleanup with a victim disappearing inside a callback: no remaining grab flag, ability lock, root anchor, or PlatformStand.
 - Executed golem-return cleanup: 1.5× playback, bounded release, and idempotent cleanup.
-- Executed the installer against mock Instances: all 15 outputs match, the missing Atropa module is created, reapplication is safe, and source mismatches reject all writes.
+- Executed the installer against mock Instances: all 17 outputs match, the missing Atropa module is created, reapplication is safe, and source mismatches reject all writes.
 
 These checks do not replace Roblox Studio tests of physics, networking, animations, and the playtest cases above.
 
@@ -64,3 +64,15 @@ If the server reports `number < nil` at the grab windup and the client reports `
 The repair creates `Behavior.GrabConfigDefaults` and routes creation, grab callbacks, aiming, and holding through the resolver. Missing/invalid parameters receive the port's defaults (windup 1s, range 60 studs, hook speed 270, pull time 0.8s, and the remaining grab fields). Valid custom fields, skin settings, and zero windup are preserved. It backs up Behavior, validates the expected source shape and Studio's Source limit before editing, and rolls back on a write failure. Run it once, then start a **fresh playtest**; existing stuck actors and cached requires are not repaired in place.
 
 Verified with Luau: both original nil expressions fail on the actual old FCT Config; the resolver repairs them; complete port Configs and custom tuning remain unchanged; malformed fields and immutable partial tables are handled; the actual Command Bar repair produces the canonical patched Behavior/helper and is safe to repeat. Roblox physics and networking still require a Studio playtest.
+
+## Play without Azure animations
+
+Run `Repair-Azure-Optional-Animations.command.luau` with playtesting stopped, then start a fresh playtest. It supports the existing Azure port and includes the grab-config resolver. It adds `Behavior.OptionalAnimations`, updates Azure's animation loads and plant client modules, and adds an **Azure-only** branch to FCT's shared `ActorNetwork` movement initialization. Other characters keep their original loader. Source versions and size limits are checked before writing; changed modules are backed up and failed writes are rolled back.
+
+Missing IDs, synchronous loading errors, and assets whose tracks stay at zero length receive non-blocking visual stand-ins. They support the track operations used by Azure, stop/completion signals, and cancellation/destruction. Valid tracks remain usable. The old utility's up-to-25-second animation preload waits are bypassed for Azure, and unnecessary Azure preloads are removed. Normal, injured, grabbing, and golem movement states can request absent tracks without indexing nil. Plant wither/idle transitions also advance when their animation files are unavailable.
+
+Fallback grab-success presentation lasts about 0.5 seconds; fallback throw presentation about 0.35 seconds. Reel travel still uses `Grab.PullTime`, and damage, release, stamina, and cooldown behavior remains in the existing gameplay code. Golem exit releases its root in under 0.8 seconds at 1.5x fallback playback, with the existing five-second safety cleanup retained. No assets are reuploaded or granted permissions by this patch.
+
+Azure's cinematic introduction uses the existing short display fallback while this testing mode is active. Set `AzureAnimationsOptional = false` in Azure's Config when its introduction assets are ready to opt back into the cinematic path. Ability animations remain optional either way.
+
+Executed regression checks cover absent IDs, denied loads, zero-length tracks, valid tracks, looping aim, plant transitions, replay/cancellation cleanup, the actual grab success/throw wait function, and the actual golem-exit root cleanup with an empty animation table. All 17 resulting modules and the full/repair installers compile under Luau and fit the per-module Studio Source limit. Studio physics/network testing remains necessary.
