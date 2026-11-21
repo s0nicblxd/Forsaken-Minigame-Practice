@@ -3,11 +3,11 @@ assert(game:GetService("RunService"):IsStudio() and not game:GetService("RunServ
 local parent=game.ReplicatedStorage.Assets.Instances
 local target=assert(parent:FindFirstChild("StunProtectionVFX"),"Install the stun-protection port first.")
 assert(target:IsA("MeshPart") and target.MeshId:match("%d+")=="76640378318129","Unexpected stun-protection mesh. Nothing changed.")
-if target:GetAttribute("StunMaterialRepairVersion")=="1.0.3" then print("[Stun Material Repair] Already applied.");return end
+if target:GetAttribute("StunMaterialRepairVersion")=="1.0.4" then print("[Stun Material Repair] Already applied.");return end
 local replacement=target:Clone()
 local ok,err=pcall(function()
  local failed,probes={},{}
- for _,id in {"rbxassetid://128651191436151","rbxassetid://88194642418565"} do
+ for _,id in {"rbxassetid://83958058671232","rbxassetid://106819888283523"} do
   local image=Instance.new("ImageLabel");image.Image=id;table.insert(probes,image)
  end
  local loaded,loadError=pcall(function()
@@ -19,8 +19,8 @@ local ok,err=pcall(function()
  assert(loaded,"Image-instance preload failed: "..tostring(loadError))
  assert(#failed==0,"Image instances could not load the required textures: "..table.concat(failed,", ")..". Check the image IDs and experience asset permissions.")
  local appearance=game:GetService("AssetService"):CreateSurfaceAppearanceAsync({
-  ColorMap=Content.fromUri("rbxassetid://128651191436151"),
-  EmissiveMask=Content.fromUri("rbxassetid://88194642418565")
+  ColorMap=Content.fromUri("rbxassetid://83958058671232"),
+  EmissiveMask=Content.fromUri("rbxassetid://106819888283523")
  })
  assert(appearance and appearance:IsA("SurfaceAppearance"),"Roblox did not return a compiled SurfaceAppearance.")
  appearance.Name="SurfaceAppearance"
@@ -32,9 +32,9 @@ local ok,err=pcall(function()
  appearance.Parent=replacement
  replacement:SetAttribute("PackedMaterialImported",false)
  replacement:SetAttribute("MaterialCompiledFromMaps",true)
- replacement:SetAttribute("StunPortVersion","1.0.3")
- replacement:SetAttribute("StunMaterialRepairVersion","1.0.3")
- replacement:SetAttribute("EmissiveMaskAsset","rbxassetid://88194642418565")
+ replacement:SetAttribute("StunPortVersion","1.0.4")
+ replacement:SetAttribute("StunMaterialRepairVersion","1.0.4")
+ replacement:SetAttribute("EmissiveMaskAsset","rbxassetid://106819888283523")
 end)
 if not ok then replacement:Destroy();error("Material could not be prepared. Nothing changed. Roblox material creation error: "..tostring(err))end
 local backup=Instance.new("Folder")
@@ -45,4 +45,4 @@ ok,err=pcall(function()target.Parent=nil;replacement.Parent=parent end)
 if not ok then replacement:Destroy();target.Parent=parent;backup:Destroy();error("Material repair rolled back: "..tostring(err))end
 target:Destroy()
 pcall(function()game:GetService("ChangeHistoryService"):SetWaypoint("Stun Protection Material")end)
-print("[Stun Material Repair] Rebuilt the rendered material with UPD's emissive mask 88194642418565. Backup: "..backup:GetFullName()..". Save and start a fresh playtest. Stun gameplay is unchanged.")
+print("[Stun Material Repair] Rebuilt the rendered material with UPD's emissive mask 106819888283523. Backup: "..backup:GetFullName()..". Save and start a fresh playtest. Stun gameplay is unchanged.")

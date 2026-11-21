@@ -2,6 +2,15 @@
 
 Ports the Sentinel-stacking rework and orbiting stun-immunity indicator to the existing FCT + Guest/Azure/Two Time fixes. Five modules and one visual template are installed. No website or production-branch files are changed.
 
+## Verified image IDs (revision 1.0.4)
+
+The user’s Studio Decal Properties screenshots provide the actual image references:
+
+- Colour image: `83958058671232` (from the uploaded colour decal/container `128651191436151`).
+- Uploaded emissive-mask image: `106819888283523` (from `Texture_88194642418565`).
+
+These underlying image IDs are now used in the image probes, material factory and XML template. The asset-type mismatch for the old colour reference is resolved at the input level. No texture re-upload or template re-import is needed for an existing installation: run the updated `Rebuild-Stun-Material.command.luau`. Gameplay modules are unchanged.
+
 ## Material correction for an existing installation
 
 If the symbols are grayscale, stop Play and run **Raw** `Rebuild-Stun-Material.command.luau` in the **Edit-mode Command Bar**. Save and start a fresh playtest. This replaces only the visual template, preserving all gameplay modules, orbit logic, sounds, mesh and uploaded colour map. No model re-import is needed.
@@ -10,7 +19,7 @@ The first template extraction missed `SurfaceAppearance.EmissiveMaskContent`, st
 
 Revision **1.0.2** constructs a fresh SurfaceAppearance through `AssetService:CreateSurfaceAppearanceAsync({ColorMap=..., EmissiveMask=...})`. The first mask repair only assigned map properties and did not resolve the rendered result. Roblox’s [material creation API](https://create.roblox.com/docs/reference/engine/classes/AssetService#CreateSurfaceAppearanceAsync) documents supplying the maps at creation and not swapping them afterward. Both image URIs are preloaded and checked. Loading or creation errors leave the current template untouched. No whole-mesh tint or forced Lighting changes are used.
 
-Revision **1.0.3** preloads temporary `ImageLabel` instances rather than raw URI strings, following Roblox’s [image-bearing instance preload interface](https://create.roblox.com/docs/reference/engine/classes/ContentProvider#PreloadAsync). Raw-string fetch failures do not establish that an image ID or its permissions are wrong. The instance path still stops on reported failures, and both success and exception paths destroy the temporary image probes. The colour/emissive IDs are unchanged. If this instance check still fails in Studio, the error identifies the affected image for asset-ID/permission investigation; no broken replacement is installed.
+Revision **1.0.3** preloads temporary `ImageLabel` instances rather than raw URI strings, following Roblox’s [image-bearing instance preload interface](https://create.roblox.com/docs/reference/engine/classes/ContentProvider#PreloadAsync). Raw-string fetch failures do not establish that an image ID or its permissions are wrong. The instance path still stops on reported failures, and both success and exception paths destroy the temporary image probes. The colour/emissive references in revision 1.0.3 were unchanged; revision 1.0.4 uses the verified underlying image IDs listed above. If this instance check still fails in Studio, the error identifies the affected image for asset-ID/permission investigation; no broken replacement is installed.
 
 The repair creates its own `ServerStorage.StunProtectionMaterial_Backup_*` folder. `Restore-Stun-Material.command.luau` restores only the previous material while keeping the stun-protection gameplay installed.
 
@@ -44,8 +53,8 @@ It appears while `StunnedDisabled` is set, including during the active stun. Any
 |---|---|
 | Original symbol mesh | `76640378318129` |
 | Original packed material | `74597329653279` |
-| Uploaded colour/alpha texture | `128651191436151` |
-| Original emissive mask | `88194642418565` |
+| Verified colour/alpha image | `83958058671232` |
+| Verified uploaded emissive-mask image | `106819888283523` |
 | Uploaded appearance sound | `107766213132983` |
 | Uploaded looping sound | `112344506440657` |
 | Uploaded ending sound | `117830806605625` |

@@ -2,16 +2,16 @@
 <Item class="MeshPart" referent="RBX0"><Properties>
 <string name="Name">StunProtectionVFX</string>
 <Content name="MeshId"><url>rbxassetid://76640378318129</url></Content>
-<Content name="TextureID"><url>rbxassetid://128651191436151</url></Content>
+<Content name="TextureID"><url>rbxassetid://83958058671232</url></Content>
 <Vector3 name="size"><X>3.20400953</X><Y>3.20400953</Y><Z>0.604846478</Z></Vector3>
 <Vector3 name="InitialSize"><X>3.20400953</X><Y>3.20400953</Y><Z>0.604846478</Z></Vector3>
 <bool name="Anchored">true</bool><bool name="CanCollide">false</bool><bool name="CanTouch">false</bool><bool name="CanQuery">false</bool>
 <float name="Transparency">0</float><token name="Material">256</token><Color3uint8 name="Color3uint8">4288914085</Color3uint8>
 </Properties><Item class="SurfaceAppearance" referent="RBX1"><Properties>
 <string name="Name">SurfaceAppearance</string><token name="AlphaMode">1</token>
-<Content name="ColorMap"><url>rbxassetid://128651191436151</url></Content>
+<Content name="ColorMap"><url>rbxassetid://83958058671232</url></Content>
 <Content name="TexturePack"><url>rbxassetid://74597329653279</url></Content>
-<Content name="EmissiveMaskContent"><uri>rbxassetid://88194642418565</uri></Content>
+<Content name="EmissiveMaskContent"><uri>rbxassetid://106819888283523</uri></Content>
 <Color3 name="Color"><R>1</R><G>1</G><B>1</B></Color3>
 <Color3 name="EmissiveTint"><R>0</R><G>0.30980393</G><B>1</B></Color3><float name="EmissiveStrength">6.28</float>
 </Properties></Item></Item></roblox>

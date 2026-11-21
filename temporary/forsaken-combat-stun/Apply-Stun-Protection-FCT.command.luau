@@ -1944,7 +1944,7 @@ end
 local assetPath="ReplicatedStorage/Assets/Instances/StunProtectionVFX"
 local assetParent=assert(find("ReplicatedStorage/Assets/Instances"),"Missing FCT Instances folder. Nothing changed.")
 local oldAsset=find(assetPath)
-if #pending==0 and oldAsset and oldAsset:GetAttribute("StunPortVersion")=="1.0.3" then print("[Stun Protection Port] Already applied.");return end
+if #pending==0 and oldAsset and oldAsset:GetAttribute("StunPortVersion")=="1.0.4" then print("[Stun Protection Port] Already applied.");return end
 local template
 local candidate=oldAsset or workspace:FindFirstChild("StunProtectionVFX",true)
 if candidate and candidate:IsA("MeshPart") and candidate.MeshId:match("%d+")=="76640378318129" then template=candidate:Clone() end
@@ -1963,16 +1963,16 @@ local hasImportedAppearance=template:FindFirstChildOfClass("SurfaceAppearance")~
 local ok,err=pcall(function()
  template.Name="StunProtectionVFX";template.Color=Color3.fromRGB(163,162,165);template.Size=Vector3.new(3.20400953,3.20400953,.604846478)
  template.Anchored=true;template.CanCollide=false;template.CanQuery=false;template.CanTouch=false;template.Transparency=0
- template:SetAttribute("StunPortVersion","1.0.3")
- template:SetAttribute("StunMaterialRepairVersion","1.0.3")
- template:SetAttribute("EmissiveMaskAsset","rbxassetid://88194642418565")
+ template:SetAttribute("StunPortVersion","1.0.4")
+ template:SetAttribute("StunMaterialRepairVersion","1.0.4")
+ template:SetAttribute("EmissiveMaskAsset","rbxassetid://106819888283523")
  template:SetAttribute("OriginalTexturePack","rbxassetid://74597329653279")
  template:SetAttribute("PackedMaterialImported",false)
  template:SetAttribute("SourceTemplateImported",hasImportedAppearance)
  template:SetAttribute("MaterialCompiledFromMaps",true)
- template.TextureID="rbxassetid://128651191436151"
+ template.TextureID="rbxassetid://83958058671232"
  local failed,probes={},{}
- for _,id in {"rbxassetid://128651191436151","rbxassetid://88194642418565"} do
+ for _,id in {"rbxassetid://83958058671232","rbxassetid://106819888283523"} do
   local image=Instance.new("ImageLabel");image.Image=id;table.insert(probes,image)
  end
  local loaded,loadError=pcall(function()
@@ -1984,8 +1984,8 @@ local ok,err=pcall(function()
  assert(loaded,"Image-instance preload failed: "..tostring(loadError))
  assert(#failed==0,"Image instances could not load the required textures: "..table.concat(failed,", ")..". Check the image IDs and experience asset permissions.")
  local appearance=game:GetService("AssetService"):CreateSurfaceAppearanceAsync({
-  ColorMap=Content.fromUri("rbxassetid://128651191436151"),
-  EmissiveMask=Content.fromUri("rbxassetid://88194642418565")
+  ColorMap=Content.fromUri("rbxassetid://83958058671232"),
+  EmissiveMask=Content.fromUri("rbxassetid://106819888283523")
  })
  assert(appearance and appearance:IsA("SurfaceAppearance"),"Roblox did not return a compiled SurfaceAppearance.")
  appearance.Name="SurfaceAppearance";appearance.AlphaMode=Enum.AlphaMode.Transparency
