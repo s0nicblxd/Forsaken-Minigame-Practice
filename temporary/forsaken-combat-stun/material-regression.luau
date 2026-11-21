@@ -74,11 +74,22 @@ mt.__newindex=function(self,key,value)
  return previousNewIndex(self,key,value)
 end
 local factoryCalls={}
+local lastProbes={}
+local destroyInstance=methods.Destroy
+function methods:Destroy()self.destroyed=true;destroyInstance(self)end
 local oldGetService=methods.GetService
 methods.GetService=function(self,name)
- if name=='ContentProvider' then return {PreloadAsync=function(_,ids,callback)
- if mode=='loadFail' then mode='normal';callback(ids[1],'Failure');return end
- for _,id in ids do callback(id,'Success')end end}end
+ if name=='ContentProvider' then return {PreloadAsync=function(_,images,callback)
+ lastProbes=images
+ for _,image in images do
+  -- Deliberately reproduce the engine's unreliable raw-string image path.
+  if type(image)=='string' then callback(image,'Failure');return end
+  assert(image:IsA('ImageLabel') and image.Image,'preload must specify image instances')
+ end
+ if mode=='preloadThrows' then mode='normal';error('simulated image loader exception')end
+ if mode=='loadFail' then mode='normal';callback(images[1].Image,'Failure');return end
+ for _,image in images do callback(image.Image,'Success')end
+end}end
  if name=='AssetService' then return {CreateSurfaceAppearanceAsync=function(_,maps)
   if mode=='maskFail' then mode='normal';error('simulated material creation failure')end
   table.insert(factoryCalls,maps)
@@ -102,14 +113,21 @@ assert(game:GetService("RunService"):IsStudio() and not game:GetService("RunServ
 local parent=game.ReplicatedStorage.Assets.Instances
 local target=assert(parent:FindFirstChild("StunProtectionVFX"),"Install the stun-protection port first.")
 assert(target:IsA("MeshPart") and target.MeshId:match("%d+")=="76640378318129","Unexpected stun-protection mesh. Nothing changed.")
-if target:GetAttribute("StunMaterialRepairVersion")=="1.0.2" then print("[Stun Material Repair] Already applied.");return end
+if target:GetAttribute("StunMaterialRepairVersion")=="1.0.3" then print("[Stun Material Repair] Already applied.");return end
 local replacement=target:Clone()
 local ok,err=pcall(function()
- local failed={}
- game:GetService("ContentProvider"):PreloadAsync({"rbxassetid://128651191436151","rbxassetid://88194642418565"},function(id,status)
-  if status~=Enum.AssetFetchStatus.Success then table.insert(failed,tostring(id).." ("..tostring(status)..")") end
+ local failed,probes={},{}
+ for _,id in {"rbxassetid://128651191436151","rbxassetid://88194642418565"} do
+  local image=Instance.new("ImageLabel");image.Image=id;table.insert(probes,image)
+ end
+ local loaded,loadError=pcall(function()
+  game:GetService("ContentProvider"):PreloadAsync(probes,function(id,status)
+   if status~=Enum.AssetFetchStatus.Success then table.insert(failed,tostring(id).." ("..tostring(status)..")") end
+  end)
  end)
- assert(#failed==0,"Required material image could not load: "..table.concat(failed,", "))
+ for _,image in probes do image:Destroy() end
+ assert(loaded,"Image-instance preload failed: "..tostring(loadError))
+ assert(#failed==0,"Image instances could not load the required textures: "..table.concat(failed,", ")..". Check the image IDs and experience asset permissions.")
  local appearance=game:GetService("AssetService"):CreateSurfaceAppearanceAsync({
   ColorMap=Content.fromUri("rbxassetid://128651191436151"),
   EmissiveMask=Content.fromUri("rbxassetid://88194642418565")
@@ -124,8 +142,8 @@ local ok,err=pcall(function()
  appearance.Parent=replacement
  replacement:SetAttribute("PackedMaterialImported",false)
  replacement:SetAttribute("MaterialCompiledFromMaps",true)
- replacement:SetAttribute("StunPortVersion","1.0.2")
- replacement:SetAttribute("StunMaterialRepairVersion","1.0.2")
+ replacement:SetAttribute("StunPortVersion","1.0.3")
+ replacement:SetAttribute("StunMaterialRepairVersion","1.0.3")
  replacement:SetAttribute("EmissiveMaskAsset","rbxassetid://88194642418565")
 end)
 if not ok then replacement:Destroy();error("Material could not be prepared. Nothing changed. Roblox material creation error: "..tostring(err))end
@@ -152,7 +170,7 @@ local backup=assert(backups[1],"No stun material repair backup found.")
 local saved=assert(backup:FindFirstChild("StunProtectionVFX"),"Missing saved material template.")
 local parent=game.ReplicatedStorage.Assets.Instances
 local target=assert(parent:FindFirstChild("StunProtectionVFX"),"Missing current template.")
-assert(target:GetAttribute("StunMaterialRepairVersion")=="1.0.1" or target:GetAttribute("StunMaterialRepairVersion")=="1.0.2","The current template is not the material repair. Nothing restored.")
+assert(target:GetAttribute("StunMaterialRepairVersion")=="1.0.1" or target:GetAttribute("StunMaterialRepairVersion")=="1.0.2" or target:GetAttribute("StunMaterialRepairVersion")=="1.0.3","The current template is not the material repair. Nothing restored.")
 local restored=saved:Clone()
 local ok,err=pcall(function()target.Parent=nil;restored.Parent=parent end)
 if not ok then restored:Destroy();target.Parent=parent;error("Material restore rolled back: "..tostring(err))end
@@ -161,12 +179,16 @@ print("[Stun Material Repair] Restored the previous material. Save and start a f
 
 end
 mode='loadFail';local ok=pcall(repair);assert(not ok and #factoryCalls==0 and parent:FindFirstChild('StunProtectionVFX')==template)
+for _,probe in lastProbes do assert(probe.destroyed,'failed probes must be cleaned up')end
+mode='preloadThrows';ok=pcall(repair);assert(not ok and #factoryCalls==0)
+for _,probe in lastProbes do assert(probe.destroyed,'loader exceptions must clean up image probes')end
 mode='maskFail';ok=pcall(repair);assert(not ok)
 assert(parent:FindFirstChild('StunProtectionVFX')==template and material.EmissiveMaskContent==nil)
 assert(#game.ServerStorage:GetChildren()==0,'failed preparation must not leave a partial backup')
 repair()
 local installed=parent:FindFirstChild('StunProtectionVFX');local appearance=installed:FindFirstChildOfClass('SurfaceAppearance')
 assert(appearance.EmissiveMaskContent.Uri=='rbxassetid://88194642418565')
+for _,probe in lastProbes do assert(probe.destroyed,'successful probes must be cleaned up')end
 assert(#factoryCalls==1 and factoryCalls[1].ColorMap.Uri=='rbxassetid://128651191436151' and factoryCalls[1].EmissiveMask.Uri=='rbxassetid://88194642418565')
 assert(appearance.EmissiveTint[1]==0 and appearance.EmissiveTint[2]==79 and appearance.EmissiveTint[3]==255)
 assert(appearance.EmissiveStrength==6.28 and appearance.TexturePack=='compiled://fresh-material')

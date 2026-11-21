@@ -10,6 +10,8 @@ The first template extraction missed `SurfaceAppearance.EmissiveMaskContent`, st
 
 Revision **1.0.2** constructs a fresh SurfaceAppearance through `AssetService:CreateSurfaceAppearanceAsync({ColorMap=..., EmissiveMask=...})`. The first mask repair only assigned map properties and did not resolve the rendered result. Roblox’s [material creation API](https://create.roblox.com/docs/reference/engine/classes/AssetService#CreateSurfaceAppearanceAsync) documents supplying the maps at creation and not swapping them afterward. Both image URIs are preloaded and checked. Loading or creation errors leave the current template untouched. No whole-mesh tint or forced Lighting changes are used.
 
+Revision **1.0.3** preloads temporary `ImageLabel` instances rather than raw URI strings, following Roblox’s [image-bearing instance preload interface](https://create.roblox.com/docs/reference/engine/classes/ContentProvider#PreloadAsync). Raw-string fetch failures do not establish that an image ID or its permissions are wrong. The instance path still stops on reported failures, and both success and exception paths destroy the temporary image probes. The colour/emissive IDs are unchanged. If this instance check still fails in Studio, the error identifies the affected image for asset-ID/permission investigation; no broken replacement is installed.
+
 The repair creates its own `ServerStorage.StunProtectionMaterial_Backup_*` folder. `Restore-Stun-Material.command.luau` restores only the previous material while keeping the stun-protection gameplay installed.
 
 ## Install in Studio
