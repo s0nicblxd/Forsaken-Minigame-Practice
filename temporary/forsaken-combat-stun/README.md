@@ -2,6 +2,14 @@
 
 Ports the Sentinel-stacking rework and orbiting stun-immunity indicator to the existing FCT + Guest/Azure/Two Time fixes. Five modules and one visual template are installed. No website or production-branch files are changed.
 
+## Current material repair (revision 1.0.5)
+
+Run **Raw** `Repair-Stun-Material-Static.command.luau` in the **Edit-mode Command Bar**, with Play stopped, then save/start a new playtest. This authors a fresh ordinary SurfaceAppearance, with `ColorMapContent` and `EmissiveMaskContent` set to the verified image URIs. It also corrects the MeshPart’s legacy TextureID to the colour image ID. No texture re-upload, model re-import, gameplay change, runtime image object, or dynamic material factory is required.
+
+The attempted CreateSurfaceAppearanceAsync route was unsuitable here: the user’s Studio build requires EditableImage Content for its EmissiveMask input. A live EditableImage-backed material is also the wrong fit for a static place asset intended to save and replicate. The replacement uses the supported Studio/plugin-authoring properties instead. [ColorMapContent supports asset URIs](https://create.roblox.com/docs/reference/engine/classes/SurfaceAppearance#ColorMapContent); both map properties have PluginSecurity setters and are saved by the place format. This operation must run in Edit mode, not inside a gameplay Script.
+
+The earlier property-based repair still used the incorrect colour decal ID; it did not test this fresh material with both verified images. The current repair retains typed image preloading and aborts safely if authoring fails. Backups and `Restore-Stun-Material.command.luau` are available. Version 1.0.5 supersedes the previous material repair attempts.
+
 ## Verified image IDs (revision 1.0.4)
 
 The user’s Studio Decal Properties screenshots provide the actual image references:
@@ -15,7 +23,7 @@ These underlying image IDs are now used in the image probes, material factory an
 
 If the symbols are grayscale, stop Play and run **Raw** `Rebuild-Stun-Material.command.luau` in the **Edit-mode Command Bar**. Save and start a fresh playtest. This replaces only the visual template, preserving all gameplay modules, orbit logic, sounds, mesh and uploaded colour map. No model re-import is needed.
 
-The first template extraction missed `SurfaceAppearance.EmissiveMaskContent`, stored in the newer binary Content format (property type 0x22). Decoding the actual UPD property identifies **rbxassetid://88194642418565**. Blue EmissiveTint and strength alone do not identify which pixels emit light; the missing mask is now explicitly assigned. The real UPD mask is passed to the material factory with the original blue tint and strength. Fresh installations and the XML template include it too.
+The first template extraction missed `SurfaceAppearance.EmissiveMaskContent`, stored in the newer binary Content format (property type 0x22). Decoding the actual UPD property identifies **rbxassetid://88194642418565**. Blue EmissiveTint and strength alone do not identify which pixels emit light; the missing mask is now explicitly assigned. The verified uploaded copy of the UPD mask is assigned during Edit-mode material authoring with the original blue tint and strength. Fresh installations and the XML template include it too.
 
 Revision **1.0.2** constructs a fresh SurfaceAppearance through `AssetService:CreateSurfaceAppearanceAsync({ColorMap=..., EmissiveMask=...})`. The first mask repair only assigned map properties and did not resolve the rendered result. Roblox’s [material creation API](https://create.roblox.com/docs/reference/engine/classes/AssetService#CreateSurfaceAppearanceAsync) documents supplying the maps at creation and not swapping them afterward. Both image URIs are preloaded and checked. Loading or creation errors leave the current template untouched. No whole-mesh tint or forced Lighting changes are used.
 
@@ -29,7 +37,7 @@ The repair creates its own `ServerStorage.StunProtectionMaterial_Backup_*` folde
 2. Open **Raw** `Apply-Stun-Protection-FCT.command.luau`, copy the entire file and paste into Studio's **Command Bar in Edit mode**.
 3. Wait for the success message, save, and start a new playtest. Stun the Slasher training bot with Guest or Two Time. You should see three orbiting symbols and hear the uploaded sounds.
 
-The XML supplies the original mesh and archived material references. If no imported template exists, the installer can construct the public mesh automatically. In both cases it builds a fresh material from the uploaded colour map and original emissive mask through Roblox’s supported API. Mesh or material failures stop before changing gameplay modules.
+The XML supplies the original mesh and archived material references. If no imported template exists, the installer can construct the public mesh automatically. In both cases it authors a fresh static material from the verified colour/emissive image URIs in Studio Edit mode. Mesh or material failures stop before changing gameplay modules.
 
 The installer checks all expected source fingerprints before writing. It preserves the current Azure optional-animation loader and Guest/NPC status compatibility. Re-running it is safe. Modified or older source is rejected instead of overwritten. Backups are kept under `ServerStorage.StunProtectionPort_Backup_*`; `Restore-Stun-Protection-FCT.command.luau` restores the newest backup. The imported asset and shared-module changes are included in the backup. Apply this after the existing combat patches; older installers may correctly reject the newer shared sources afterward.
 
@@ -61,12 +69,12 @@ It appears while `StunnedDisabled` is set, including during the active stun. Any
 
 Mesh size is 3.20400953 × 3.20400953 × 0.604846478. The SurfaceAppearance uses transparency alpha, blue emission (0, 79, 255), and emissive strength 6.28. Start/loop/end volumes follow UPD: 0.45 / 0.3 / 0.4. Sounds are spatial, with a local 80-stud falloff limit.
 
-Roblox protects `SurfaceAppearance.TexturePack` from normal script assignment. The XML archives the original reference, while the installer and repair generate a new material from the colour/emissive maps. `OriginalTexturePack` is provenance metadata; `MaterialCompiledFromMaps` identifies the new construction path. The protected cached pack is not forced onto the newly requested maps.
+Roblox protects `SurfaceAppearance.TexturePack` from normal script assignment. The XML archives the original reference, while the installer and repair author a new static material from URI-backed colour/emissive maps. `OriginalTexturePack` is provenance metadata; `MaterialAuthoredInStudio` identifies the current path. `MaterialCompiledFromMaps` is false because the dynamic material factory is not used. The protected cached pack is not forced onto the newly requested maps.
 
 ## Validation
 
 All five installed modules and both command files compile with Luau. Mocked regression suites execute the real patched Statuses/Stunned modules and real stackable helper functions, checking full/short stun durations, correct immunity timing, NPC resolution, living-Sentinel counting, timer replacement, other-source immunity, cancelled overrides, dead-rig cleanup, and animation-less movement locking.
 
-The indicator regression checks staggered creation, orbit radius/height, uploaded audio IDs, hide flags, interrupted spawns, death/removal cleanup, and late-created NPCs without ActorCreated messages. The installer regression checks edited-source rejection, mid-write rollback, repeat application, template import/cloning and restoration, including an existing imported asset. The XML’s mesh, colour-map, emissive-mask and packed-material references are parsed and checked. A separate material regression uses a fake material factory that rejects map reassignment. It verifies exact factory input URIs, blue tint, emission strength, unchanged gameplay, safe image-loading/creation failure, repeated application and material-only restoration. These checks cannot prove Studio rendering.
+The indicator regression checks staggered creation, orbit radius/height, uploaded audio IDs, hide flags, interrupted spawns, death/removal cleanup, and late-created NPCs without ActorCreated messages. The installer regression checks edited-source rejection, mid-write rollback, repeat application, template import/cloning and restoration, including an existing imported asset. The XML’s mesh, colour-map, emissive-mask and packed-material references are parsed and checked. A separate material regression rejects any invocation of the EditableImage material factory and checks ordinary URI map assignment instead. It verifies both image references, the legacy mesh fallback texture, blue tint, emission strength, unchanged gameplay, safe loading/authoring failure, repeated application and restoration. These checks cannot prove Studio rendering.
 
 Run `luau status-regression.luau`, `luau indicator-regression.luau`, and `luau material-regression.luau`. Installer regression was also run locally. These checks are not a Roblox Studio playtest. Confirm actual asset permissions, material appearance, audio, and bot/player timing in Studio; test Guest, Azure and Two Time afterward.
