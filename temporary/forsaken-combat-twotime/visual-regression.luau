@@ -597,10 +597,14 @@ end
 return Visuals
 
 end)()
+Enum.NormalId.Top='Top';Enum.EasingStyle={Linear='Linear'};Enum.EasingDirection={InOut='InOut'}
+local UDim2={fromScale=vec}
 local Debris={AddItem=function(_,object,delay)object.debrisDelay=delay end}
 local TweenInfo={new=vec}
-local TweenService={Create=function(_,object,info,props)return {Play=function()for k,v in props do object[k]=v end end}end}
+local TweenService={Create=function(_,object,info,props)return {Play=function()for k,v in props do object[k]=v end end,Cancel=function(self)self.cancelled=true end}end}
 local function stopPrayVFX(a)
+ if a.TTPrayGlyphTween then a.TTPrayGlyphTween:Cancel();a.TTPrayGlyphTween=nil end
+ if a.TTPrayGlyph then a.TTPrayGlyph:Destroy();a.TTPrayGlyph=nil end
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
@@ -615,6 +619,17 @@ local function stopPrayVFX(a)
 end
 local function startPrayVFX(a)
  stopPrayVFX(a)
+ local root=a.Rig.PrimaryPart
+ local glyph=Instance.new("Part");glyph.Name="TwoTimePrayGroundSymbol"
+ glyph.Size=Vector3.new(5,.01,5);glyph.Transparency=1;glyph.CanCollide=false;glyph.CanTouch=false;glyph.CanQuery=false;glyph.CastShadow=false;glyph.Massless=true
+ glyph.CFrame=root.CFrame*CFrame.new(0,-(a.Rig.Humanoid.HipHeight+root.Size.Y/2)+.06,0)
+ glyph.Parent=a.Rig
+ local weld=Instance.new("WeldConstraint");weld.Part0=root;weld.Part1=glyph;weld.Parent=glyph
+ local gui=Instance.new("SurfaceGui");gui.Adornee=glyph;gui.Face=Enum.NormalId.Top;gui.CanvasSize=Vector2.new(512,512);gui.LightInfluence=0;gui.AlwaysOnTop=false;gui.Parent=glyph
+ local image=Instance.new("ImageLabel");image.Name="Spawn";image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayGroundSymbolImage;image.Parent=gui
+ a.TTPrayGlyph=glyph
+ a.TTPrayGlyphTween=TweenService:Create(image,TweenInfo.new(4,Enum.EasingStyle.Linear,Enum.EasingDirection.InOut,-1),{Rotation=-360})
+ a.TTPrayGlyphTween:Play()
  local folder=Visuals.Build("Pray")
  a.TTPrayVFX=folder:GetChildren()
  for _,object in a.TTPrayVFX do object.Parent=a.Rig.PrimaryPart end
@@ -623,8 +638,8 @@ local function startPrayVFX(a)
   for _,item in object:GetDescendants() do
    if item:IsA("ParticleEmitter") then
     -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
-    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
-    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+    if item.Name=="Spawn" and (object.Name=="StartFloor" or object.Name=="Floor") then item.Enabled=false end
+    if item:GetAttribute("EmitCount") and not (item.Name=="Spawn" and (object.Name=="StartFloor" or object.Name=="Floor")) then item:Emit(item:GetAttribute("EmitCount")) end
    end
   end
  end
@@ -639,15 +654,20 @@ assert(beam.Attachment0.Name=='BeamTop' and beam.Attachment1.Name=='BeamBottom')
 assert(beam.Attachment0.Parent==pray and beam.Attachment1.Parent==pray)
 assert(find(pray,'Glow'):GetAttribute('EmitCount')==1)
 for _,item in pray:GetDescendants()do assert(not item:IsA('Sound') and not item:IsA('Animation'))end
-local actor={Rig={PrimaryPart=Instance.new('Part')}}
+local root=Instance.new('Part');root.Size={Y=2};root.CFrame=setmetatable({},{__mul=function()return {}end})
+local actor={Config={PrayGroundSymbolImage='rbxassetid://134399639839028'},Rig={PrimaryPart=root,Humanoid={HipHeight=2},_children={}}}
 startPrayVFX(actor);assert(#actor.TTPrayVFX>0)
 local startedGlow=find(actor.Rig.PrimaryPart,'Glow');assert(startedGlow.emitted==1)
 local aura=find(actor.Rig.PrimaryPart,'Aura');assert(aura.Enabled)
 local glyph
 for _,object in actor.TTPrayVFX do if object.Name=='StartFloor' then glyph=find(object,'Spawn')end end
-assert(glyph and glyph.Enabled and glyph.Rate>=2,'Spawn glyph must continuously emit during the hold')
+assert(glyph and not glyph.Enabled,'fading particle symbol must be replaced')
+assert(actor.TTPrayGlyph and not actor.TTPrayGlyph.destroyed)
+local heldGlyph=actor.TTPrayGlyph;local loop=actor.TTPrayGlyphTween
+assert(find(heldGlyph,'Spawn').Image=='rbxassetid://134399639839028')
 local retained=actor.TTPrayVFX
 stopPrayVFX(actor);assert(actor.TTPrayVFX==nil and not aura.Enabled)
-assert(not glyph.Enabled and glyph.cleared,"releasing must stop and clear the looping Spawn glyph")
+assert(not glyph.Enabled and glyph.cleared,"releasing must clear the old particle glyph")
+assert(heldGlyph.destroyed and loop.cancelled and actor.TTPrayGlyph==nil,"release must destroy the persistent glyph and cancel its rotation")
 for _,object in retained do assert(object.debrisDelay==4)end
 print('Actual UPD visual factory, attachment references, startup emission and Pray cleanup passed')

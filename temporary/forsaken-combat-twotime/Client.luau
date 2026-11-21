@@ -180,8 +180,7 @@ function Client.Created(a)
   local crouched=rig:GetAttribute("Crouching")==true
   if crouched~=lastCrouch then
    lastCrouch=crouched
-   Sprinting.SprintSpeed=crouched and a.Config.CrouchRunSpeed or a.TTOriginalSprintSpeed
-   if Sprinting.IsSprinting then Sprinting:Toggle(true) end
+   a.TTLocalCrouchStart=crouched and os.clock() or nil
   end
   local folder=rig:FindFirstChild("SpeedMultipliers")
   if folder then
@@ -189,9 +188,17 @@ function Client.Created(a)
    if crouched then
     if not multiplier then multiplier=Util:CreateSpeedMultiplier(rig,1,"TwoTimeCrouching") end
     -- Sprinting uses SprintSpeed/BaseSpeed. Walking and running need different base ratios.
-    multiplier.Value=Sprinting.IsSprinting and 1 or a.Config.CrouchSpeed/a.Config.Speed
+    local running=Sprinting.IsSprinting and Sprinting.CanSprint~=false and (Sprinting.Stamina or 0)>0
+    local sprintValue=folder:FindFirstChild("Sprinting")
+    local base=rig.Humanoid:GetAttribute("BaseSpeed") or a.Config.Speed
+    local target=running and a.Config.CrouchRunSpeed or a.Config.CrouchSpeed
+    local elapsed=os.clock()-(a.TTLocalCrouchStart or os.clock())
+    local startup=elapsed<.75 and .15+.85*(1-elapsed/.75)^5 or elapsed<1.75 and .15+.85*(elapsed-.75)^2 or 1
+    multiplier.Value=target/math.max(.01,base*(sprintValue and sprintValue.Value or 1))*startup
     local bonus=folder:FindFirstChild("CrouchBonusTT") or Util:CreateSpeedMultiplier(rig,1,"CrouchBonusTT")
-    bonus.Value=rig:GetAttribute("TwoTimeCrouchBonus") or 1
+    bonus.Value=running and (rig:GetAttribute("TwoTimeCrouchBonus") or 1) or 1
+    a.TTSprintPulse=(a.TTSprintPulse or .2)+dt
+    if a.TTSprintPulse>=.2 then a.TTSprintPulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",running,"Sprint") end
    else
     if multiplier then multiplier:Destroy() end
     local bonus=folder:FindFirstChild("CrouchBonusTT");if bonus then bonus:Destroy() end

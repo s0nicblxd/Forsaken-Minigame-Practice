@@ -31,10 +31,12 @@ mt.__index=function(a,key)
  if key=='Dot' then return function(_,b)return a.X*b.X+a.Y*b.Y+a.Z*b.Z end end
 end
 local CFrame={new=function(...)return {...}end}
-local Enum={HumanoidStateType={Jumping='Jumping'}}
+local Vector2={new=function(...)return {...}end}
+local UDim2={fromScale=function(...)return {...}end}
+local Enum={NormalId={Top='Top'},EasingStyle={Linear='Linear'},EasingDirection={InOut='InOut'},HumanoidStateType={Jumping='Jumping'}}
 local TweenInfo={new=function()return {}end}
 local Debris={AddItem=function()end}
-local TweenService={Create=function(_,object,_,values)return {Play=function()for k,v in values do object[k]=v end end}end}
+local TweenService={Create=function(_,object,_,values)return {Play=function()for k,v in values do object[k]=v end end,Cancel=function()end}end}
 local heartbeat=signal()
 local RunService={Heartbeat=heartbeat}
 local Players={GetPlayerFromCharacter=function(_,rig)return rig.player end}
@@ -48,10 +50,12 @@ local game={ReplicatedStorage={Modules=Modules}}
 local function object()
  return {Parent=true,Destroy=function(self)self.Parent=nil end}
 end
+local Instance={new=function()return object()end}
 local function rig(position,look)
  local attrs={};local speeds={}
  local h={Health=80,MaxHealth=80,HipHeight=2,HealthChanged=signal(),GetStateEnabled=function()return true end,SetStateEnabled=function()end}
- local root={Position=position or Vector3.new(0,0,0),CFrame={LookVector=look or Vector3.new(0,0,-1)},Anchored=false,AssemblyLinearVelocity=Vector3.new(0,0,0)}
+ local root={Size=Vector3.new(2,2,2),Position=position or Vector3.new(0,0,0),CFrame={LookVector=look or Vector3.new(0,0,-1)},Anchored=false,AssemblyLinearVelocity=Vector3.new(0,0,0)}
+ setmetatable(root.CFrame,{__mul=function()return {}end})
  local model={Parent={Name='Killers'},PrimaryPart=root,Humanoid=h,attrs=attrs,speeds=speeds}
  model.Parent=setmetatable(model.Parent,{__tostring=function()return 'Killers'end})
  function model:GetAttribute(key)return attrs[key]end
@@ -146,6 +150,8 @@ local function knife(a,on)
  -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
 end
 local function stopPrayVFX(a)
+ if a.TTPrayGlyphTween then a.TTPrayGlyphTween:Cancel();a.TTPrayGlyphTween=nil end
+ if a.TTPrayGlyph then a.TTPrayGlyph:Destroy();a.TTPrayGlyph=nil end
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
@@ -160,6 +166,17 @@ local function stopPrayVFX(a)
 end
 local function startPrayVFX(a)
  stopPrayVFX(a)
+ local root=a.Rig.PrimaryPart
+ local glyph=Instance.new("Part");glyph.Name="TwoTimePrayGroundSymbol"
+ glyph.Size=Vector3.new(5,.01,5);glyph.Transparency=1;glyph.CanCollide=false;glyph.CanTouch=false;glyph.CanQuery=false;glyph.CastShadow=false;glyph.Massless=true
+ glyph.CFrame=root.CFrame*CFrame.new(0,-(a.Rig.Humanoid.HipHeight+root.Size.Y/2)+.06,0)
+ glyph.Parent=a.Rig
+ local weld=Instance.new("WeldConstraint");weld.Part0=root;weld.Part1=glyph;weld.Parent=glyph
+ local gui=Instance.new("SurfaceGui");gui.Adornee=glyph;gui.Face=Enum.NormalId.Top;gui.CanvasSize=Vector2.new(512,512);gui.LightInfluence=0;gui.AlwaysOnTop=false;gui.Parent=glyph
+ local image=Instance.new("ImageLabel");image.Name="Spawn";image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayGroundSymbolImage;image.Parent=gui
+ a.TTPrayGlyph=glyph
+ a.TTPrayGlyphTween=TweenService:Create(image,TweenInfo.new(4,Enum.EasingStyle.Linear,Enum.EasingDirection.InOut,-1),{Rotation=-360})
+ a.TTPrayGlyphTween:Play()
  local folder=Visuals.Build("Pray")
  a.TTPrayVFX=folder:GetChildren()
  for _,object in a.TTPrayVFX do object.Parent=a.Rig.PrimaryPart end
@@ -168,8 +185,8 @@ local function startPrayVFX(a)
   for _,item in object:GetDescendants() do
    if item:IsA("ParticleEmitter") then
     -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
-    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
-    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+    if item.Name=="Spawn" and (object.Name=="StartFloor" or object.Name=="Floor") then item.Enabled=false end
+    if item:GetAttribute("EmitCount") and not (item.Name=="Spawn" and (object.Name=="StartFloor" or object.Name=="Floor")) then item:Emit(item:GetAttribute("EmitCount")) end
    end
   end
  end
@@ -212,7 +229,7 @@ end
 function Server.StopCrouch(a,manual)
  if not a.TTCrouchStart then return end
  local elapsed=os.clock()-a.TTCrouchStart
- a.TTCrouchStart=nil;a.TTRamp=0
+ a.TTCrouchStart=nil;a.TTRamp=0;a.TTSprintHeld=nil;a.TTSprintLease=nil
  a.Rig:SetAttribute("Crouching",nil)
  a.Rig:SetAttribute("FootstepsMuted",a.TTPreviousFootstepsMuted)
  a.TTPreviousFootstepsMuted=nil
@@ -452,8 +469,13 @@ function Server.Created(a)
   if part:IsA("BasePart") then part.CanCollide=false;part.CanTouch=false;part.Massless=true end
  end end
  local remote="TwoTimePortHold_"..a.Player.UserId
- Network:SetConnection(remote,"REMOTE_EVENT",function(player,holding)
-  if player~=a.Player or not a.TTPraying then return end
+ Network:SetConnection(remote,"REMOTE_EVENT",function(player,holding,mode)
+  if player~=a.Player then return end
+  if mode=="Sprint" then
+   if alive(a) and a.TTCrouchStart then a.TTSprintHeld=holding==true;a.TTSprintLease=os.clock() end
+   return
+  end
+  if not a.TTPraying then return end
   if holding==true then a.TTPrayLease=os.clock() else Server.StopPray(a,false) end
  end)
  a.TTHoldRemote=remote
@@ -473,7 +495,7 @@ function Server.Created(a)
     local target,distance=nearest(a);local h=a.Rig.Humanoid;local root=a.Rig.PrimaryPart
     local direction=target and target.PrimaryPart.Position-root.Position
     local motion=root.AssemblyLinearVelocity*Vector3.new(1,0,1)
-    local running=motion.Magnitude>a.Config.CrouchSpeed+1
+    local running=a.TTSprintHeld and os.clock()-(a.TTSprintLease or 0)<1.25 and motion.Magnitude>a.Config.CrouchSpeed+1
     if running and direction and direction.Magnitude>.001 and distance<=a.Config.CrouchSpeedBoostDistance and motion.Unit:Dot(direction.Unit)>a.Config.CrouchSpeedBoostDot and os.clock()>=(a.TTRampResetUntil or 0) then a.TTRamp=math.min(a.Config.CrouchSpeedBoostTime,a.TTRamp+dt) else a.TTRamp=0 end
     a.Rig:SetAttribute("TwoTimeCrouchBonus",1+(a.Config.CrouchSpeedBoostMax-1)*a.TTRamp/a.Config.CrouchSpeedBoostTime)
    end
@@ -643,11 +665,11 @@ workspace.FindFirstChild=function(_,key)
 end
 a=spawned();Server.Crouch(a)
 a.Rig.PrimaryPart.AssemblyLinearVelocity=Vector3.new(0,0,-23)
-for _=1,16 do tickActor(.25)end
+for _=1,16 do Network.callbacks["TwoTimePortHold_12"](a.Player,true,"Sprint");tickActor(.25)end
 near(a.Rig.attrs.TwoTimeCrouchBonus,1.5)
 a.Rig.PrimaryPart.AssemblyLinearVelocity=Vector3.new(23,0,0);tickActor(.1)
 near(a.Rig.attrs.TwoTimeCrouchBonus,1)
-a.Rig.PrimaryPart.AssemblyLinearVelocity=Vector3.new(0,0,-23);tickActor(.5)
+a.Rig.PrimaryPart.AssemblyLinearVelocity=Vector3.new(0,0,-23);Network.callbacks["TwoTimePortHold_12"](a.Player,true,"Sprint");tickActor(.5)
 assert(a.Rig.attrs.TwoTimeCrouchBonus>1)
 a.Rig.attrs.Stunned=true;tickActor(.1)
 assert(not a.TTCrouchStart and a.Rig.attrs.TwoTimeCrouchBonus==nil)

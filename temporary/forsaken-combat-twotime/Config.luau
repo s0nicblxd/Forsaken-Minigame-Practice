@@ -281,5 +281,6 @@ t1.SprintSpeed=26
 t1.MaxStamina=100
 t1.StaminaLoss=10
 t1.StaminaGain=20
-t1.TwoTimePortVersion="1.0.2"
+t1.TwoTimePortVersion="1.0.3"
+t1.PrayGroundSymbolImage="rbxassetid://134399639839028"
 return t1

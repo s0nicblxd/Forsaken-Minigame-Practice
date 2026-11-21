@@ -10471,7 +10471,7 @@ Behavior.OnStunned=Behavior.OnHelpless
 return Behavior
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,previous="10077:dada0ab6:c0faa1f7",after="13717:fa340eb8:3e37c1cf",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,previous="10077:dada0ab6:c0faa1f7",previous2="13717:fa340eb8:3e37c1cf",previous3="13717:fa340eb8:3e37c1cf",after="14332:bd3b993c:96e7b119",source=[====[
 -- Public image-based presentation only; gameplay never waits on an AnimationTrack.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -10654,8 +10654,7 @@ function Client.Created(a)
   local crouched=rig:GetAttribute("Crouching")==true
   if crouched~=lastCrouch then
    lastCrouch=crouched
-   Sprinting.SprintSpeed=crouched and a.Config.CrouchRunSpeed or a.TTOriginalSprintSpeed
-   if Sprinting.IsSprinting then Sprinting:Toggle(true) end
+   a.TTLocalCrouchStart=crouched and os.clock() or nil
   end
   local folder=rig:FindFirstChild("SpeedMultipliers")
   if folder then
@@ -10663,9 +10662,17 @@ function Client.Created(a)
    if crouched then
     if not multiplier then multiplier=Util:CreateSpeedMultiplier(rig,1,"TwoTimeCrouching") end
     -- Sprinting uses SprintSpeed/BaseSpeed. Walking and running need different base ratios.
-    multiplier.Value=Sprinting.IsSprinting and 1 or a.Config.CrouchSpeed/a.Config.Speed
+    local running=Sprinting.IsSprinting and Sprinting.CanSprint~=false and (Sprinting.Stamina or 0)>0
+    local sprintValue=folder:FindFirstChild("Sprinting")
+    local base=rig.Humanoid:GetAttribute("BaseSpeed") or a.Config.Speed
+    local target=running and a.Config.CrouchRunSpeed or a.Config.CrouchSpeed
+    local elapsed=os.clock()-(a.TTLocalCrouchStart or os.clock())
+    local startup=elapsed<.75 and .15+.85*(1-elapsed/.75)^5 or elapsed<1.75 and .15+.85*(elapsed-.75)^2 or 1
+    multiplier.Value=target/math.max(.01,base*(sprintValue and sprintValue.Value or 1))*startup
     local bonus=folder:FindFirstChild("CrouchBonusTT") or Util:CreateSpeedMultiplier(rig,1,"CrouchBonusTT")
-    bonus.Value=rig:GetAttribute("TwoTimeCrouchBonus") or 1
+    bonus.Value=running and (rig:GetAttribute("TwoTimeCrouchBonus") or 1) or 1
+    a.TTSprintPulse=(a.TTSprintPulse or .2)+dt
+    if a.TTSprintPulse>=.2 then a.TTSprintPulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",running,"Sprint") end
    else
     if multiplier then multiplier:Destroy() end
     local bonus=folder:FindFirstChild("CrouchBonusTT");if bonus then bonus:Destroy() end
@@ -10772,7 +10779,7 @@ end
 return Rules
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",previous2="20810:c613c66e:f0dfb625",after="21058:1dfac0b0:ba740893",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",previous2="20810:c613c66e:f0dfb625",previous3="21058:1dfac0b0:ba740893",after="22563:8f19fd97:30793af6",source=[====[
 -- FCT APIs and FCT visual templates; newest UPD balance. No animation or sound calls.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -10812,6 +10819,8 @@ local function knife(a,on)
  -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
 end
 local function stopPrayVFX(a)
+ if a.TTPrayGlyphTween then a.TTPrayGlyphTween:Cancel();a.TTPrayGlyphTween=nil end
+ if a.TTPrayGlyph then a.TTPrayGlyph:Destroy();a.TTPrayGlyph=nil end
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
@@ -10826,6 +10835,17 @@ local function stopPrayVFX(a)
 end
 local function startPrayVFX(a)
  stopPrayVFX(a)
+ local root=a.Rig.PrimaryPart
+ local glyph=Instance.new("Part");glyph.Name="TwoTimePrayGroundSymbol"
+ glyph.Size=Vector3.new(5,.01,5);glyph.Transparency=1;glyph.CanCollide=false;glyph.CanTouch=false;glyph.CanQuery=false;glyph.CastShadow=false;glyph.Massless=true
+ glyph.CFrame=root.CFrame*CFrame.new(0,-(a.Rig.Humanoid.HipHeight+root.Size.Y/2)+.06,0)
+ glyph.Parent=a.Rig
+ local weld=Instance.new("WeldConstraint");weld.Part0=root;weld.Part1=glyph;weld.Parent=glyph
+ local gui=Instance.new("SurfaceGui");gui.Adornee=glyph;gui.Face=Enum.NormalId.Top;gui.CanvasSize=Vector2.new(512,512);gui.LightInfluence=0;gui.AlwaysOnTop=false;gui.Parent=glyph
+ local image=Instance.new("ImageLabel");image.Name="Spawn";image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayGroundSymbolImage;image.Parent=gui
+ a.TTPrayGlyph=glyph
+ a.TTPrayGlyphTween=TweenService:Create(image,TweenInfo.new(4,Enum.EasingStyle.Linear,Enum.EasingDirection.InOut,-1),{Rotation=-360})
+ a.TTPrayGlyphTween:Play()
  local folder=Visuals.Build("Pray")
  a.TTPrayVFX=folder:GetChildren()
  for _,object in a.TTPrayVFX do object.Parent=a.Rig.PrimaryPart end
@@ -10834,8 +10854,8 @@ local function startPrayVFX(a)
   for _,item in object:GetDescendants() do
    if item:IsA("ParticleEmitter") then
     -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
-    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
-    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+    if item.Name=="Spawn" and (object.Name=="StartFloor" or object.Name=="Floor") then item.Enabled=false end
+    if item:GetAttribute("EmitCount") and not (item.Name=="Spawn" and (object.Name=="StartFloor" or object.Name=="Floor")) then item:Emit(item:GetAttribute("EmitCount")) end
    end
   end
  end
@@ -10878,7 +10898,7 @@ end
 function Server.StopCrouch(a,manual)
  if not a.TTCrouchStart then return end
  local elapsed=os.clock()-a.TTCrouchStart
- a.TTCrouchStart=nil;a.TTRamp=0
+ a.TTCrouchStart=nil;a.TTRamp=0;a.TTSprintHeld=nil;a.TTSprintLease=nil
  a.Rig:SetAttribute("Crouching",nil)
  a.Rig:SetAttribute("FootstepsMuted",a.TTPreviousFootstepsMuted)
  a.TTPreviousFootstepsMuted=nil
@@ -11118,8 +11138,13 @@ function Server.Created(a)
   if part:IsA("BasePart") then part.CanCollide=false;part.CanTouch=false;part.Massless=true end
  end end
  local remote="TwoTimePortHold_"..a.Player.UserId
- Network:SetConnection(remote,"REMOTE_EVENT",function(player,holding)
-  if player~=a.Player or not a.TTPraying then return end
+ Network:SetConnection(remote,"REMOTE_EVENT",function(player,holding,mode)
+  if player~=a.Player then return end
+  if mode=="Sprint" then
+   if alive(a) and a.TTCrouchStart then a.TTSprintHeld=holding==true;a.TTSprintLease=os.clock() end
+   return
+  end
+  if not a.TTPraying then return end
   if holding==true then a.TTPrayLease=os.clock() else Server.StopPray(a,false) end
  end)
  a.TTHoldRemote=remote
@@ -11139,7 +11164,7 @@ function Server.Created(a)
     local target,distance=nearest(a);local h=a.Rig.Humanoid;local root=a.Rig.PrimaryPart
     local direction=target and target.PrimaryPart.Position-root.Position
     local motion=root.AssemblyLinearVelocity*Vector3.new(1,0,1)
-    local running=motion.Magnitude>a.Config.CrouchSpeed+1
+    local running=a.TTSprintHeld and os.clock()-(a.TTSprintLease or 0)<1.25 and motion.Magnitude>a.Config.CrouchSpeed+1
     if running and direction and direction.Magnitude>.001 and distance<=a.Config.CrouchSpeedBoostDistance and motion.Unit:Dot(direction.Unit)>a.Config.CrouchSpeedBoostDot and os.clock()>=(a.TTRampResetUntil or 0) then a.TTRamp=math.min(a.Config.CrouchSpeedBoostTime,a.TTRamp+dt) else a.TTRamp=0 end
     a.Rig:SetAttribute("TwoTimeCrouchBonus",1+(a.Config.CrouchSpeedBoostMax-1)*a.TTRamp/a.Config.CrouchSpeedBoostTime)
    end
@@ -11733,7 +11758,7 @@ end
 return Visuals
 ]====]},
 {path=[====[
-ReplicatedStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",previous2="14227:c58653c9:e7f29712",after="14230:47aec50a:a06c72a7",source=[====[
+ReplicatedStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",previous2="14227:c58653c9:e7f29712",previous3="14230:47aec50a:a06c72a7",after="14286:3b2baa1b:99057862",source=[====[
 
 local t1 = {
 	DisplayName = "Two Time",
@@ -12017,7 +12042,8 @@ t1.SprintSpeed=26
 t1.MaxStamina=100
 t1.StaminaLoss=10
 t1.StaminaGain=20
-t1.TwoTimePortVersion="1.0.2"
+t1.TwoTimePortVersion="1.0.3"
+t1.PrayGroundSymbolImage="rbxassetid://134399639839028"
 return t1
 ]====]},
 {path=[====[
@@ -20943,7 +20969,7 @@ Behavior.OnStunned=Behavior.OnHelpless
 return Behavior
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,previous="10077:dada0ab6:c0faa1f7",after="13717:fa340eb8:3e37c1cf",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Client]====],before=false,previous="10077:dada0ab6:c0faa1f7",previous2="13717:fa340eb8:3e37c1cf",previous3="13717:fa340eb8:3e37c1cf",after="14332:bd3b993c:96e7b119",source=[====[
 -- Public image-based presentation only; gameplay never waits on an AnimationTrack.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -21126,8 +21152,7 @@ function Client.Created(a)
   local crouched=rig:GetAttribute("Crouching")==true
   if crouched~=lastCrouch then
    lastCrouch=crouched
-   Sprinting.SprintSpeed=crouched and a.Config.CrouchRunSpeed or a.TTOriginalSprintSpeed
-   if Sprinting.IsSprinting then Sprinting:Toggle(true) end
+   a.TTLocalCrouchStart=crouched and os.clock() or nil
   end
   local folder=rig:FindFirstChild("SpeedMultipliers")
   if folder then
@@ -21135,9 +21160,17 @@ function Client.Created(a)
    if crouched then
     if not multiplier then multiplier=Util:CreateSpeedMultiplier(rig,1,"TwoTimeCrouching") end
     -- Sprinting uses SprintSpeed/BaseSpeed. Walking and running need different base ratios.
-    multiplier.Value=Sprinting.IsSprinting and 1 or a.Config.CrouchSpeed/a.Config.Speed
+    local running=Sprinting.IsSprinting and Sprinting.CanSprint~=false and (Sprinting.Stamina or 0)>0
+    local sprintValue=folder:FindFirstChild("Sprinting")
+    local base=rig.Humanoid:GetAttribute("BaseSpeed") or a.Config.Speed
+    local target=running and a.Config.CrouchRunSpeed or a.Config.CrouchSpeed
+    local elapsed=os.clock()-(a.TTLocalCrouchStart or os.clock())
+    local startup=elapsed<.75 and .15+.85*(1-elapsed/.75)^5 or elapsed<1.75 and .15+.85*(elapsed-.75)^2 or 1
+    multiplier.Value=target/math.max(.01,base*(sprintValue and sprintValue.Value or 1))*startup
     local bonus=folder:FindFirstChild("CrouchBonusTT") or Util:CreateSpeedMultiplier(rig,1,"CrouchBonusTT")
-    bonus.Value=rig:GetAttribute("TwoTimeCrouchBonus") or 1
+    bonus.Value=running and (rig:GetAttribute("TwoTimeCrouchBonus") or 1) or 1
+    a.TTSprintPulse=(a.TTSprintPulse or .2)+dt
+    if a.TTSprintPulse>=.2 then a.TTSprintPulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",running,"Sprint") end
    else
     if multiplier then multiplier:Destroy() end
     local bonus=folder:FindFirstChild("CrouchBonusTT");if bonus then bonus:Destroy() end
@@ -21244,7 +21277,7 @@ end
 return Rules
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",previous2="20810:c613c66e:f0dfb625",after="21058:1dfac0b0:ba740893",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Behavior/Server]====],before=false,previous="19452:b6a039bb:e64a3db6",previous2="20810:c613c66e:f0dfb625",previous3="21058:1dfac0b0:ba740893",after="22563:8f19fd97:30793af6",source=[====[
 -- FCT APIs and FCT visual templates; newest UPD balance. No animation or sound calls.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
@@ -21284,6 +21317,8 @@ local function knife(a,on)
  -- Invisibility's own watcher can now affect the visible blade along with the rest of the rig.
 end
 local function stopPrayVFX(a)
+ if a.TTPrayGlyphTween then a.TTPrayGlyphTween:Cancel();a.TTPrayGlyphTween=nil end
+ if a.TTPrayGlyph then a.TTPrayGlyph:Destroy();a.TTPrayGlyph=nil end
  local visuals=a.TTPrayVFX;a.TTPrayVFX=nil
  for _,object in visuals or {} do
   for _,item in object:GetDescendants() do
@@ -21298,6 +21333,17 @@ local function stopPrayVFX(a)
 end
 local function startPrayVFX(a)
  stopPrayVFX(a)
+ local root=a.Rig.PrimaryPart
+ local glyph=Instance.new("Part");glyph.Name="TwoTimePrayGroundSymbol"
+ glyph.Size=Vector3.new(5,.01,5);glyph.Transparency=1;glyph.CanCollide=false;glyph.CanTouch=false;glyph.CanQuery=false;glyph.CastShadow=false;glyph.Massless=true
+ glyph.CFrame=root.CFrame*CFrame.new(0,-(a.Rig.Humanoid.HipHeight+root.Size.Y/2)+.06,0)
+ glyph.Parent=a.Rig
+ local weld=Instance.new("WeldConstraint");weld.Part0=root;weld.Part1=glyph;weld.Parent=glyph
+ local gui=Instance.new("SurfaceGui");gui.Adornee=glyph;gui.Face=Enum.NormalId.Top;gui.CanvasSize=Vector2.new(512,512);gui.LightInfluence=0;gui.AlwaysOnTop=false;gui.Parent=glyph
+ local image=Instance.new("ImageLabel");image.Name="Spawn";image.BackgroundTransparency=1;image.Size=UDim2.fromScale(1,1);image.Image=a.Config.PrayGroundSymbolImage;image.Parent=gui
+ a.TTPrayGlyph=glyph
+ a.TTPrayGlyphTween=TweenService:Create(image,TweenInfo.new(4,Enum.EasingStyle.Linear,Enum.EasingDirection.InOut,-1),{Rotation=-360})
+ a.TTPrayGlyphTween:Play()
  local folder=Visuals.Build("Pray")
  a.TTPrayVFX=folder:GetChildren()
  for _,object in a.TTPrayVFX do object.Parent=a.Rig.PrimaryPart end
@@ -21306,8 +21352,8 @@ local function startPrayVFX(a)
   for _,item in object:GetDescendants() do
    if item:IsA("ParticleEmitter") then
     -- Keep the startup Spawn glyph alive for the entire hold, alongside the looping lights.
-    if item.Name=="Spawn" and object.Name=="StartFloor" then item.Enabled=true;item.Rate=math.max(item.Rate,2) end
-    if item:GetAttribute("EmitCount") then item:Emit(item:GetAttribute("EmitCount")) end
+    if item.Name=="Spawn" and (object.Name=="StartFloor" or object.Name=="Floor") then item.Enabled=false end
+    if item:GetAttribute("EmitCount") and not (item.Name=="Spawn" and (object.Name=="StartFloor" or object.Name=="Floor")) then item:Emit(item:GetAttribute("EmitCount")) end
    end
   end
  end
@@ -21350,7 +21396,7 @@ end
 function Server.StopCrouch(a,manual)
  if not a.TTCrouchStart then return end
  local elapsed=os.clock()-a.TTCrouchStart
- a.TTCrouchStart=nil;a.TTRamp=0
+ a.TTCrouchStart=nil;a.TTRamp=0;a.TTSprintHeld=nil;a.TTSprintLease=nil
  a.Rig:SetAttribute("Crouching",nil)
  a.Rig:SetAttribute("FootstepsMuted",a.TTPreviousFootstepsMuted)
  a.TTPreviousFootstepsMuted=nil
@@ -21590,8 +21636,13 @@ function Server.Created(a)
   if part:IsA("BasePart") then part.CanCollide=false;part.CanTouch=false;part.Massless=true end
  end end
  local remote="TwoTimePortHold_"..a.Player.UserId
- Network:SetConnection(remote,"REMOTE_EVENT",function(player,holding)
-  if player~=a.Player or not a.TTPraying then return end
+ Network:SetConnection(remote,"REMOTE_EVENT",function(player,holding,mode)
+  if player~=a.Player then return end
+  if mode=="Sprint" then
+   if alive(a) and a.TTCrouchStart then a.TTSprintHeld=holding==true;a.TTSprintLease=os.clock() end
+   return
+  end
+  if not a.TTPraying then return end
   if holding==true then a.TTPrayLease=os.clock() else Server.StopPray(a,false) end
  end)
  a.TTHoldRemote=remote
@@ -21611,7 +21662,7 @@ function Server.Created(a)
     local target,distance=nearest(a);local h=a.Rig.Humanoid;local root=a.Rig.PrimaryPart
     local direction=target and target.PrimaryPart.Position-root.Position
     local motion=root.AssemblyLinearVelocity*Vector3.new(1,0,1)
-    local running=motion.Magnitude>a.Config.CrouchSpeed+1
+    local running=a.TTSprintHeld and os.clock()-(a.TTSprintLease or 0)<1.25 and motion.Magnitude>a.Config.CrouchSpeed+1
     if running and direction and direction.Magnitude>.001 and distance<=a.Config.CrouchSpeedBoostDistance and motion.Unit:Dot(direction.Unit)>a.Config.CrouchSpeedBoostDot and os.clock()>=(a.TTRampResetUntil or 0) then a.TTRamp=math.min(a.Config.CrouchSpeedBoostTime,a.TTRamp+dt) else a.TTRamp=0 end
     a.Rig:SetAttribute("TwoTimeCrouchBonus",1+(a.Config.CrouchSpeedBoostMax-1)*a.TTRamp/a.Config.CrouchSpeedBoostTime)
    end
@@ -22205,7 +22256,7 @@ end
 return Visuals
 ]====]},
 {path=[====[
-ServerStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",previous2="14227:c58653c9:e7f29712",after="14230:47aec50a:a06c72a7",source=[====[
+ServerStorage/Assets/Survivors/TwoTime/Config]====],before="11453:a752093b:afc9e202",previous="14133:ea0af3d6:5f27dea5",previous2="14227:c58653c9:e7f29712",previous3="14230:47aec50a:a06c72a7",after="14286:3b2baa1b:99057862",source=[====[
 
 local t1 = {
 	DisplayName = "Two Time",
@@ -22489,7 +22540,8 @@ t1.SprintSpeed=26
 t1.MaxStamina=100
 t1.StaminaLoss=10
 t1.StaminaGain=20
-t1.TwoTimePortVersion="1.0.2"
+t1.TwoTimePortVersion="1.0.3"
+t1.PrayGroundSymbolImage="rbxassetid://134399639839028"
 return t1
 ]====]}
 }
@@ -22502,7 +22554,7 @@ for _,plan in plans do
   assert(target:IsA("ModuleScript"),"Expected ModuleScript at "..plan.path..". Nothing changed.")
   local current=fingerprint(target.Source)
   if current~=plan.after then
-   assert((plan.before and current==plan.before) or (plan.previous and current==plan.previous) or (plan.previous2 and current==plan.previous2),"Unexpected edited source at "..plan.path..". Nothing changed; keep your edits and send that module for reconciliation.")
+   assert((plan.before and current==plan.before) or (plan.previous and current==plan.previous) or (plan.previous2 and current==plan.previous2) or (plan.previous3 and current==plan.previous3),"Unexpected edited source at "..plan.path..". Nothing changed; keep your edits and send that module for reconciliation.")
    table.insert(pending,{target=target,plan=plan,before=target.Source})
   end
  else

@@ -2,17 +2,25 @@
 
 Studio Command Bar installer for the current FCT combat build, following the newest supplied UPD configuration and the user's ordered patch notes. No new kit animation IDs are loaded and no kit sounds are played. Existing generic locomotion remains in use. Public ability icons, expressions, FCT life models, dagger, Ritual effects and Oblation UI are retained.
 
-## Latest repair: hitbox revert and held Pray symbol
+## Latest repair: persistent Pray symbol and crouch movement
 
-If you installed the polish repair, stop Play and run **Raw** `Repair-TwoTime-Hitboxes-Pray.command.luau` in Studio’s **Edit-mode Command Bar**. It updates four modules (Config and Server in both snapshots), with backups and repeat-run protection. The first working port’s hitbox setup is restored for standing and crouched stabs: 4 × 6 × 5.5, offset 7, shared prediction/placement, and default line-of-sight origin. The actual-transform backstab test is retained. This deliberately reverts the unsuccessful close-range geometry adjustment; it does not claim verified live-game hitbox geometry.
+After the hitbox repair, stop Play and run **Raw** `Repair-TwoTime-Crouch-Symbol.command.luau` in the **Edit-mode Command Bar**. It updates six Two Time modules, with backups. Hitboxes are unchanged.
 
-Pray’s startup floor Spawn glyph now emits continuously for the whole hold alongside the existing looping effects. Release, interruption and other stop paths disable and clear floor glyph particles. The softer miss penalty, messages, VFX, indicator and meter polish stay in place.
+The fading particle glyph is replaced by a welded, non-colliding transparent surface with the same public Spawn texture and an indefinitely repeating rotation. It has no particle lifetime and is destroyed immediately when prayer stops; the original non-glyph particle/light effects remain.
+
+Crouch restores UPD’s startup slowdown/recovery (0.75s toward a 0.15 multiplier, then 1s recovery). After startup, the crouch multiplier compensates for the actual live Sprinting multiplier rather than changing the sprint module’s speed setting. Expected forward speeds before other modifiers are 10 walking, 23 running, and 34.5 at full approach buildup. Sprint input is reported through the existing owner-validated remote lease and checked with physical movement by the server. Walking and stale sprint input cannot build the approach bonus. Running toward a living killer within 105 studs builds the bonus over 4s; moving away, damage and uncrouching reset it.
+
+## Previous repair: hitbox revert and held Pray symbol
+
+If you installed the polish repair, stop Play and run **Raw** `Repair-TwoTime-Hitboxes-Pray.command.luau` in Studio’s **Edit-mode Command Bar**. The original version updated four modules; the current file also includes the subsequent crouch/symbol correction, with backups and repeat-run protection. The first working port’s hitbox setup is restored for standing and crouched stabs: 4 × 6 × 5.5, offset 7, shared prediction/placement, and default line-of-sight origin. The actual-transform backstab test is retained. This deliberately reverts the unsuccessful close-range geometry adjustment; it does not claim verified live-game hitbox geometry.
+
+Pray’s startup floor Spawn glyph was initially changed to emit continuously; the current implementation uses the persistent textured surface described above. Release, interruption and other stop paths disable and clear floor glyph particles. The softer miss penalty, messages, VFX, indicator and meter polish stay in place.
 
 ## Upgrade the already-working port
 
 Stop Play, copy the entire **Raw** `Repair-TwoTime-Polish.command.luau` file into Studio's **Edit-mode Command Bar**, and save/start a fresh playtest. It updates 10 Two Time modules, imports the exported visual properties, and leaves the installed shared Weakness/Azure/Guest changes alone. A fresh installation can use the full installer below; it also accepts the previously published working port.
 
-The current repair includes the hitbox revert above, makes miss Slowness start beyond 30 studs, restores UPD's one-stud-wide textured indicator and endpoint particles, adds Pray's exported VFX and warning feedback, and restores conditional meter visibility. Animations/audio remain omitted.
+The current repair includes the corrections above, makes miss Slowness start beyond 30 studs, restores UPD's one-stud-wide textured indicator and endpoint particles, adds Pray's exported VFX and warning feedback, and restores conditional meter visibility. Animations/audio remain omitted.
 
 ## Apply
 

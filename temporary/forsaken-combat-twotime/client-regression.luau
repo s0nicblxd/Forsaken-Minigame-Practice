@@ -31,7 +31,9 @@ mt.__index=function(a,key)
  if key=='Dot' then return function(_,b)return a.X*b.X+a.Y*b.Y+a.Z*b.Z end end
 end
 local CFrame={new=function(...)return {...}end}
-local Enum={HumanoidStateType={Jumping='Jumping'}}
+local Vector2={new=function(...)return {...}end}
+local UDim2={fromScale=function(...)return {...}end}
+local Enum={NormalId={Top='Top'},EasingStyle={Linear='Linear'},EasingDirection={InOut='InOut'},HumanoidStateType={Jumping='Jumping'}}
 local TweenInfo={new=function()return {}end}
 local Debris={AddItem=function()end}
 local TweenService={Create=function(_,object,_,values)return {Play=function()for k,v in values do object[k]=v end end,Cancel=function()end}end}
@@ -48,10 +50,12 @@ local game={ReplicatedStorage={Modules=Modules}}
 local function object()
  return {Parent=true,Destroy=function(self)self.Parent=nil end}
 end
+local Instance={new=function()return object()end}
 local function rig(position,look)
  local attrs={};local speeds={}
  local h={Health=80,MaxHealth=80,HipHeight=2,HealthChanged=signal(),GetStateEnabled=function()return true end,SetStateEnabled=function()end}
- local root={Position=position or Vector3.new(0,0,0),CFrame={LookVector=look or Vector3.new(0,0,-1)},Anchored=false,AssemblyLinearVelocity=Vector3.new(0,0,0)}
+ local root={Size=Vector3.new(2,2,2),Position=position or Vector3.new(0,0,0),CFrame={LookVector=look or Vector3.new(0,0,-1)},Anchored=false,AssemblyLinearVelocity=Vector3.new(0,0,0)}
+ setmetatable(root.CFrame,{__mul=function()return {}end})
  local model={Parent={Name='Killers'},PrimaryPart=root,Humanoid=h,attrs=attrs,speeds=speeds}
  model.Parent=setmetatable(model.Parent,{__tostring=function()return 'Killers'end})
  function model:GetAttribute(key)return attrs[key]end
@@ -119,6 +123,7 @@ end
 local localPlayer={UserId=12,Name='Tester',PlayerGui={WaitForChild=function()return {}end}}
 Players.LocalPlayer=localPlayer
 local rig=rig()
+function rig.Humanoid:GetAttribute(key)if key=="BaseSpeed" then return 12 end end
 rig.PrimaryPart.Size=Vector3.new(2,2,1)
 localPlayer.Character=rig
 workspace.Terrain={}
@@ -303,8 +308,7 @@ function Client.Created(a)
   local crouched=rig:GetAttribute("Crouching")==true
   if crouched~=lastCrouch then
    lastCrouch=crouched
-   Sprinting.SprintSpeed=crouched and a.Config.CrouchRunSpeed or a.TTOriginalSprintSpeed
-   if Sprinting.IsSprinting then Sprinting:Toggle(true) end
+   a.TTLocalCrouchStart=crouched and os.clock() or nil
   end
   local folder=rig:FindFirstChild("SpeedMultipliers")
   if folder then
@@ -312,9 +316,17 @@ function Client.Created(a)
    if crouched then
     if not multiplier then multiplier=Util:CreateSpeedMultiplier(rig,1,"TwoTimeCrouching") end
     -- Sprinting uses SprintSpeed/BaseSpeed. Walking and running need different base ratios.
-    multiplier.Value=Sprinting.IsSprinting and 1 or a.Config.CrouchSpeed/a.Config.Speed
+    local running=Sprinting.IsSprinting and Sprinting.CanSprint~=false and (Sprinting.Stamina or 0)>0
+    local sprintValue=folder:FindFirstChild("Sprinting")
+    local base=rig.Humanoid:GetAttribute("BaseSpeed") or a.Config.Speed
+    local target=running and a.Config.CrouchRunSpeed or a.Config.CrouchSpeed
+    local elapsed=os.clock()-(a.TTLocalCrouchStart or os.clock())
+    local startup=elapsed<.75 and .15+.85*(1-elapsed/.75)^5 or elapsed<1.75 and .15+.85*(elapsed-.75)^2 or 1
+    multiplier.Value=target/math.max(.01,base*(sprintValue and sprintValue.Value or 1))*startup
     local bonus=folder:FindFirstChild("CrouchBonusTT") or Util:CreateSpeedMultiplier(rig,1,"CrouchBonusTT")
-    bonus.Value=rig:GetAttribute("TwoTimeCrouchBonus") or 1
+    bonus.Value=running and (rig:GetAttribute("TwoTimeCrouchBonus") or 1) or 1
+    a.TTSprintPulse=(a.TTSprintPulse or .2)+dt
+    if a.TTSprintPulse>=.2 then a.TTSprintPulse=0;Network:FireServerConnection("TwoTimePortHold_"..a.Player.UserId,"REMOTE_EVENT",running,"Sprint") end
    else
     if multiplier then multiplier:Destroy() end
     local bonus=folder:FindFirstChild("CrouchBonusTT");if bonus then bonus:Destroy() end
@@ -416,6 +428,25 @@ now+=4;heartbeat:Fire(.1)
 assert(not Network.locks.TwoTimeStab and not Network.locks.TwoTimeRitual)
 Network.callbacks.TwoTimePortState('Revive',true)
 assert(a.HealthbarDisplay==nil and sprint.Stamina==60)
+-- Verify crouch math against the live sprint multiplier, including an in-flight sprint tween.
+rig.attrs.Crouching=true;sprint.IsSprinting=false;heartbeat:Fire(.016)
+advance(2);heartbeat:Fire(.016)
+local function actualSpeed()
+ local result=12
+ for _,value in rig.speeds do if value.Parent then result*=value.Value end end
+ return result
+end
+assert(math.abs(actualSpeed()-10)<.001)
+rig.speeds.Sprinting={Parent=true,Value=26/12};sprint.IsSprinting=true;heartbeat:Fire(.016)
+assert(math.abs(actualSpeed()-23)<.001)
+rig.speeds.Sprinting.Value=1.5;heartbeat:Fire(.016)
+assert(math.abs(actualSpeed()-23)<.001,'old sprint tween must not overwrite crouch speed')
+rig.attrs.TwoTimeCrouchBonus=1.5;heartbeat:Fire(.016)
+assert(math.abs(actualSpeed()-34.5)<.001)
+sprint.IsSprinting=false;rig.speeds.Sprinting.Value=1;heartbeat:Fire(.016)
+assert(math.abs(actualSpeed()-10)<.001,'walking must not inherit a stale sprint buildup')
+rig.attrs.Crouching=nil;heartbeat:Fire(.016)
+assert(math.abs(actualSpeed()-12)<.001)
 -- Indicator only displays when crouched and Dagger is actually usable.
 rig.attrs.Crouching=true;a.CanUseAbility=function()return false end
 RunService.RenderStepped:Fire(.016);assert(not a.TTIndicator[3].Enabled)
