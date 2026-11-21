@@ -76,3 +76,12 @@ Fallback grab-success presentation lasts about 0.5 seconds; fallback throw prese
 Azure's cinematic introduction uses the existing short display fallback while this testing mode is active. Set `AzureAnimationsOptional = false` in Azure's Config when its introduction assets are ready to opt back into the cinematic path. Ability animations remain optional either way.
 
 Executed regression checks cover absent IDs, denied loads, zero-length tracks, valid tracks, looping aim, plant transitions, replay/cancellation cleanup, the actual grab success/throw wait function, and the actual golem-exit root cleanup with an empty animation table. All 17 resulting modules and the full/repair installers compile under Luau and fit the per-module Studio Source limit. Studio physics/network testing remains necessary.
+
+
+## Azure execution repair (reworked Two Time)
+
+After the existing Azure and Two Time ports, stop Play and run `Repair-Azure-Execution.command.luau` in Studio's Command Bar, then save and start a fresh playtest. It repairs the Two Time-specific `OnExecution` nil lookup for a missing `GhostFire.GhostfireBlade`, makes the vignette optional, and guards delayed callbacks against a removed victim. The original 1.333s/2.65s/3.217s Two Time sequence and 2.783s generic explosion timing are retained. Optional ragdoll setup cannot prevent the final kill; an already-dead victim is never restored to 0.01 health.
+
+The repair replaces only the recognized execution callback and adds its `ExecutionCompatibility` child module; it preserves other edits to Azure. It updates both ReplicatedStorage and ServerStorage copies if present, makes `ServerStorage.AzureExecution_Backup_…`, validates source sizes, and rolls back on write failure. Run `Restore-Azure-Execution.command.luau` in Edit mode to restore the latest backup. If the callback itself differs, preflight refuses to change anything and requests that source.
+
+Local regression checks cover missing blade/UI, legacy cosmetic behavior, mid-execution deletion, already-dead victims, generic timing, dual-copy installation, preservation of unrelated source, repeated install, restore, and injected Source write failures. Studio animation/rendering tests remain necessary in the user's place.

@@ -1,0 +1,58 @@
+{
+  "Test-As-Helperbot.command.luau": {
+    "bytes": 1151,
+    "sha256": "7dae50ed679e3336651a0f6a1d2b4e7f6b231fc03b2ab7949f83d3d6982a98ff"
+  },
+  "HelperbotUPD.rbxm": {
+    "bytes": 14853,
+    "sha256": "fc7cac5bcc937a3019040b47ab3d66b251dcd9b1fffa651b1f1fd8696aba850c"
+  },
+  "Haste.luau": {
+    "bytes": 275,
+    "sha256": "9e679a2d9d18403c4cc62112da8de6907ce0f91cb2819e0061a9631958e1ba89"
+  },
+  "Restore-Helperbot-FCT.command.luau": {
+    "bytes": 1307,
+    "sha256": "97a0785e5f268c077ef031d59f7a7b6b31ab3ef9d3c080554079ede49ba1ec04"
+  },
+  "CooldownStatus.luau": {
+    "bytes": 1489,
+    "sha256": "4bdbdf71390dd281a424ff440bfd239efaf72bd148a48f21b036521dbcd6957e"
+  },
+  "Config.luau": {
+    "bytes": 12259,
+    "sha256": "44ec1bdacdaf6d35ec603ad29f6c5836726841f922e52ccd94a634ca53fc3d55"
+  },
+  "cl_HelperbotChargeBillboard.luau": {
+    "bytes": 4061,
+    "sha256": "309bdeedf242627efaa53235960e169f33f28a5638215a907fcda3984fab74b1"
+  },
+  "HelperbotDonor.rbxm": {
+    "bytes": 29922,
+    "sha256": "45a58a14d114ac586fdd068aaf3474390b0cdf347c6ba55bf41d3cfbc01bb2cd"
+  },
+  "Server.luau": {
+    "bytes": 10342,
+    "sha256": "c122dc389c7a7d040a5ac1ecf2929cb88b9dfea42afd056475f9cd9ffb3c61d5"
+  },
+  "Client.luau": {
+    "bytes": 22767,
+    "sha256": "ffc70897542cd23d76087b28cf3d24c0a4ef1ad266d0b16b136f261c3a6debdc"
+  },
+  "Fatigue.luau": {
+    "bytes": 242,
+    "sha256": "562ab7dcd880682c44c98fcdab94e3f84914354c4911da977e94785fb92d5a48"
+  },
+  "Behavior.luau": {
+    "bytes": 613,
+    "sha256": "cf34fad2cbb07844b56a66ce4878f2dd3ced9859b456e206d11ce6fca04160cb"
+  },
+  "Rules.luau": {
+    "bytes": 780,
+    "sha256": "cc9a0d931790296913eb64b9e0bb5bd7d5bbd291acc92655265e4f4e780c7b3c"
+  },
+  "Apply-Helperbot-FCT.command.luau": {
+    "bytes": 58482,
+    "sha256": "2bf402ec7182397c70ce4af38b0fea3b59cba27ace8edcdbb5b6be30ae1c1116"
+  }
+}
