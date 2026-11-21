@@ -11,6 +11,7 @@
 <string name="Name">SurfaceAppearance</string><token name="AlphaMode">1</token>
 <Content name="ColorMap"><url>rbxassetid://128651191436151</url></Content>
 <Content name="TexturePack"><url>rbxassetid://74597329653279</url></Content>
+<Content name="EmissiveMaskContent"><uri>rbxassetid://88194642418565</uri></Content>
 <Color3 name="Color"><R>1</R><G>1</G><B>1</B></Color3>
 <Color3 name="EmissiveTint"><R>0</R><G>0.30980393</G><B>1</B></Color3><float name="EmissiveStrength">6.28</float>
 </Properties></Item></Item></roblox>

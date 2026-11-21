@@ -1944,7 +1944,7 @@ end
 local assetPath="ReplicatedStorage/Assets/Instances/StunProtectionVFX"
 local assetParent=assert(find("ReplicatedStorage/Assets/Instances"),"Missing FCT Instances folder. Nothing changed.")
 local oldAsset=find(assetPath)
-if #pending==0 and oldAsset and oldAsset:GetAttribute("StunPortVersion")=="1.0.0" then print("[Stun Protection Port] Already applied.");return end
+if #pending==0 and oldAsset and oldAsset:GetAttribute("StunPortVersion")=="1.0.1" then print("[Stun Protection Port] Already applied.");return end
 local template
 local candidate=oldAsset or workspace:FindFirstChild("StunProtectionVFX",true)
 if candidate and candidate:IsA("MeshPart") and candidate.MeshId:match("%d+")=="76640378318129" then template=candidate:Clone() end
@@ -1963,12 +1963,15 @@ local hasImportedAppearance=template:FindFirstChildOfClass("SurfaceAppearance")~
 local ok,err=pcall(function()
  template.Name="StunProtectionVFX";template.Color=Color3.fromRGB(163,162,165);template.Size=Vector3.new(3.20400953,3.20400953,.604846478)
  template.Anchored=true;template.CanCollide=false;template.CanQuery=false;template.CanTouch=false;template.Transparency=0
- template:SetAttribute("StunPortVersion","1.0.0")
+ template:SetAttribute("StunPortVersion","1.0.1")
+ template:SetAttribute("StunMaterialRepairVersion","1.0.1")
+ template:SetAttribute("EmissiveMaskAsset","rbxassetid://88194642418565")
  template:SetAttribute("OriginalTexturePack","rbxassetid://74597329653279")
  template:SetAttribute("PackedMaterialImported",hasImportedAppearance)
  template.TextureID="rbxassetid://128651191436151"
  local appearance=template:FindFirstChildOfClass("SurfaceAppearance") or Instance.new("SurfaceAppearance")
  if appearance.ColorMap~="rbxassetid://128651191436151" then appearance.ColorMap="rbxassetid://128651191436151" end;if appearance.AlphaMode~=Enum.AlphaMode.Transparency then appearance.AlphaMode=Enum.AlphaMode.Transparency end
+ appearance.EmissiveMaskContent=Content.fromUri("rbxassetid://88194642418565")
  appearance.EmissiveTint=Color3.fromRGB(0,79,255);appearance.EmissiveStrength=6.28;appearance.Parent=template
 end)
 if not ok then template:Destroy();error("Could not prepare the visual template. Nothing changed: "..tostring(err))end

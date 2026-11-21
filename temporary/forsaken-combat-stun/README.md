@@ -2,6 +2,14 @@
 
 Ports the Sentinel-stacking rework and orbiting stun-immunity indicator to the existing FCT + Guest/Azure/Two Time fixes. Five modules and one visual template are installed. No website or production-branch files are changed.
 
+## Material correction for an existing installation
+
+If the symbols are grayscale, stop Play and run **Raw** `Repair-Stun-Material.command.luau` in the **Edit-mode Command Bar**. Save and start a fresh playtest. This replaces only the visual template, preserving all gameplay modules, orbit logic, sounds, mesh and uploaded colour map. No model re-import is needed.
+
+The first template extraction missed `SurfaceAppearance.EmissiveMaskContent`, stored in the newer binary Content format (property type 0x22). Decoding the actual UPD property identifies **rbxassetid://88194642418565**. Blue EmissiveTint and strength alone do not identify which pixels emit light; the missing mask is now explicitly assigned. This uses the real UPD mask, not a whole-mesh tint or a substituted colour-map mask. Fresh installations and the XML template include it too.
+
+The repair creates its own `ServerStorage.StunProtectionMaterial_Backup_*` folder. `Restore-Stun-Material.command.luau` restores only the previous material while keeping the stun-protection gameplay installed.
+
 ## Install in Studio
 
 1. Stop Play and save your place. Download `StunProtectionVFX.rbxmx` using GitHub's Raw/download button, keeping the `.rbxmx` extension. In Explorer select **ReplicatedStorage > Assets > Instances**, then **Insert from File** and choose the file. The imported MeshPart should be named `StunProtectionVFX` directly inside `Instances`.
@@ -33,6 +41,7 @@ It appears while `StunnedDisabled` is set, including during the active stun. Any
 | Original symbol mesh | `76640378318129` |
 | Original packed material | `74597329653279` |
 | Uploaded colour/alpha texture | `128651191436151` |
+| Original emissive mask | `88194642418565` |
 | Uploaded appearance sound | `107766213132983` |
 | Uploaded looping sound | `112344506440657` |
 | Uploaded ending sound | `117830806605625` |
@@ -45,6 +54,6 @@ Roblox protects `SurfaceAppearance.TexturePack` from normal script assignment. T
 
 All five installed modules and both command files compile with Luau. Mocked regression suites execute the real patched Statuses/Stunned modules and real stackable helper functions, checking full/short stun durations, correct immunity timing, NPC resolution, living-Sentinel counting, timer replacement, other-source immunity, cancelled overrides, dead-rig cleanup, and animation-less movement locking.
 
-The indicator regression checks staggered creation, orbit radius/height, uploaded audio IDs, hide flags, interrupted spawns, death/removal cleanup, and late-created NPCs without ActorCreated messages. The installer regression checks edited-source rejection, mid-write rollback, repeat application, template import/cloning and restoration, including an existing imported asset. The XML's mesh, colour-map and packed-material references are parsed and checked.
+The indicator regression checks staggered creation, orbit radius/height, uploaded audio IDs, hide flags, interrupted spawns, death/removal cleanup, and late-created NPCs without ActorCreated messages. The installer regression checks edited-source rejection, mid-write rollback, repeat application, template import/cloning and restoration, including an existing imported asset. The XML’s mesh, colour-map, emissive-mask and packed-material references are parsed and checked. A separate material regression verifies the exact mask URI, blue tint, emission strength, unchanged gameplay, safe failure before replacement, repeated application and material-only restoration.
 
-Run `luau status-regression.luau` and `luau indicator-regression.luau`. Installer regression was also run locally. These checks are not a Roblox Studio playtest. Confirm actual asset permissions, material appearance, audio, and bot/player timing in Studio; test Guest, Azure and Two Time afterward.
+Run `luau status-regression.luau`, `luau indicator-regression.luau`, and `luau material-regression.luau`. Installer regression was also run locally. These checks are not a Roblox Studio playtest. Confirm actual asset permissions, material appearance, audio, and bot/player timing in Studio; test Guest, Azure and Two Time afterward.
