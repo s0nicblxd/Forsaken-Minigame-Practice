@@ -9,7 +9,7 @@ local backup=assert(backups[1],"No stun material repair backup found.")
 local saved=assert(backup:FindFirstChild("StunProtectionVFX"),"Missing saved material template.")
 local parent=game.ReplicatedStorage.Assets.Instances
 local target=assert(parent:FindFirstChild("StunProtectionVFX"),"Missing current template.")
-assert(target:GetAttribute("StunMaterialRepairVersion")=="1.0.1","The current template is not the material repair. Nothing restored.")
+assert(target:GetAttribute("StunMaterialRepairVersion")=="1.0.1" or target:GetAttribute("StunMaterialRepairVersion")=="1.0.2","The current template is not the material repair. Nothing restored.")
 local restored=saved:Clone()
 local ok,err=pcall(function()target.Parent=nil;restored.Parent=parent end)
 if not ok then restored:Destroy();target.Parent=parent;error("Material restore rolled back: "..tostring(err))end

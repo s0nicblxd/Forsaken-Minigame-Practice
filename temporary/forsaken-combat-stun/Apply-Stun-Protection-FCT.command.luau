@@ -1944,7 +1944,7 @@ end
 local assetPath="ReplicatedStorage/Assets/Instances/StunProtectionVFX"
 local assetParent=assert(find("ReplicatedStorage/Assets/Instances"),"Missing FCT Instances folder. Nothing changed.")
 local oldAsset=find(assetPath)
-if #pending==0 and oldAsset and oldAsset:GetAttribute("StunPortVersion")=="1.0.1" then print("[Stun Protection Port] Already applied.");return end
+if #pending==0 and oldAsset and oldAsset:GetAttribute("StunPortVersion")=="1.0.2" then print("[Stun Protection Port] Already applied.");return end
 local template
 local candidate=oldAsset or workspace:FindFirstChild("StunProtectionVFX",true)
 if candidate and candidate:IsA("MeshPart") and candidate.MeshId:match("%d+")=="76640378318129" then template=candidate:Clone() end
@@ -1963,16 +1963,28 @@ local hasImportedAppearance=template:FindFirstChildOfClass("SurfaceAppearance")~
 local ok,err=pcall(function()
  template.Name="StunProtectionVFX";template.Color=Color3.fromRGB(163,162,165);template.Size=Vector3.new(3.20400953,3.20400953,.604846478)
  template.Anchored=true;template.CanCollide=false;template.CanQuery=false;template.CanTouch=false;template.Transparency=0
- template:SetAttribute("StunPortVersion","1.0.1")
- template:SetAttribute("StunMaterialRepairVersion","1.0.1")
+ template:SetAttribute("StunPortVersion","1.0.2")
+ template:SetAttribute("StunMaterialRepairVersion","1.0.2")
  template:SetAttribute("EmissiveMaskAsset","rbxassetid://88194642418565")
  template:SetAttribute("OriginalTexturePack","rbxassetid://74597329653279")
- template:SetAttribute("PackedMaterialImported",hasImportedAppearance)
+ template:SetAttribute("PackedMaterialImported",false)
+ template:SetAttribute("SourceTemplateImported",hasImportedAppearance)
+ template:SetAttribute("MaterialCompiledFromMaps",true)
  template.TextureID="rbxassetid://128651191436151"
- local appearance=template:FindFirstChildOfClass("SurfaceAppearance") or Instance.new("SurfaceAppearance")
- if appearance.ColorMap~="rbxassetid://128651191436151" then appearance.ColorMap="rbxassetid://128651191436151" end;if appearance.AlphaMode~=Enum.AlphaMode.Transparency then appearance.AlphaMode=Enum.AlphaMode.Transparency end
- appearance.EmissiveMaskContent=Content.fromUri("rbxassetid://88194642418565")
- appearance.EmissiveTint=Color3.fromRGB(0,79,255);appearance.EmissiveStrength=6.28;appearance.Parent=template
+ local failed={}
+ game:GetService("ContentProvider"):PreloadAsync({"rbxassetid://128651191436151","rbxassetid://88194642418565"},function(id,status)
+  if status~=Enum.AssetFetchStatus.Success then table.insert(failed,tostring(id).." ("..tostring(status)..")") end
+ end)
+ assert(#failed==0,"Required material image could not load: "..table.concat(failed,", "))
+ local appearance=game:GetService("AssetService"):CreateSurfaceAppearanceAsync({
+  ColorMap=Content.fromUri("rbxassetid://128651191436151"),
+  EmissiveMask=Content.fromUri("rbxassetid://88194642418565")
+ })
+ assert(appearance and appearance:IsA("SurfaceAppearance"),"Roblox did not return a compiled SurfaceAppearance.")
+ appearance.Name="SurfaceAppearance";appearance.AlphaMode=Enum.AlphaMode.Transparency
+ appearance.EmissiveTint=Color3.fromRGB(0,79,255);appearance.EmissiveStrength=6.28;appearance.Color=Color3.new(1,1,1)
+ for _,old in template:GetChildren() do if old:IsA("SurfaceAppearance") then old:Destroy() end end
+ appearance.Parent=template
 end)
 if not ok then template:Destroy();error("Could not prepare the visual template. Nothing changed: "..tostring(err))end
 local backup=Instance.new("Folder");backup.Name="StunProtectionPort_Backup_"..os.date("!%Y%m%d_%H%M%S");backup.Parent=game.ServerStorage
@@ -2000,5 +2012,5 @@ if not ok then
 end
 if oldAsset then oldAsset:Destroy()end
 pcall(function()game:GetService("ChangeHistoryService"):SetWaypoint("Stun Protection Port")end)
-if not hasImportedAppearance then warn("[Stun Protection Port] Using uploaded colour map + blue emission. For the original packed material, restore, import StunProtectionVFX.rbxmx into ReplicatedStorage.Assets.Instances, then reapply.")end
+print("[Stun Protection Port] Rendered material compiled from uploaded colour map + original emissive mask.")
 print("[Stun Protection Port] Applied "..#pending.." modules and visual template. Backup: "..backup:GetFullName()..". Save, then start a fresh playtest.")

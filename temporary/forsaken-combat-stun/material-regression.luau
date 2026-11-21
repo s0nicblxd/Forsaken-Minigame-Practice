@@ -63,38 +63,72 @@ path('ServerStorage')
 path('ReplicatedStorage/Modules/Hitboxes','ModuleScript').Source='DamageOverride hitResponse == "Ignored"'
 
 local previousNewIndex=mt.__newindex
+local previousIndex=mt.__index
+local mapKeys={ColorMap=true,ColorMapContent=true,EmissiveMaskContent=true,TexturePack=true}
+mt.__index=function(self,key)
+ if rawget(self,"_compiled") and mapKeys[key] then return self._mapValues[key]end
+ return previousIndex(self,key)
+end
 mt.__newindex=function(self,key,value)
- if mode=='maskFail' and key=='EmissiveMaskContent' then mode='normal';error('simulated material assignment failure')end
+ if rawget(self,"_compiled") and mapKeys[key] then error('compiled maps cannot be reassigned')end
  return previousNewIndex(self,key,value)
+end
+local factoryCalls={}
+local oldGetService=methods.GetService
+methods.GetService=function(self,name)
+ if name=='ContentProvider' then return {PreloadAsync=function(_,ids,callback)
+ if mode=='loadFail' then mode='normal';callback(ids[1],'Failure');return end
+ for _,id in ids do callback(id,'Success')end end}end
+ if name=='AssetService' then return {CreateSurfaceAppearanceAsync=function(_,maps)
+  if mode=='maskFail' then mode='normal';error('simulated material creation failure')end
+  table.insert(factoryCalls,maps)
+  local appearance=Instance.new('SurfaceAppearance')
+  appearance._compiled=true
+  appearance._mapValues={ColorMap=maps.ColorMap.Uri,ColorMapContent=maps.ColorMap,EmissiveMaskContent=maps.EmissiveMask,TexturePack='compiled://fresh-material'}
+  return appearance
+ end}end
+ return oldGetService(self,name)
 end
 local Color3={new=function(...)return {...}end,fromRGB=function(...)return {...}end}
 local Content={fromUri=function(uri)return {Uri=uri}end}
-local Enum={AlphaMode={Transparency=1}}
+local Enum={AssetFetchStatus={Success='Success'},AlphaMode={Transparency=1}}
 local parent=path('ReplicatedStorage/Assets/Instances')
 local template=Instance.new('MeshPart');template.Name='StunProtectionVFX';template.MeshId='rbxassetid://76640378318129';template:SetAttribute('StunPortVersion','1.0.0');template.Parent=parent
 local material=Instance.new('SurfaceAppearance');material.Name='SurfaceAppearance';material.ColorMap='rbxassetid://128651191436151';material.TexturePack='rbxassetid://74597329653279';material.EmissiveStrength=6.28;material.Parent=template
 local gameplay=path('ReplicatedStorage/Modules/Statuses','ModuleScript');gameplay.Source='GAMEPLAY MUST NOT CHANGE'
 local function repair()
--- Material-only correction: adds the emissive mask omitted from the first export.
+-- Material-only correction: compile colour + emission maps through Roblox's supported API.
 assert(game:GetService("RunService"):IsStudio() and not game:GetService("RunService"):IsRunning(),"Stop Play before repairing the material.")
 local parent=game.ReplicatedStorage.Assets.Instances
 local target=assert(parent:FindFirstChild("StunProtectionVFX"),"Install the stun-protection port first.")
 assert(target:IsA("MeshPart") and target.MeshId:match("%d+")=="76640378318129","Unexpected stun-protection mesh. Nothing changed.")
-if target:GetAttribute("StunMaterialRepairVersion")=="1.0.1" then print("[Stun Material Repair] Already applied.");return end
+if target:GetAttribute("StunMaterialRepairVersion")=="1.0.2" then print("[Stun Material Repair] Already applied.");return end
 local replacement=target:Clone()
 local ok,err=pcall(function()
- local appearance=assert(replacement:FindFirstChildOfClass("SurfaceAppearance"),"Missing SurfaceAppearance; import the updated StunProtectionVFX.rbxmx template first.")
- if appearance.ColorMap~="rbxassetid://128651191436151" then appearance.ColorMap="rbxassetid://128651191436151" end
- appearance.EmissiveMaskContent=Content.fromUri("rbxassetid://88194642418565")
+ local failed={}
+ game:GetService("ContentProvider"):PreloadAsync({"rbxassetid://128651191436151","rbxassetid://88194642418565"},function(id,status)
+  if status~=Enum.AssetFetchStatus.Success then table.insert(failed,tostring(id).." ("..tostring(status)..")") end
+ end)
+ assert(#failed==0,"Required material image could not load: "..table.concat(failed,", "))
+ local appearance=game:GetService("AssetService"):CreateSurfaceAppearanceAsync({
+  ColorMap=Content.fromUri("rbxassetid://128651191436151"),
+  EmissiveMask=Content.fromUri("rbxassetid://88194642418565")
+ })
+ assert(appearance and appearance:IsA("SurfaceAppearance"),"Roblox did not return a compiled SurfaceAppearance.")
+ appearance.Name="SurfaceAppearance"
  appearance.EmissiveTint=Color3.fromRGB(0,79,255)
  appearance.EmissiveStrength=6.28
  appearance.Color=Color3.new(1,1,1)
  appearance.AlphaMode=Enum.AlphaMode.Transparency
- replacement:SetAttribute("StunPortVersion","1.0.1")
- replacement:SetAttribute("StunMaterialRepairVersion","1.0.1")
+ for _,old in replacement:GetChildren() do if old:IsA("SurfaceAppearance") then old:Destroy() end end
+ appearance.Parent=replacement
+ replacement:SetAttribute("PackedMaterialImported",false)
+ replacement:SetAttribute("MaterialCompiledFromMaps",true)
+ replacement:SetAttribute("StunPortVersion","1.0.2")
+ replacement:SetAttribute("StunMaterialRepairVersion","1.0.2")
  replacement:SetAttribute("EmissiveMaskAsset","rbxassetid://88194642418565")
 end)
-if not ok then replacement:Destroy();error("Material could not be prepared. Nothing changed: "..tostring(err))end
+if not ok then replacement:Destroy();error("Material could not be prepared. Nothing changed. Roblox material creation error: "..tostring(err))end
 local backup=Instance.new("Folder")
 backup.Name="StunProtectionMaterial_Backup_"..os.date("!%Y%m%d_%H%M%S")
 backup.Parent=game.ServerStorage
@@ -103,7 +137,7 @@ ok,err=pcall(function()target.Parent=nil;replacement.Parent=parent end)
 if not ok then replacement:Destroy();target.Parent=parent;backup:Destroy();error("Material repair rolled back: "..tostring(err))end
 target:Destroy()
 pcall(function()game:GetService("ChangeHistoryService"):SetWaypoint("Stun Protection Material")end)
-print("[Stun Material Repair] Added UPD's emissive mask 88194642418565. Backup: "..backup:GetFullName()..". Save and start a fresh playtest. Stun gameplay is unchanged.")
+print("[Stun Material Repair] Rebuilt the rendered material with UPD's emissive mask 88194642418565. Backup: "..backup:GetFullName()..". Save and start a fresh playtest. Stun gameplay is unchanged.")
 
 end
 local function restore()
@@ -118,7 +152,7 @@ local backup=assert(backups[1],"No stun material repair backup found.")
 local saved=assert(backup:FindFirstChild("StunProtectionVFX"),"Missing saved material template.")
 local parent=game.ReplicatedStorage.Assets.Instances
 local target=assert(parent:FindFirstChild("StunProtectionVFX"),"Missing current template.")
-assert(target:GetAttribute("StunMaterialRepairVersion")=="1.0.1","The current template is not the material repair. Nothing restored.")
+assert(target:GetAttribute("StunMaterialRepairVersion")=="1.0.1" or target:GetAttribute("StunMaterialRepairVersion")=="1.0.2","The current template is not the material repair. Nothing restored.")
 local restored=saved:Clone()
 local ok,err=pcall(function()target.Parent=nil;restored.Parent=parent end)
 if not ok then restored:Destroy();target.Parent=parent;error("Material restore rolled back: "..tostring(err))end
@@ -126,19 +160,21 @@ target:Destroy();backup:Destroy()
 print("[Stun Material Repair] Restored the previous material. Save and start a fresh playtest.")
 
 end
-mode='maskFail';local ok=pcall(repair);assert(not ok)
+mode='loadFail';local ok=pcall(repair);assert(not ok and #factoryCalls==0 and parent:FindFirstChild('StunProtectionVFX')==template)
+mode='maskFail';ok=pcall(repair);assert(not ok)
 assert(parent:FindFirstChild('StunProtectionVFX')==template and material.EmissiveMaskContent==nil)
 assert(#game.ServerStorage:GetChildren()==0,'failed preparation must not leave a partial backup')
 repair()
 local installed=parent:FindFirstChild('StunProtectionVFX');local appearance=installed:FindFirstChildOfClass('SurfaceAppearance')
 assert(appearance.EmissiveMaskContent.Uri=='rbxassetid://88194642418565')
+assert(#factoryCalls==1 and factoryCalls[1].ColorMap.Uri=='rbxassetid://128651191436151' and factoryCalls[1].EmissiveMask.Uri=='rbxassetid://88194642418565')
 assert(appearance.EmissiveTint[1]==0 and appearance.EmissiveTint[2]==79 and appearance.EmissiveTint[3]==255)
-assert(appearance.EmissiveStrength==6.28 and appearance.TexturePack=='rbxassetid://74597329653279')
+assert(appearance.EmissiveStrength==6.28 and appearance.TexturePack=='compiled://fresh-material')
 assert(appearance.ColorMap=='rbxassetid://128651191436151' and appearance.AlphaMode==1)
 assert(gameplay.Source=='GAMEPLAY MUST NOT CHANGE')
-local count=#game.ServerStorage:GetChildren();repair();assert(#game.ServerStorage:GetChildren()==count and parent:FindFirstChild('StunProtectionVFX')==installed)
+local count=#game.ServerStorage:GetChildren();repair();assert(#game.ServerStorage:GetChildren()==count and parent:FindFirstChild('StunProtectionVFX')==installed and #factoryCalls==1)
 restore();local restored=parent:FindFirstChild('StunProtectionVFX')
 assert(restored:FindFirstChildOfClass('SurfaceAppearance').EmissiveMaskContent==nil)
 assert(restored.MeshId=='rbxassetid://76640378318129' and restored:GetAttribute('StunMaterialRepairVersion')==nil)
 assert(gameplay.Source=='GAMEPLAY MUST NOT CHANGE')
-print('Material repair: exact mask/colour references, failed-write isolation, repeat apply and restoration passed')
+print('Material rebuild: immutable compiled maps, exact input URIs, failed creation, repeat apply and restoration passed')
