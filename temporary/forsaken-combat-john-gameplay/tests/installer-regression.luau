@@ -3375,7 +3375,7 @@ v1.Information = {
         Header = "DIGITAL FOOTPRINT", 
         Image = "rbxassetid://83206360003394", 
         Quote = "\"John Doe and \226\150\136\226\150\136\226\150\136\226\150\136 Doe are two of Roblox\226\128\153s earliest accounts, as seen by their low user IDs here.\" - Roblox", 
-        Text = ("Cooldown: %*s\n"):format(v1.DigitalFootprintCooldown) .. "<font color=\"rgb(248,217,109)\">John Doe</font> stomps on the ground three times, commanding a shadow to emerge underneath his footsteps as a trap for survivors to walk over.\n" .. "If a survivor steps over the false shadow, then <font color=\"rgb(248,217,109)\">John Doe</font> gets a <b>Speed I</b> buff for 10 seconds and the survivor gets a <b>Corrupted I</b> & <b>Slowness II</b> debuff for 10 seconds.\n" .. "Upon the trap being triggered, <font color=\"rgb(248,217,109)\">John Doe</font> and the survivor who activated it have their auras revealed to each other for 10 seconds.\n" .. "The shadow despawns after contact is made with it or <font color=\"rgb(248,217,109)\">John Doe</font> attempts to place down a fourth shadow.\n" .. ("Digital Footprint is 30% larger. There can only be <b>%*</b> shadows present at once, and attempting to create more will cause the oldest shadow to dissipate.\n"):format(v1.DigitalFootprintLimit)
+        Text = ("Cooldown: %*s\n"):format(v1.DigitalFootprintCooldown) .. "<font color=\"rgb(248,217,109)\">John Doe</font> stomps on the ground three times, commanding a shadow to emerge underneath his footsteps as a trap for survivors to walk over.\n" .. "If a survivor steps over the false shadow, then <font color=\"rgb(248,217,109)\">John Doe</font> gets a <b>Speed I</b> buff for 10 seconds and the survivor gets a <b>Corrupted I</b> & <b>Slowness II</b> debuff for 10 seconds.\n" .. "Upon the trap being triggered, <font color=\"rgb(248,217,109)\">John Doe</font> and the survivor who activated it have their auras revealed to each other for 10 seconds.\n" .. "The shadow despawns after contact is made with it or <font color=\"rgb(248,217,109)\">John Doe</font> attempts to place down a fourth shadow.\n" .. ("Digital Footprint is 30%% larger. There can only be <b>%*</b> shadows present at once, and attempting to create more will cause the oldest shadow to dissipate.\n"):format(v1.DigitalFootprintLimit)
     }, 
     {
         Header = "404 ERROR", 
@@ -4760,7 +4760,7 @@ v1.Information = {
         Header = "DIGITAL FOOTPRINT", 
         Image = "rbxassetid://83206360003394", 
         Quote = "\"John Doe and \226\150\136\226\150\136\226\150\136\226\150\136 Doe are two of Roblox\226\128\153s earliest accounts, as seen by their low user IDs here.\" - Roblox", 
-        Text = ("Cooldown: %*s\n"):format(v1.DigitalFootprintCooldown) .. "<font color=\"rgb(248,217,109)\">John Doe</font> stomps on the ground three times, commanding a shadow to emerge underneath his footsteps as a trap for survivors to walk over.\n" .. "If a survivor steps over the false shadow, then <font color=\"rgb(248,217,109)\">John Doe</font> gets a <b>Speed I</b> buff for 10 seconds and the survivor gets a <b>Corrupted I</b> & <b>Slowness II</b> debuff for 10 seconds.\n" .. "Upon the trap being triggered, <font color=\"rgb(248,217,109)\">John Doe</font> and the survivor who activated it have their auras revealed to each other for 10 seconds.\n" .. "The shadow despawns after contact is made with it or <font color=\"rgb(248,217,109)\">John Doe</font> attempts to place down a fourth shadow.\n" .. ("Digital Footprint is 30% larger. There can only be <b>%*</b> shadows present at once, and attempting to create more will cause the oldest shadow to dissipate.\n"):format(v1.DigitalFootprintLimit)
+        Text = ("Cooldown: %*s\n"):format(v1.DigitalFootprintCooldown) .. "<font color=\"rgb(248,217,109)\">John Doe</font> stomps on the ground three times, commanding a shadow to emerge underneath his footsteps as a trap for survivors to walk over.\n" .. "If a survivor steps over the false shadow, then <font color=\"rgb(248,217,109)\">John Doe</font> gets a <b>Speed I</b> buff for 10 seconds and the survivor gets a <b>Corrupted I</b> & <b>Slowness II</b> debuff for 10 seconds.\n" .. "Upon the trap being triggered, <font color=\"rgb(248,217,109)\">John Doe</font> and the survivor who activated it have their auras revealed to each other for 10 seconds.\n" .. "The shadow despawns after contact is made with it or <font color=\"rgb(248,217,109)\">John Doe</font> attempts to place down a fourth shadow.\n" .. ("Digital Footprint is 30%% larger. There can only be <b>%*</b> shadows present at once, and attempting to create more will cause the oldest shadow to dissipate.\n"):format(v1.DigitalFootprintLimit)
     }, 
     {
         Header = "404 ERROR", 
@@ -7919,7 +7919,7 @@ v1.Information = {
         Header = "DIGITAL FOOTPRINT", 
         Image = "rbxassetid://83206360003394", 
         Quote = "\"John Doe and \226\150\136\226\150\136\226\150\136\226\150\136 Doe are two of Roblox\226\128\153s earliest accounts, as seen by their low user IDs here.\" - Roblox", 
-        Text = ("Cooldown: %*s\n"):format(v1.DigitalFootprintCooldown) .. "<font color=\"rgb(248,217,109)\">John Doe</font> stomps on the ground three times, commanding a shadow to emerge underneath his footsteps as a trap for survivors to walk over.\n" .. "If a survivor steps over the false shadow, then <font color=\"rgb(248,217,109)\">John Doe</font> gets a <b>Speed I</b> buff for 10 seconds and the survivor gets a <b>Corrupted I</b> & <b>Slowness II</b> debuff for 10 seconds.\n" .. "Upon the trap being triggered, <font color=\"rgb(248,217,109)\">John Doe</font> and the survivor who activated it have their auras revealed to each other for 10 seconds.\n" .. "The shadow despawns after contact is made with it or <font color=\"rgb(248,217,109)\">John Doe</font> attempts to place down a fourth shadow.\n" .. ("Digital Footprint is 30% larger. There can only be <b>%*</b> shadows present at once, and attempting to create more will cause the oldest shadow to dissipate.\n"):format(v1.DigitalFootprintLimit)
+        Text = ("Cooldown: %*s\n"):format(v1.DigitalFootprintCooldown) .. "<font color=\"rgb(248,217,109)\">John Doe</font> stomps on the ground three times, commanding a shadow to emerge underneath his footsteps as a trap for survivors to walk over.\n" .. "If a survivor steps over the false shadow, then <font color=\"rgb(248,217,109)\">John Doe</font> gets a <b>Speed I</b> buff for 10 seconds and the survivor gets a <b>Corrupted I</b> & <b>Slowness II</b> debuff for 10 seconds.\n" .. "Upon the trap being triggered, <font color=\"rgb(248,217,109)\">John Doe</font> and the survivor who activated it have their auras revealed to each other for 10 seconds.\n" .. "The shadow despawns after contact is made with it or <font color=\"rgb(248,217,109)\">John Doe</font> attempts to place down a fourth shadow.\n" .. ("Digital Footprint is 30%% larger. There can only be <b>%*</b> shadows present at once, and attempting to create more will cause the oldest shadow to dissipate.\n"):format(v1.DigitalFootprintLimit)
     }, 
     {
         Header = "404 ERROR", 
@@ -7940,7 +7940,7 @@ v1.DigitalFootprintSizeMultiplier=1.3
 v1.CorruptEnergyUnstoppableLinger=1.5
 v1.UnstoppableSpeedBoostDuration=3
 v1.UnstoppableNegativeStatusDurationMultiplier=.5
-return v1;]========],before="11356:6ef0ee7a:cc954821",after="11389:df0607f7:1a86fd24"},
+return v1;]========],before="11356:6ef0ee7a:cc954821",after="11390:0b9ed3dc:9693639b"},
 {path=[========[
 ReplicatedStorage/Modules/StatusEffects/Stunned]========],source=[========[
 -- FCT lifecycle + UPD immunity timing. Existing combat damage behavior is preserved.
@@ -9865,7 +9865,7 @@ v1.Information = {
         Header = "DIGITAL FOOTPRINT", 
         Image = "rbxassetid://83206360003394", 
         Quote = "\"John Doe and \226\150\136\226\150\136\226\150\136\226\150\136 Doe are two of Roblox\226\128\153s earliest accounts, as seen by their low user IDs here.\" - Roblox", 
-        Text = ("Cooldown: %*s\n"):format(v1.DigitalFootprintCooldown) .. "<font color=\"rgb(248,217,109)\">John Doe</font> stomps on the ground three times, commanding a shadow to emerge underneath his footsteps as a trap for survivors to walk over.\n" .. "If a survivor steps over the false shadow, then <font color=\"rgb(248,217,109)\">John Doe</font> gets a <b>Speed I</b> buff for 10 seconds and the survivor gets a <b>Corrupted I</b> & <b>Slowness II</b> debuff for 10 seconds.\n" .. "Upon the trap being triggered, <font color=\"rgb(248,217,109)\">John Doe</font> and the survivor who activated it have their auras revealed to each other for 10 seconds.\n" .. "The shadow despawns after contact is made with it or <font color=\"rgb(248,217,109)\">John Doe</font> attempts to place down a fourth shadow.\n" .. ("Digital Footprint is 30% larger. There can only be <b>%*</b> shadows present at once, and attempting to create more will cause the oldest shadow to dissipate.\n"):format(v1.DigitalFootprintLimit)
+        Text = ("Cooldown: %*s\n"):format(v1.DigitalFootprintCooldown) .. "<font color=\"rgb(248,217,109)\">John Doe</font> stomps on the ground three times, commanding a shadow to emerge underneath his footsteps as a trap for survivors to walk over.\n" .. "If a survivor steps over the false shadow, then <font color=\"rgb(248,217,109)\">John Doe</font> gets a <b>Speed I</b> buff for 10 seconds and the survivor gets a <b>Corrupted I</b> & <b>Slowness II</b> debuff for 10 seconds.\n" .. "Upon the trap being triggered, <font color=\"rgb(248,217,109)\">John Doe</font> and the survivor who activated it have their auras revealed to each other for 10 seconds.\n" .. "The shadow despawns after contact is made with it or <font color=\"rgb(248,217,109)\">John Doe</font> attempts to place down a fourth shadow.\n" .. ("Digital Footprint is 30%% larger. There can only be <b>%*</b> shadows present at once, and attempting to create more will cause the oldest shadow to dissipate.\n"):format(v1.DigitalFootprintLimit)
     }, 
     {
         Header = "404 ERROR", 
@@ -9886,7 +9886,7 @@ v1.DigitalFootprintSizeMultiplier=1.3
 v1.CorruptEnergyUnstoppableLinger=1.5
 v1.UnstoppableSpeedBoostDuration=3
 v1.UnstoppableNegativeStatusDurationMultiplier=.5
-return v1;]========],before="11426:1e3114dd:e18edd78",after="11459:5b0d46ba:295d758d"},
+return v1;]========],before="11426:1e3114dd:e18edd78",after="11460:088deaff:b5c40572"},
 }
 local pending={}
 for _,plan in ipairs(plans) do

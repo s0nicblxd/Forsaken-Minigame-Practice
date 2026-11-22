@@ -22,6 +22,6 @@ Existing skin overrides remain existing overrides; no custom skin implementation
 
 Preflight checks exact prior Sources, module types, Source size and content integrity before mutation. Failed writes roll back. Repeated application is a no-op. Backups are JohnGameplay_Backup folders in ServerStorage. Local tests cannot verify Roblox rendering, asset permissions or real multiplayer latency.
 
-## Local validation
+## Tooltip repair
 
-All 12 changed modules and both Command Bar scripts compile with the Luau CLI. The standalone tests in `tests/` exercise real Statuses/Stunned integration, prior Sentinel immunity behavior, Unstoppable windows and debuff refreshes, Corrupt Energy lifecycle/Retract, and transactional install/restore. Run each with `luau tests/<name>.luau`. Roblox rendering, media permissions and multiplayer latency still require Studio.
+If the earlier installer was already applied and Config fails with `invalid option %l to format`, stop Play and run `Repair-JohnDoe-Tooltip.command.luau`, save, then start a fresh playtest. It escapes the literal percent in the Digital Footprint tooltip in both stores, with preflight checks and Config backups. The main installer now contains the corrected tooltip. `tests/config-regression.luau` executes both complete Configs on normal and special days, including every formatted tooltip.
