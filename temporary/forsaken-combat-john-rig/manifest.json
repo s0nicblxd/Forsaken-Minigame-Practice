@@ -1,0 +1,34 @@
+{
+  "JohnDoeUPD.rbxm": {
+    "bytes": 143865,
+    "sha256": "7e551b0b2aa4bb84056e068ac806344584d58223d9f0c0317a8083dbd1adba7f"
+  },
+  "Apply-JohnDoe-Rig.command.luau": {
+    "bytes": 148553,
+    "sha256": "1af6f8e7068ba1fc27bd5c62bcaf4893fc78d7917f531a5bbe075addea8ec35d"
+  },
+  "Config.luau": {
+    "bytes": 11201,
+    "sha256": "96083ee0b521f35d1b34466235aa5653da632d1f235dda19af5b4a2fe381722e"
+  },
+  "Restore-JohnDoe-Rig.command.luau": {
+    "bytes": 2519,
+    "sha256": "db18943e54d738fdc6fa3ff05046cfe3db4a4748076d749050f3214c95dd90bd"
+  },
+  "RigAlignment.luau": {
+    "bytes": 1566,
+    "sha256": "480891c80578589a643f87663e8971a8a2195d0d96811d50017ec6bf9b313b73"
+  },
+  "Behavior.luau": {
+    "bytes": 57265,
+    "sha256": "40a12481e70b353668514d6651ff9d2e32fe176e553ae605d9ddca556001c8f9"
+  },
+  "tests/installer.spec.luau": {
+    "bytes": 443434,
+    "sha256": "17dced7acb127eaf4c78a7b8a37df0539a5e69c9b0f3f624bb4859dc08c197af"
+  },
+  "tests/alignment.spec.luau": {
+    "bytes": 3722,
+    "sha256": "d4826506349d7a9445e54eb6d5e6a43bb7a04b7518d9c2c5ddebda7aba625321"
+  }
+}
