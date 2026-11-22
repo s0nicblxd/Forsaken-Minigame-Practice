@@ -1,0 +1,54 @@
+{
+  "Config.luau": {
+    "bytes": 11356,
+    "sha256": "459bd3a3f3eacbd47b8a2dcff1460dc164746685b28398fdd1fa08195eccb1e9"
+  },
+  "CorruptEnergyController.luau": {
+    "bytes": 92,
+    "sha256": "2fd2b8a83e0c1d1d8c3879d7f00bd09167b680121316a63cb0470f69a4c53e93"
+  },
+  "Server.luau": {
+    "bytes": 8245,
+    "sha256": "ba4f9c7614019a6a45a884edf728bfb21eae57cd706cb05c1022aa5cc23c9930"
+  },
+  "Client.luau": {
+    "bytes": 3121,
+    "sha256": "54d4d377f76f30f83adfb1081dd530e7679c7aae8ab4879cb6bef0eadf811c58"
+  },
+  "Apply-JohnDoe-Corrupt-Energy.command.luau": {
+    "bytes": 167842,
+    "sha256": "f364806415bcf97725c63af1bf42317908b2956a450e010bd20025ae8a3f77e1"
+  },
+  "Behavior.luau": {
+    "bytes": 44616,
+    "sha256": "4660176c0c652ce1945a1b3c5d952cf428a1d485a94cf6426fb9cf99692bdd43"
+  },
+  "Hitboxes.luau": {
+    "bytes": 27086,
+    "sha256": "1e49d77c6e795035b6dbe855a4a5cb8bb984c0f399ac1b96b92241afc062fd20"
+  },
+  "Rules.luau": {
+    "bytes": 294,
+    "sha256": "92b24c1905f37732032fe0b5ff3c13ec4fea466131fa025edf2148ad51fa5457"
+  },
+  "Restore-JohnDoe-Corrupt-Energy.command.luau": {
+    "bytes": 1902,
+    "sha256": "b27afd1d5a7f6b05669815eff6cd09c81c45d79b72ec29d605922bb34bc0b40c"
+  },
+  "tests/installer.spec.luau": {
+    "bytes": 503821,
+    "sha256": "a277921ec0690a14cb3b645c78f8590f0030cf099dbabf1b36a70c2f61633433"
+  },
+  "tests/client.spec.luau": {
+    "bytes": 5790,
+    "sha256": "a086b4515336382e55e4b7416a45e8ed83cfbce024de6a27d1315517a95c6d29"
+  },
+  "tests/server.spec.luau": {
+    "bytes": 15902,
+    "sha256": "89818636ce9c5e3af065d0a339ff783d8b34b24014d58179f362c8aa1cf8e86d"
+  },
+  "tests/hitbox.spec.luau": {
+    "bytes": 30662,
+    "sha256": "a168a5682b6c1a9368482b9783c668b89b10ba02507fad16328d75e24a838d6e"
+  }
+}
