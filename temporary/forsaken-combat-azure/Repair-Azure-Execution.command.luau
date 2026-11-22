@@ -171,13 +171,60 @@ local function find(path)
  for name in path:gmatch("[^/]+") do current=current and current:FindFirstChild(name) end
  return current
 end
+-- Compare callback tokens, not formatting. Strings and all executable tokens remain exact.
+local function tokens(source,start,limit)
+ local result={};local i=start or 1
+ local function longEnd(at)
+  local first,last,equals=source:find("%[(=*)%[",at)
+  if first~=at then return end
+  local _,finish=source:find("]"..equals.."]",last+1,true)
+  assert(finish,"Unterminated long string/comment in Azure callback. Nothing changed.")
+  return finish
+ end
+ while i<=#source and (not limit or #result<limit) do
+  local c=source:sub(i,i)
+  if c:match("%s") then i+=1
+  elseif source:sub(i,i+1)=="--" then
+   local finish=longEnd(i+2)
+   if finish then i=finish+1 else local newline=source:find("\n",i+2,true);i=newline and newline+1 or #source+1 end
+  else
+   local first=i;local finish
+   if c=='"' or c=="'" or c=="`" then
+    local quote=c;i+=1
+    while i<=#source do
+     local nextChar=source:sub(i,i)
+     if nextChar=="\\" then i+=2 elseif nextChar==quote then finish=i;i+=1;break else i+=1 end
+    end
+    assert(finish,"Unterminated quoted text in Azure callback. Nothing changed.")
+   elseif c=="[" and longEnd(i) then finish=longEnd(i);i=finish+1
+   else
+    local a,b=source:find("[%a_][%w_]*",i)
+    if a~=i then a,b=source:find("%d[%w_%.]*",i) end
+    finish=a==i and b or i;i=finish+1
+   end
+   table.insert(result,{text=source:sub(first,finish),first=first,last=finish})
+  end
+ end
+ return result
+end
+local function callbackRange(source,expected)
+ local start=source:find("function%s+u77%.OnExecution%s*%(")
+ if not start then return end
+ assert(not source:find("function%s+u77%.OnExecution%s*%(",start+1),"Multiple Azure execution callbacks found. Nothing changed.")
+ local wanted=tokens(expected)
+ local actual=tokens(source,start,#wanted)
+ if #actual~=#wanted then return end
+ for i,token in ipairs(wanted) do if actual[i].text~=token.text then return end end
+ return actual[1].first,actual[#actual].last
+end
+
 local pending={}
 for _,path in {"ReplicatedStorage/Assets/Killers/Azure/Behavior","ServerStorage/Assets/Killers/Azure/Behavior"} do
  local target=find(path)
  if target and target:IsA("ModuleScript") then
   local before=target.Source
-  local first,last=before:find(oldCallback,1,true)
-  local already=before:find(newCallback,1,true)
+  local first,last=callbackRange(before,oldCallback)
+  local already=callbackRange(before,newCallback)
   if first or already then
    local existing=target:FindFirstChild("ExecutionCompatibility")
    assert(not existing or existing:IsA("ModuleScript"),"Unexpected execution helper at "..path..". Nothing changed.")
@@ -185,7 +232,7 @@ for _,path in {"ReplicatedStorage/Assets/Killers/Azure/Behavior","ServerStorage/
    assert(#after<200000 and #helperSource<200000,"A module exceeds Studio's Source limit. Nothing changed.")
    if first or not existing or existing.Source~=helperSource then table.insert(pending,{target=target,path=path,before=before,after=after,existing=existing,oldHelper=existing and existing.Source}) end
   else
-   error("Azure execution callback differs from the supported port: "..path..". Nothing changed; send the current Behavior source for a matching repair.")
+   error("Azure execution callback has different executable code from the supported port: "..path..". Nothing changed; send the current Behavior source for a matching repair.")
   end
  end
 end
