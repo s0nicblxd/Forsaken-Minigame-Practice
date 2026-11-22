@@ -87,3 +87,5 @@ The repair replaces only the recognized execution callback and adds its `Executi
 Local regression checks cover missing blade/UI, legacy cosmetic behavior, mid-execution deletion, already-dead victims, generic timing, dual-copy installation, preservation of unrelated source, repeated install, restore, and injected Source write failures. Studio animation/rendering tests remain necessary in the user's place.
 
 The execution repair now compares executable tokens rather than raw callback text. It accepts indentation, blank-line, line-ending, and comment differences while still rejecting changes to executable code or quoted strings. Restoration preserves the exact original source formatting.
+
+The execution repair recognizes both the newer FCF-derived `u77.OnExecution` callback and the original FCT `t9.OnExecution` callback. ReplicatedStorage and ServerStorage are checked independently, so a newer replicated copy and older stored copy can be repaired together without replacing their unrelated code. Mixed-version install, repeat application and exact restoration are regression-tested.

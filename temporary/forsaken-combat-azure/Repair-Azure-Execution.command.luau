@@ -208,27 +208,135 @@ local function tokens(source,start,limit)
  return result
 end
 local function callbackRange(source,expected)
- local start=source:find("function%s+u77%.OnExecution%s*%(")
- if not start then return end
- assert(not source:find("function%s+u77%.OnExecution%s*%(",start+1),"Multiple Azure execution callbacks found. Nothing changed.")
  local wanted=tokens(expected)
+ local owner=wanted[2].text
+ local pattern="function%s+"..owner.."%.OnExecution%s*%("
+ local start=source:find(pattern)
+ if not start then return end
+ assert(not source:find(pattern,start+1),"Multiple Azure execution callbacks found. Nothing changed.")
  local actual=tokens(source,start,#wanted)
  if #actual~=#wanted then return end
  for i,token in ipairs(wanted) do if actual[i].text~=token.text then return end end
  return actual[1].first,actual[#actual].last
 end
 
+local variants={
+{before=oldCallback,after=newCallback},
+{before=[========[
+function t9.OnExecution(_: {[any]: any}, p203, p204) -- line: 4256
+	-- upvalues: delay (copy), TweenService (copy), Ragdolls (copy)
+	if not p203.Rig then
+		return
+	end
+
+	if p204.Name == "TwoTime" then
+		local MassInfectionShockwaveVignette = p203.Config.Instances.MassInfectionShockwaveVignette
+		local v724 = MassInfectionShockwaveVignette and MassInfectionShockwaveVignette:Clone()
+
+		v724.Name = "AZUREQUICKSHINE1"
+		v724.Parent = p203.Player.PlayerGui
+
+		local ImageLabel = v724:FindFirstChildOfClass("ImageLabel")
+
+		ImageLabel.ImageTransparency = 1
+		p204:FindFirstChild("GhostFire"):FindFirstChild("GhostfireBlade").Transparency = 0
+		delay(1.3333333333333333, function() -- line: 4280
+			-- upvalues: MassInfectionShockwaveVignette (copy), TweenService (copy), ImageLabel (copy)
+			if MassInfectionShockwaveVignette then
+				TweenService:Create(ImageLabel, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+					ImageTransparency = 0.9
+				}):Play()
+				task.delay(0.2, function() -- line: 4287
+					-- upvalues: TweenService (copy), ImageLabel (copy)
+					TweenService:Create(ImageLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+						ImageTransparency = 1
+					}):Play()
+				end)
+			end
+		end)
+		delay(2.65, function() -- line: 4297
+			-- upvalues: MassInfectionShockwaveVignette (copy), ImageLabel (copy), TweenService (copy), v724 (copy), p204 (copy)
+			if MassInfectionShockwaveVignette then
+				ImageLabel.ImageTransparency = 1
+				TweenService:Create(ImageLabel, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut), {
+					ImageTransparency = 0.9
+				}):Play()
+				task.delay(0.2, function() -- line: 4305
+					-- upvalues: TweenService (copy), ImageLabel (copy)
+					TweenService:Create(ImageLabel, TweenInfo.new(0.75, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+						ImageTransparency = 1
+					}):Play()
+				end)
+				task.delay(1, function() -- line: 4312
+					-- upvalues: v724 (copy)
+					v724:Destroy()
+				end)
+			end
+
+			local Humanoid = p204:FindFirstChildOfClass("Humanoid")
+
+			if Humanoid then
+				Humanoid.Health = 0.01
+			end
+		end)
+		delay(3.216666666666667, function() -- line: 4324
+			-- upvalues: Ragdolls (copy), p204 (copy)
+			Ragdolls.AddProfile(p204, {
+				Velocity = Vector3.new(0, 0, 0)
+			})
+
+			local Humanoid = p204:FindFirstChildOfClass("Humanoid")
+
+			if Humanoid then
+				Humanoid.BreakJointsOnDeath = false
+				Humanoid.Health = 0
+			end
+		end)
+
+		return
+	end
+
+	local v726 = p203.Rig.PrimaryPart.CFrame.LookVector * 33
+
+	delay(2.783333333333333, function() -- line: 4342
+		-- upvalues: Ragdolls (copy), p204 (copy), v726 (copy)
+		Ragdolls.AddProfile(p204, {
+			Velocity = v726,
+			KillEffects = {
+				Explode = true
+			}
+		})
+
+		local Humanoid = p204:FindFirstChildOfClass("Humanoid")
+
+		if Humanoid then
+			Humanoid.BreakJointsOnDeath = false
+			Humanoid.Health = 0
+		end
+	end)
+end
+]========],after=[========[
+function t9.OnExecution(_,actor,victim)
+ return require(script.ExecutionCompatibility).Run(actor,victim)
+end;
+]========]}
+}
+
 local pending={}
 for _,path in {"ReplicatedStorage/Assets/Killers/Azure/Behavior","ServerStorage/Assets/Killers/Azure/Behavior"} do
  local target=find(path)
  if target and target:IsA("ModuleScript") then
   local before=target.Source
-  local first,last=callbackRange(before,oldCallback)
-  local already=callbackRange(before,newCallback)
+  local first,last,already,replacement
+  for _,variant in ipairs(variants) do
+   first,last=callbackRange(before,variant.before)
+   already=callbackRange(before,variant.after)
+   if first or already then replacement=variant.after;break end
+  end
   if first or already then
    local existing=target:FindFirstChild("ExecutionCompatibility")
    assert(not existing or existing:IsA("ModuleScript"),"Unexpected execution helper at "..path..". Nothing changed.")
-   local after=first and before:sub(1,first-1)..newCallback..before:sub(last+1) or before
+   local after=first and before:sub(1,first-1)..replacement..before:sub(last+1) or before
    assert(#after<200000 and #helperSource<200000,"A module exceeds Studio's Source limit. Nothing changed.")
    if first or not existing or existing.Source~=helperSource then table.insert(pending,{target=target,path=path,before=before,after=after,existing=existing,oldHelper=existing and existing.Source}) end
   else
