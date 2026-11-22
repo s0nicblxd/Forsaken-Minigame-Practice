@@ -196,7 +196,7 @@ local function step(a)
 end
 function Server.Cast(a)
  if not alive(a) or blocked(a) then return {Cancelled=true} end
- if Server.CanRetract(a) then clear(a,false);return {Retract=true} end
+ if Server.CanRetract(a) then clear(a,false);return {Retract=true,Cooldown=0} end
  if a.JDCECast and a.JDCECast.casting then return {Cancelled=true} end
  clear(a,true)
  a.JDCESerial=(a.JDCESerial or 0)+1
@@ -285,7 +285,7 @@ assert(a:CanUseAbility("CorruptEnergy") and a.Cooldowns.CorruptEnergy==18)
 a.AbilityDisablers.Other=true;assert(not a:CanUseAbility("CorruptEnergy"));a.AbilityDisablers.Other=nil
 a.Rig:SetAttribute("Stunned",true);assert(not a:CanUseAbility("CorruptEnergy"));a.Rig:SetAttribute("Stunned",nil)
 local cast=a.JDCECast;local result=Server.Cast(a)
-assert(result.Retract and not Server.CanRetract(a) and #a.CurrentSpikes==0 and a.Cooldowns.CorruptEnergy==18)
+assert(result.Retract and result.Cooldown==0 and not Server.CanRetract(a) and #a.CurrentSpikes==0 and a.Cooldowns.CorruptEnergy==18)
 for _,box in ipairs(boxes.items)do assert(box.cancelled)end
 advance(20);assert(#a.CurrentSpikes==0,"old summons returned after retraction")
 -- A new cast gets its own counter and unique IDs.

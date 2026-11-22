@@ -14,6 +14,11 @@ The installer checks exact supported Sources, Source size and integrity, makes `
 
 Studio checks: cast on flat ground; verify 31 colliders; overlap one target with several spikes and confirm no more than two base impacts; test a fresh cast resets its counter; press Retract during cooldown and verify the remaining cooldown is preserved; stun during windup/summoning; kill/reset John during a cast; check another character's normal damage and Reworked Guest's block. Local tests cannot verify Studio rendering, audio permissions or real network timing.
 
-The original windup camera-shake timings and CorruptEnergyStart cosmetic hook are retained. Exceptional skins that define their own CorruptEnergy callback (for example #BoomerFormulaJohnDoe) keep that custom implementation and need a separate compatibility pass.
 
-Local verification includes the actual shared Hitboxes module: a third filtered spike causes no health loss, TimesHit increment, block reaction or hit callback; an ordinary unfiltered hit still works. Server, native-hotbar, installer/restore and rollback regressions are shipped in tests/ for the Luau CLI. Real Studio/network/visual testing is still required.
+## Retract cooldown confirmation repair
+
+If phase 2 is already installed, stop Play and run **Repair-Retract-Cooldown.command.luau**, save, then restart Play. It updates only the two server controllers. The old confirmation lacked an explicit cooldown override; when the client received the confirmation after JDCanRetract changed to false, its normal ability handler fell back to 18s and restarted the display timer. Returning `{Retract=true,Cooldown=0}` preserves that existing timer regardless of packet ordering. The authoritative server expiry was already retained.
+
+Fresh phase-two installers include this correction. The targeted repair makes JohnRetractCooldown_Backup folders and has its own Restore-Retract-Cooldown command. If undoing the entire older phase-two installation after applying this repair, undo the targeted repair first so its original full-patch fingerprint matches again.
+
+Regression coverage reproduces the reset in FCT's actual confirmation-handler code, tests the fix with either replicated-state ordering, retains partial timers and does not recreate expired timers. The real server dispatcher is also checked for preserving expiry during Retract while still starting ordinary casts at 18s. Paired-controller installation, repeat application, restore and rollback pass.

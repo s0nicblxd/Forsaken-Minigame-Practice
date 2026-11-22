@@ -7,17 +7,25 @@
     "bytes": 92,
     "sha256": "2fd2b8a83e0c1d1d8c3879d7f00bd09167b680121316a63cb0470f69a4c53e93"
   },
+  "Restore-Retract-Cooldown.command.luau": {
+    "bytes": 9511,
+    "sha256": "c13515b10d447f2ffc8cb961a253986642519c8d2ccefbe8c3c4a6f3649ec016"
+  },
+  "Repair-Retract-Cooldown.command.luau": {
+    "bytes": 18343,
+    "sha256": "46b3cc51c25836a5fc504b0f613459e8afdda7b714143d7bfaf41f58496648c9"
+  },
   "Server.luau": {
-    "bytes": 8245,
-    "sha256": "ba4f9c7614019a6a45a884edf728bfb21eae57cd706cb05c1022aa5cc23c9930"
+    "bytes": 8256,
+    "sha256": "0d58bb9734e8b73fb0e9ba26fd6d4e3099fa7cea6e01d525ee3dd2d958f5ea5e"
   },
   "Client.luau": {
     "bytes": 3121,
     "sha256": "54d4d377f76f30f83adfb1081dd530e7679c7aae8ab4879cb6bef0eadf811c58"
   },
   "Apply-JohnDoe-Corrupt-Energy.command.luau": {
-    "bytes": 167842,
-    "sha256": "f364806415bcf97725c63af1bf42317908b2956a450e010bd20025ae8a3f77e1"
+    "bytes": 167864,
+    "sha256": "e436ad304f49ecb4911ab8c9d3921bfc994c92124c0f3444334b626e91cfee30"
   },
   "Behavior.luau": {
     "bytes": 44616,
@@ -36,16 +44,24 @@
     "sha256": "b27afd1d5a7f6b05669815eff6cd09c81c45d79b72ec29d605922bb34bc0b40c"
   },
   "tests/installer.spec.luau": {
-    "bytes": 503821,
-    "sha256": "a277921ec0690a14cb3b645c78f8590f0030cf099dbabf1b36a70c2f61633433"
+    "bytes": 503865,
+    "sha256": "34f885051edb529fd3f297f872106b42db97c9735777f3c848a73f7b8861ed72"
+  },
+  "tests/cooldown-confirmation.spec.luau": {
+    "bytes": 2719,
+    "sha256": "878329d003c715955fb1728b8a0b067cd090bf792f122b984ffd2427dff894b5"
   },
   "tests/client.spec.luau": {
     "bytes": 5790,
     "sha256": "a086b4515336382e55e4b7416a45e8ed83cfbce024de6a27d1315517a95c6d29"
   },
+  "tests/cooldown-repair.spec.luau": {
+    "bytes": 41118,
+    "sha256": "58bf87658df62a4fb5ee47301f662c2ae45c5fa1e8dca969240cec9e542b47f7"
+  },
   "tests/server.spec.luau": {
-    "bytes": 15902,
-    "sha256": "89818636ce9c5e3af065d0a339ff783d8b34b24014d58179f362c8aa1cf8e86d"
+    "bytes": 15936,
+    "sha256": "d1d946c0f9987667614553cc0df0eb2e66a7e3598f97e22402fe444eae98f8d4"
   },
   "tests/hitbox.spec.luau": {
     "bytes": 30662,

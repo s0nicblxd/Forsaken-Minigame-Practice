@@ -4519,7 +4519,7 @@ local function step(a)
 end
 function Server.Cast(a)
  if not alive(a) or blocked(a) then return {Cancelled=true} end
- if Server.CanRetract(a) then clear(a,false);return {Retract=true} end
+ if Server.CanRetract(a) then clear(a,false);return {Retract=true,Cooldown=0} end
  if a.JDCECast and a.JDCECast.casting then return {Cancelled=true} end
  clear(a,true)
  a.JDCESerial=(a.JDCESerial or 0)+1
@@ -5859,7 +5859,7 @@ local function step(a)
 end
 function Server.Cast(a)
  if not alive(a) or blocked(a) then return {Cancelled=true} end
- if Server.CanRetract(a) then clear(a,false);return {Retract=true} end
+ if Server.CanRetract(a) then clear(a,false);return {Retract=true,Cooldown=0} end
  if a.JDCECast and a.JDCECast.casting then return {Cancelled=true} end
  clear(a,true)
  a.JDCESerial=(a.JDCESerial or 0)+1
@@ -7825,7 +7825,7 @@ local function step(a)
 end
 function Server.Cast(a)
  if not alive(a) or blocked(a) then return {Cancelled=true} end
- if Server.CanRetract(a) then clear(a,false);return {Retract=true} end
+ if Server.CanRetract(a) then clear(a,false);return {Retract=true,Cooldown=0} end
  if a.JDCECast and a.JDCECast.casting then return {Cancelled=true} end
  clear(a,true)
  a.JDCESerial=(a.JDCESerial or 0)+1
@@ -7864,7 +7864,7 @@ function Server.Destroyed(a)
  if a.CanUseAbility==a.JDCECanUseWrapper then a.CanUseAbility=a.JDCEOriginalCanUse end
 end
 return Server
-]========],before=false,after="8245:ae90ee42:a8b0ecab"},
+]========],before=false,after="8256:bef18f60:1b128a83"},
 {path=[========[
 ReplicatedStorage/Assets/Killers/JohnDoe/Config]========],source=[========[
 -- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw
@@ -9874,7 +9874,7 @@ local function step(a)
 end
 function Server.Cast(a)
  if not alive(a) or blocked(a) then return {Cancelled=true} end
- if Server.CanRetract(a) then clear(a,false);return {Retract=true} end
+ if Server.CanRetract(a) then clear(a,false);return {Retract=true,Cooldown=0} end
  if a.JDCECast and a.JDCECast.casting then return {Cancelled=true} end
  clear(a,true)
  a.JDCESerial=(a.JDCESerial or 0)+1
@@ -9913,7 +9913,7 @@ function Server.Destroyed(a)
  if a.CanUseAbility==a.JDCECanUseWrapper then a.CanUseAbility=a.JDCEOriginalCanUse end
 end
 return Server
-]========],before=false,after="8245:ae90ee42:a8b0ecab"},
+]========],before=false,after="8256:bef18f60:1b128a83"},
 {path=[========[
 ServerStorage/Assets/Killers/JohnDoe/Config]========],source=[========[
 -- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw

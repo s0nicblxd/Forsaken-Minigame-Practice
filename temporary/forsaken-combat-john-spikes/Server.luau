@@ -131,7 +131,7 @@ local function step(a)
 end
 function Server.Cast(a)
  if not alive(a) or blocked(a) then return {Cancelled=true} end
- if Server.CanRetract(a) then clear(a,false);return {Retract=true} end
+ if Server.CanRetract(a) then clear(a,false);return {Retract=true,Cooldown=0} end
  if a.JDCECast and a.JDCECast.casting then return {Cancelled=true} end
  clear(a,true)
  a.JDCESerial=(a.JDCESerial or 0)+1
