@@ -2598,8 +2598,11 @@ local function fixture()
   for _,name in {"Config","Behavior"} do local m=child(root,name,"ModuleScript");m.Source=originals[service.."/Assets/Killers/JohnDoe/"..name] end
   local rig=child(root,"Rig","Model");rig.ModelScale=1;rig:SetAttribute("Original",true)
   local body=child(rig,"HumanoidRootPart","Part");body.Size=Vector3.new(2,2,1)
+  child(rig,"Humanoid","Humanoid");local leg=child(rig,"Left Leg","Part");leg.Size=Vector3.new(1,2,1)
+  local arm=child(rig,"Spike Arm","MeshPart");arm.Size=Vector3.new(1.6,4.1,1.4)
  end
  local query=child(path("ReplicatedStorage/Assets/Instances"),"QueryHitbox","Part");query.Size=Vector3.new(4,6,3)
+ local collision=child(path("ReplicatedStorage/Assets/Instances"),"CollisionHitbox","Part");collision.Size=Vector3.new(2,4,2)
  local payload=child(workspace,"JohnDoeUPD");local rig=child(payload,"MainRig","Model")
  local root=child(rig,"HumanoidRootPart","Part");root.Size=Vector3.new(2,2,1)
  local leg=child(rig,"Left Leg","Part");leg.Size=Vector3.new(1,2,1)
@@ -2608,8 +2611,8 @@ local function fixture()
  return game.ReplicatedStorage.Assets.Killers.JohnDoe,game.ServerStorage.Assets.Killers.JohnDoe
 end
 local function install()
--- John Doe phase 1: UPD base rig, adjustable height, collision and ground alignment.
--- Import JohnDoeUPD.rbxm into Workspace first. Stop Play.
+-- John Doe phase 1: preserve the fct4 appearance, adjustable height and alignment.
+-- No model import. Recovers the original appearance from the first phase-one backup if necessary.
 local SCALE=1.25 -- INITIAL CALIBRATION, not a confirmed official starting scale; edit and rerun to adjust.
 assert(game:GetService("RunService"):IsStudio() and not game:GetService("RunService"):IsRunning(),"Stop Play before installing John Doe's rig.")
 assert(type(SCALE)=="number" and SCALE>=1 and SCALE<=1.6,"Choose a calibration scale between 1.0 and 1.6.")
@@ -5236,12 +5239,22 @@ end
 local ready=true
 for _,service in {"ReplicatedStorage","ServerStorage"} do
  local root=assert(find(service.."/Assets/Killers/JohnDoe"),"Missing John Doe asset folder.")
- if root:GetAttribute("JohnDoeRigPhase")~="1.0.0" or root.Config:GetAttribute("JohnDoeRigScale")~=SCALE then ready=false end
+ if root:GetAttribute("JohnDoeRigPhase")~="1.0.0" or root.Config:GetAttribute("JohnDoeRigScale")~=SCALE or not root:FindFirstChild("Rig") or root.Rig:GetAttribute("JohnDoeAppearanceSource")~="FCT4" then ready=false end
 end
 if ready then print("[John Doe rig] Already installed at scale "..SCALE);return end
-local payload=assert(workspace:FindFirstChild("JohnDoeUPD"),"Import JohnDoeUPD.rbxm directly under Workspace first. Nothing changed.")
-assert(payload:FindFirstChild("MainRig") and payload.MainRig:IsA("Model"),"Missing imported UPD MainRig. Nothing changed.")
-assert(payload:FindFirstChild("Config") and payload.Config:FindFirstChild("CollisionHitbox"),"Missing imported collision template. Nothing changed.")
+local function originalRig(path,current)
+ if current and (current:GetAttribute("JohnDoeRigPhase")~="1.0.0" or current:GetAttribute("JohnDoeAppearanceSource")=="FCT4") then return current end
+ local backups={}
+ for _,folder in game.ServerStorage:GetChildren() do if folder.Name:match("^JohnDoeRig_Backup_") then table.insert(backups,folder) end end
+ table.sort(backups,function(a,b)return a.Name<b.Name end)
+ for _,folder in ipairs(backups) do
+  for _,saved in folder:GetChildren() do
+   if saved:IsA("Model") and saved:GetAttribute("JohnRigOriginalPath")==path.."/Rig" and saved:GetAttribute("JohnDoeRigPhase")~="1.0.0" then return saved end
+  end
+ end
+ error("Original John model backup is missing at "..path..". Nothing changed; send the current place to recover the correct appearance.")
+end
+local defaultCollision=assert(find("ReplicatedStorage/Assets/Instances/CollisionHitbox"),"Missing FCT collision template. Nothing changed.")
 local defaultQuery=assert(find("ReplicatedStorage/Assets/Instances/QueryHitbox"),"Missing FCT query hitbox. Nothing changed.")
 local profiles={}
 local function scaledOffset(template,fallback)
@@ -5254,9 +5267,10 @@ local ok,err=pcall(function()
   local root=find(path);local config=root.Config
   local profile={root=root,config=config,path=path,oldScale=config:GetAttribute("JohnDoeRigScale"),oldVersion=root:GetAttribute("JohnDoeRigPhase"),oldRig=root:FindFirstChild("Rig"),oldCollision=config:FindFirstChild("JohnDoeRigCollision"),oldQuery=config:FindFirstChild("JohnDoeRigQuery")}
   table.insert(profiles,profile)
-  local rig=payload.MainRig:Clone();profile.rig=rig;rig.Name="Rig"
-  rig.PrimaryPart=assert(rig:FindFirstChild("HumanoidRootPart"),"UPD rig has no HumanoidRootPart")
-  local hum=assert(rig:FindFirstChildOfClass("Humanoid"),"UPD rig has no Humanoid")
+  local rig=originalRig(path,profile.oldRig):Clone();profile.rig=rig;rig.Name="Rig"
+  rig:SetAttribute("JohnRigOriginalPath",nil);rig:SetAttribute("JohnRigWasCreated",nil);rig:SetAttribute("JohnDoeAppearanceSource","FCT4")
+  rig.PrimaryPart=assert(rig:FindFirstChild("HumanoidRootPart"),"John rig has no HumanoidRootPart")
+  local hum=assert(rig:FindFirstChildOfClass("Humanoid"),"John rig has no Humanoid")
   if not hum:FindFirstChildOfClass("Animator") then Instance.new("Animator",hum) end
   for _,item in rig:GetDescendants() do
    assert(not item:IsA("LuaSourceContainer"),"Unexpected script in the imported rig")
@@ -5264,7 +5278,7 @@ local ok,err=pcall(function()
   end
   rig:ScaleTo(SCALE);hum.HipHeight=0;rig.PrimaryPart.Anchored=true
   rig:SetAttribute("JohnDoeRigPhase","1.0.0")
-  local collision=payload.Config.CollisionHitbox:Clone();profile.collision=collision
+  local collision=defaultCollision:Clone();profile.collision=collision
   collision.Name="JohnDoeRigCollision";collision.Size=collision.Size*SCALE
   collision:SetAttribute("CFrameOffset",scaledOffset(collision,CFrame.new(0,.5,0)))
   local query=defaultQuery:Clone();profile.query=query;query.Name="JohnDoeRigQuery";query.Size=query.Size*SCALE
@@ -5315,13 +5329,13 @@ if not ok then
 end
 for _,p in ipairs(profiles) do for _,key in {"oldRig","oldCollision","oldQuery"} do if p[key] then p[key]:Destroy() end end end
 pcall(function()game:GetService("ChangeHistoryService"):SetWaypoint("John Doe UPD rig phase 1")end)
-print("[John Doe rig] Default John uses the UPD model at calibration scale "..SCALE..". Ground/camera/collision/Slash alignment patched; original kit balance and animation IDs retained. Existing skins retain their own rigs.")
+print("[John Doe rig] Default John keeps the fct4 model at calibration scale "..SCALE..". Ground/camera/collision/Slash alignment patched; original kit balance and animation IDs retained. Existing skins retain their own rigs.")
 print("[John Doe rig] Backup: "..backup:GetFullName()..". Save and start a fresh playtest.")
 
 end
 local function calibrate()
--- John Doe phase 1: UPD base rig, adjustable height, collision and ground alignment.
--- Import JohnDoeUPD.rbxm into Workspace first. Stop Play.
+-- John Doe phase 1: preserve the fct4 appearance, adjustable height and alignment.
+-- No model import. Recovers the original appearance from the first phase-one backup if necessary.
 local SCALE=1.4 -- INITIAL CALIBRATION, not a confirmed official starting scale; edit and rerun to adjust.
 assert(game:GetService("RunService"):IsStudio() and not game:GetService("RunService"):IsRunning(),"Stop Play before installing John Doe's rig.")
 assert(type(SCALE)=="number" and SCALE>=1 and SCALE<=1.6,"Choose a calibration scale between 1.0 and 1.6.")
@@ -7948,12 +7962,22 @@ end
 local ready=true
 for _,service in {"ReplicatedStorage","ServerStorage"} do
  local root=assert(find(service.."/Assets/Killers/JohnDoe"),"Missing John Doe asset folder.")
- if root:GetAttribute("JohnDoeRigPhase")~="1.0.0" or root.Config:GetAttribute("JohnDoeRigScale")~=SCALE then ready=false end
+ if root:GetAttribute("JohnDoeRigPhase")~="1.0.0" or root.Config:GetAttribute("JohnDoeRigScale")~=SCALE or not root:FindFirstChild("Rig") or root.Rig:GetAttribute("JohnDoeAppearanceSource")~="FCT4" then ready=false end
 end
 if ready then print("[John Doe rig] Already installed at scale "..SCALE);return end
-local payload=assert(workspace:FindFirstChild("JohnDoeUPD"),"Import JohnDoeUPD.rbxm directly under Workspace first. Nothing changed.")
-assert(payload:FindFirstChild("MainRig") and payload.MainRig:IsA("Model"),"Missing imported UPD MainRig. Nothing changed.")
-assert(payload:FindFirstChild("Config") and payload.Config:FindFirstChild("CollisionHitbox"),"Missing imported collision template. Nothing changed.")
+local function originalRig(path,current)
+ if current and (current:GetAttribute("JohnDoeRigPhase")~="1.0.0" or current:GetAttribute("JohnDoeAppearanceSource")=="FCT4") then return current end
+ local backups={}
+ for _,folder in game.ServerStorage:GetChildren() do if folder.Name:match("^JohnDoeRig_Backup_") then table.insert(backups,folder) end end
+ table.sort(backups,function(a,b)return a.Name<b.Name end)
+ for _,folder in ipairs(backups) do
+  for _,saved in folder:GetChildren() do
+   if saved:IsA("Model") and saved:GetAttribute("JohnRigOriginalPath")==path.."/Rig" and saved:GetAttribute("JohnDoeRigPhase")~="1.0.0" then return saved end
+  end
+ end
+ error("Original John model backup is missing at "..path..". Nothing changed; send the current place to recover the correct appearance.")
+end
+local defaultCollision=assert(find("ReplicatedStorage/Assets/Instances/CollisionHitbox"),"Missing FCT collision template. Nothing changed.")
 local defaultQuery=assert(find("ReplicatedStorage/Assets/Instances/QueryHitbox"),"Missing FCT query hitbox. Nothing changed.")
 local profiles={}
 local function scaledOffset(template,fallback)
@@ -7966,9 +7990,10 @@ local ok,err=pcall(function()
   local root=find(path);local config=root.Config
   local profile={root=root,config=config,path=path,oldScale=config:GetAttribute("JohnDoeRigScale"),oldVersion=root:GetAttribute("JohnDoeRigPhase"),oldRig=root:FindFirstChild("Rig"),oldCollision=config:FindFirstChild("JohnDoeRigCollision"),oldQuery=config:FindFirstChild("JohnDoeRigQuery")}
   table.insert(profiles,profile)
-  local rig=payload.MainRig:Clone();profile.rig=rig;rig.Name="Rig"
-  rig.PrimaryPart=assert(rig:FindFirstChild("HumanoidRootPart"),"UPD rig has no HumanoidRootPart")
-  local hum=assert(rig:FindFirstChildOfClass("Humanoid"),"UPD rig has no Humanoid")
+  local rig=originalRig(path,profile.oldRig):Clone();profile.rig=rig;rig.Name="Rig"
+  rig:SetAttribute("JohnRigOriginalPath",nil);rig:SetAttribute("JohnRigWasCreated",nil);rig:SetAttribute("JohnDoeAppearanceSource","FCT4")
+  rig.PrimaryPart=assert(rig:FindFirstChild("HumanoidRootPart"),"John rig has no HumanoidRootPart")
+  local hum=assert(rig:FindFirstChildOfClass("Humanoid"),"John rig has no Humanoid")
   if not hum:FindFirstChildOfClass("Animator") then Instance.new("Animator",hum) end
   for _,item in rig:GetDescendants() do
    assert(not item:IsA("LuaSourceContainer"),"Unexpected script in the imported rig")
@@ -7976,7 +8001,7 @@ local ok,err=pcall(function()
   end
   rig:ScaleTo(SCALE);hum.HipHeight=0;rig.PrimaryPart.Anchored=true
   rig:SetAttribute("JohnDoeRigPhase","1.0.0")
-  local collision=payload.Config.CollisionHitbox:Clone();profile.collision=collision
+  local collision=defaultCollision:Clone();profile.collision=collision
   collision.Name="JohnDoeRigCollision";collision.Size=collision.Size*SCALE
   collision:SetAttribute("CFrameOffset",scaledOffset(collision,CFrame.new(0,.5,0)))
   local query=defaultQuery:Clone();profile.query=query;query.Name="JohnDoeRigQuery";query.Size=query.Size*SCALE
@@ -8027,7 +8052,7 @@ if not ok then
 end
 for _,p in ipairs(profiles) do for _,key in {"oldRig","oldCollision","oldQuery"} do if p[key] then p[key]:Destroy() end end end
 pcall(function()game:GetService("ChangeHistoryService"):SetWaypoint("John Doe UPD rig phase 1")end)
-print("[John Doe rig] Default John uses the UPD model at calibration scale "..SCALE..". Ground/camera/collision/Slash alignment patched; original kit balance and animation IDs retained. Existing skins retain their own rigs.")
+print("[John Doe rig] Default John keeps the fct4 model at calibration scale "..SCALE..". Ground/camera/collision/Slash alignment patched; original kit balance and animation IDs retained. Existing skins retain their own rigs.")
 print("[John Doe rig] Backup: "..backup:GetFullName()..". Save and start a fresh playtest.")
 
 end
@@ -8083,6 +8108,17 @@ restore();assert(rep.Rig:GetScale()==1.25 and rep.Config:GetAttribute("JohnDoeRi
 restore();assert(rep.Rig:GetAttribute("Original") and not rep.Behavior.RigAlignment and not rep.Config.JohnDoeRigQuery)
 assert(rep.Behavior.Source==originals["ReplicatedStorage/Assets/Killers/JohnDoe/Behavior"])
 assert(not rep.Config:GetAttribute("JohnDoeRigScale") and not rep:GetAttribute("JohnDoeRigPhase"))
+-- Recover the correct appearance after the previous MainRig patch replaced both live rigs.
+rep,stored=fixture()
+local originalBackup=child(game.ServerStorage,"JohnDoeRig_Backup_00000000_000000_000")
+for _,root in {rep,stored} do
+ local saved=root.Rig:Clone();saved:SetAttribute("JohnRigOriginalPath",root.Parent.Parent.Parent.Name.."/Assets/Killers/JohnDoe/Rig");saved.Name=root.Parent.Parent.Parent.Name;saved.Parent=originalBackup
+ root.Rig:Destroy()
+ local wrong=workspace.JohnDoeUPD.MainRig:Clone();wrong.Name="Rig";wrong:SetAttribute("JohnDoeRigPhase","1.0.0");wrong.Parent=root
+end
+install()
+assert(rep.Rig:FindFirstChild("Spike Arm") and stored.Rig:FindFirstChild("Spike Arm"),"wrong model was not recovered from original backup")
+assert(rep.Rig:GetAttribute("JohnDoeAppearanceSource")=="FCT4")
 -- Mid-write failure restores modules, root attributes and all original rig/template parents.
 rep,stored=fixture();local oldRig=rep.Rig;failAt=writes+3
 local ok=pcall(install)
