@@ -808,6 +808,7 @@ local function __playSound(t1: {[any]: any}, s3: string, t2: {[any]: any}?) -- l
 end
 
 local t3 = {}
+local Presentation=require(script.Parent.Presentation)
 
 local function playChargeUISound(p4, p5) -- line: 429
 	-- upvalues: Sounds (copy), SoundService (copy)
@@ -1142,31 +1143,9 @@ function t3.cl_OnZoneEntered(_, _) -- line: 662
 end
 function t3.cl_OnZoneLeft(_, _) -- line: 666
 end
-function t3.lcl_OnChargeLevelChanged(_: {[any]: any}, p33, n3: number, s5: string) -- line: 670
-	-- upvalues: TweenService (copy)
-	p33.State.ChargeLevel = n3
-
-	local v102 = p33.Behavior and p33.Behavior.Abilities
-	local v103 = v102 and v102[s5]
-
-	if not v103 then
-		("%* does not exist in Helperbot's moveset"):format(s5)
-
-		return
-	end
-
-	local v104 = v103 and v103.UIElement
-
-	if not v104 or not v104.Parent or not v104:FindFirstChild("Charges") then
-		return
-	end
-
-	v104.Charges.TextColor3 = n3 == 0 and Color3.new(1, 0, 0) or Color3.new(1, 0.882353, 0.203922)
-	TweenService:Create(v104.Charges, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		TextColor3 = Color3.new(1, 1, 1)
-	}):Play()
-	v104.Charges.Text = `Lv. { n3 }`
-	v104.Charges.Visible = true
+function t3.lcl_OnChargeLevelChanged(_,a,level)
+ a.State.ChargeLevel=level
+ if a.Player==Players.LocalPlayer then Presentation.UpdateLevel(a) end
 end
 function t3.cl_InspireMeterUpdate(_, p35, p36, p37, ...) -- line: 690
 	-- upvalues: LocalPlayer (copy), __pcallMethod (copy)
@@ -1418,6 +1397,14 @@ local originalDestroyed=t3.Destroyed
 function t3.Created(self,a)
  a.HelperClientDestroyed=false
  originalCreated(self,a)
+ if a.Player==Players.LocalPlayer then
+  local elapsed=0
+  a.Maid:Add(RunService.Heartbeat:Connect(function(dt)
+   elapsed+=dt
+   if elapsed>=.2 then elapsed=0;Presentation.UpdateLevel(a) end
+  end))
+  Presentation.UpdateLevel(a)
+ end
  a.Maid:Add(a.Rig:GetAttributeChangedSignal("PulseCharges"):Connect(function()
   if a.Player==Players.LocalPlayer then t3:lcl_OnChargeLevelChanged(a,a.Rig:GetAttribute("PulseCharges") or 0,"Pulse") end
  end))
@@ -1483,7 +1470,7 @@ end
 local originalPulse=t3.cl_OnPulseEmitted
 function t3.cl_OnPulseEmitted(self,a,radius,speed)
  originalPulse(self,a,radius,speed)
- local attachment=a.Config.Instances.VFXPulse:Clone();attachment.Parent=a.Rig.PrimaryPart
+ local attachment=Presentation.Attach(a.Config.Instances.VFXPulse,a.Rig)
  for _,effect in ipairs(attachment:GetChildren()) do if effect:IsA("ParticleEmitter") then effect:Emit(effect:GetAttribute("EmitCount") or 8) end end
  game:GetService("Debris"):AddItem(attachment,3)
 end
@@ -1492,7 +1479,7 @@ function t3.cl_CreateZoneVisual(self,a,id,radius)
  originalZone(self,a,id,radius)
  local zone=a.State.ActiveZones[id]
  if not zone then return end
- local attachment=a.Config.Instances.VFXInspireActive:Clone();attachment.Parent=a.Rig.PrimaryPart
+ local attachment=Presentation.Attach(a.Config.Instances.VFXInspireActive,a.Rig)
  for _,effect in ipairs(attachment:GetChildren()) do if effect:IsA("ParticleEmitter") then effect.Enabled=true end end
  local destroy=zone.Destroy
  function zone.Destroy(object)
@@ -1504,7 +1491,7 @@ function t3.cl_CreateZoneVisual(self,a,id,radius)
  end
 end
 return t3
-]====],bytes=22767},
+]====],bytes=22393},
 {path=[====[
 Behavior/Rules]====],source=[====[
 -- Corrected Helperbot moveset. Pure rules shared by the server and regression tests.
@@ -1520,6 +1507,54 @@ function Rules.CooldownDelta(dt,level,support) return dt*.1*level*(support and .
 function Rules.Progress(progress,inside,dt) return math.clamp(progress+(inside and dt or -dt*.7),0,5) end
 return Rules
 ]====],bytes=780},
+{path=[====[
+Behavior/Presentation]====],source=[====[
+-- UPD emitter offsets belong to the robot's hat, not the HumanoidRootPart.
+local Presentation={}
+function Presentation.Attach(template,rig)
+ local effect=template:Clone()
+ local origin=rig:FindFirstChild("HelperbotVFXOrigin",true)
+ if origin and origin:IsA("Attachment") and origin.Parent:IsA("BasePart") then
+  effect.CFrame=origin.CFrame;effect.Parent=origin.Parent
+ else
+  local hat=rig:FindFirstChild("Hat",true)
+  local head=rig:FindFirstChild("Head")
+  -- Preserve the original attachment CFrame (including the 1.25-stud antenna offset).
+  effect.Parent=hat and hat:IsA("BasePart") and hat or head or rig.PrimaryPart
+ end
+ return effect
+end
+function Presentation.UpdateLevel(actor)
+ local gui=actor.Player and actor.Player:FindFirstChildOfClass("PlayerGui")
+ local main=gui and gui:FindFirstChild("MainUI")
+ local container=main and main:FindFirstChild("AbilityContainer")
+ local ability=actor.Behavior and actor.Behavior.Abilities and actor.Behavior.Abilities.Pulse
+ local icon=container and container:FindFirstChild("Pulse") or ability and ability.UIElement
+ if not icon or not icon.Parent then return end
+ if ability then ability.UIElement=icon end
+ local label=icon:FindFirstChild("HelperbotPulseLevel")
+ if not label then
+  local native=icon:FindFirstChild("Charges")
+  if native and native:IsA("TextLabel") then
+   label=native:Clone()
+   for _,child in ipairs(label:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
+   -- This label replaces the native charge count; Pulse levels are not expendable ability uses.
+   native.Visible=false
+  else
+   label=Instance.new("TextLabel")
+   label.BackgroundTransparency=1;label.AnchorPoint=Vector2.new(.5,1)
+   label.Position=UDim2.fromScale(.5,0);label.Size=UDim2.new(1,0,.3,0)
+   label.Font=Enum.Font.SourceSansBold;label.TextScaled=true;label.TextStrokeTransparency=0
+  end
+  label.Name="HelperbotPulseLevel";label.Parent=icon
+ end
+ local level=math.clamp(actor.Rig:GetAttribute("PulseCharges") or actor.State and actor.State.ChargeLevel or 1,0,3)
+ label.Text="Lv. "..level;label.TextColor3=Color3.new(1,1,1)
+ label.TextTransparency=0;label.Visible=true;label.ZIndex=icon.ZIndex+2
+ return label
+end
+return Presentation
+]====],bytes=2200},
 {path=[====[
 Haste]====],source=[====[
 local Cooldowns=require(script.CooldownStatus)

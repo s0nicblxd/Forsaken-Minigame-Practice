@@ -23,6 +23,10 @@ Requires the existing FCT combat compatibility setup (Guest/Azure/Two Time/stun 
 - Generic Fatigue slows cooldown recovery by 10% per level. **Pulse does not apply it:** the UPD export specifies Duration=0 and the authoritative supplied moveset specifies no lasting killer debuff. No FCF Burning.
 - Survivor support still targets the existing Survivors folder. No new FFA alliances or friendly-fire rules are introduced.
 
+## Antenna and Pulse indicator repair
+
+If Helperbot is already installed, stop Play and run `Repair-Helperbot-Presentation.command.luau`, save, then restart Play. No model reimport is required. The repair adds the Presentation module and updates only Helperbot's Client, leaving server gameplay unchanged. It attaches caster effects to Hat (or Head fallback), preserving UPD's authored 1.25-stud antenna offset. A custom skin can provide a `HelperbotVFXOrigin` Attachment. The level indicator binds to `PlayerGui.MainUI.AbilityContainer.Pulse`, without relying on an UPD-only UIElement field, and rebinds after hotbar recreation. Backups are saved in ServerStorage; unknown Client edits stop preflight. Fresh installs include these fixes.
+
 ## Verification
 
 Standalone Luau regression scripts are in `tests/` (run with the Luau CLI, not the Studio Command Bar). They cover server mechanics, cooldown effects, client lifecycle without animations, installer idempotence, preservation, rollback, and restoration. Both exported model graphs were also checked for dense valid references and intact Motor6D connections. All shipped Luau files compile; no individual module approaches Studio's 200,000-byte Source limit.

@@ -3,6 +3,10 @@
     "bytes": 1151,
     "sha256": "7dae50ed679e3336651a0f6a1d2b4e7f6b231fc03b2ab7949f83d3d6982a98ff"
   },
+  "Presentation.luau": {
+    "bytes": 2200,
+    "sha256": "ca746c973517dd57324567a39f0fdf99ecbcef6ade9f9bcb03a1221656b57114"
+  },
   "HelperbotUPD.rbxm": {
     "bytes": 14853,
     "sha256": "fc7cac5bcc937a3019040b47ab3d66b251dcd9b1fffa651b1f1fd8696aba850c"
@@ -36,8 +40,12 @@
     "sha256": "c122dc389c7a7d040a5ac1ecf2929cb88b9dfea42afd056475f9cd9ffb3c61d5"
   },
   "Client.luau": {
-    "bytes": 22767,
-    "sha256": "ffc70897542cd23d76087b28cf3d24c0a4ef1ad266d0b16b136f261c3a6debdc"
+    "bytes": 22393,
+    "sha256": "3c8017fe38ba098470aab707ea81224a358969e9355c2302e74c0a953c83ebfe"
+  },
+  "Repair-Helperbot-Presentation.command.luau": {
+    "bytes": 50266,
+    "sha256": "4b6a077a22eb1bd1041faf47ef8caf15da6b45f6cb33ddd98dd9d304fd2ea248"
   },
   "Fatigue.luau": {
     "bytes": 242,
@@ -52,7 +60,7 @@
     "sha256": "cc9a0d931790296913eb64b9e0bb5bd7d5bbd291acc92655265e4f4e780c7b3c"
   },
   "Apply-Helperbot-FCT.command.luau": {
-    "bytes": 58482,
-    "sha256": "2bf402ec7182397c70ce4af38b0fea3b59cba27ace8edcdbb5b6be30ae1c1116"
+    "bytes": 60383,
+    "sha256": "5bcb660256e53f26476b3f989d510c469feabec6b6ee1a4400ef9b0508937f51"
   }
 }
