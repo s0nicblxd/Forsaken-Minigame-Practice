@@ -51,7 +51,6 @@ local require=function(m)return m end
 local typeof=function(x)return type(x)=='table'and x.IsA and 'Instance'or type(x)end
 local warn=function()end
 local Behavior=(function()
--- FCF compatibility port. Third move uses the supplied Combo hit timings, not recovered server code.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
 local Modules=game.ReplicatedStorage.Modules
@@ -88,7 +87,7 @@ local function play(state,rig,id)
  end
 end
 local function lock(actor,key,value)
- -- FCF has named disablers; do not overwrite unrelated ability locks.
+ 
  if actor.DisableAbilities then actor:DisableAbilities(key,value)
  else actor.AbilityDisablers=actor.AbilityDisablers or {};actor.AbilityDisablers[key]=value or nil end
 end
@@ -152,7 +151,7 @@ local function createBox(state,options)
  return box
 end
 local function ignoreOthers(victim)
- -- FCF drops Target from hitbox options. Explicitly exclude other humanoid models instead.
+ 
  local ignore={}
  for _,object in workspace:GetDescendants()do
   if object:IsA("Humanoid") and object.Parent~=victim then table.insert(ignore,object.Parent)end
@@ -171,7 +170,7 @@ local function markGrab(state,victim)
  victim:PivotTo(state.actor.Rig:GetPivot())
 end
 local function flourish(state)
- -- Play the provided extra move attachments; no guessed persistent status or damage effects.
+ 
  local config=state.actor.Config
  for _,template in {config.KaioKen,config.EX}do
   if typeof(template)=="Instance" and root(state.actor.Rig)then
@@ -190,7 +189,7 @@ local function combo(actor,extra)
  local opening=play(state,actor.Rig,start)
  if extra then flourish(state)end
  later(state,.2,function()playSound(actor,"GashingWoundSwing")end)
- -- Confirmed older Combo timings/damage; intentionally reused for reconstructed extra move.
+ 
  for index,hit in {{.383,10},{1.083,15},{1.717,10}}do
   later(state,hit[1],function()
    if index>1 and not living(state.target)then return end
@@ -224,7 +223,7 @@ local function combo(actor,extra)
   if living(victim)then
    local ar,vr=root(actor.Rig),root(victim)
    victim:PivotTo(actor.Rig:GetPivot()*CFrame.new(0,0,-3))
-   -- Release before applying the finisher impulse; cleanup also releases both on any failure.
+   
    if state.anchors[vr]~=nil then vr.Anchored=state.anchors[vr];state.anchors[vr]=nil end
    if not vr.Anchored then vr.AssemblyLinearVelocity=ar.CFrame.LookVector*200 end
    local ragdollModule=Modules:FindFirstChild("Ragdolls")
@@ -261,11 +260,11 @@ local function quick(actor)
    end}
   })
  end)
- -- Keep the hitbox alive for its full .25s rather than releasing at .75s.
+ 
  later(state,.95,function()cleanup(state)end)
 end
 local function execute(actor,fn,...)
- if not RunService:IsServer()then return end -- Server owns combat and replicated animations.
+ if not RunService:IsServer()then return end 
  local args=table.pack(...)
  local ok,err=xpcall(function()fn(actor,table.unpack(args,1,args.n))end,debug.traceback)
  if not ok then warn("[Martial Artist] "..tostring(err));if actor.MArtistCast then cleanup(actor.MArtistCast)end end
@@ -308,7 +307,7 @@ end
 local a,v=actor('MArtist'),actor('Victim')
 Behavior.Created(Behavior,a)
 assert(Behavior.Abilities.Combo.Cooldown==5 and Behavior.Abilities.QuickAttack.Cooldown==5 and Behavior.Abilities.SuperDeathKillCombo.Cooldown==15)
--- No server effects when dispatcher invokes client callback.
+
 server=false;Behavior.Abilities.Combo.Callback(a);assert(not a.MArtistCast and #boxes==0);server=true
 Behavior.Abilities.Combo.Callback(a);local state=a.MArtistCast
 advance(.383);local first=boxes[#boxes];assert(first.options.Damage(v.Rig)==10)
@@ -324,16 +323,16 @@ assert(not a.MArtistCast and not a.Rig.PrimaryPart.Anchored and not v.Rig.Primar
 assert(not v.locks.MArtist_Combo and a.locks.Unrelated and not a.locks.MArtist_Combo)
 assert(rewards==1 and first.cancelled and second.cancelled and third.cancelled)
 assert(animationLoads>=3,'animation failures did not prevent damage and release')
--- Miss cleans up early and cannot spawn follow-up hitboxes.
+
 local count=#boxes;Behavior.Abilities.Combo.Callback(a);advance(2);assert(#boxes==count+1 and not a.MArtistCast)
--- New third move uses confirmed old timing and distinct animation family.
+
 Behavior.Abilities.SuperDeathKillCombo.Callback(a);advance(.383);local super=boxes[#boxes];super.options.Connections.Hit(v.Rig)
 assert(a.MArtistCast.target==v.Rig and super.options.Damage(v.Rig)==10)
--- Interruption restores both rigs immediately and prevents delayed attacks.
+
 count=#boxes;a.Rig.Stunned=true;a.Rig:GetAttributeChangedSignal('Stunned'):Fire()
 assert(not a.MArtistCast and not v.Rig.PrimaryPart.Anchored and not a.Rig.PrimaryPart.Anchored)
 advance(2);assert(#boxes==count and a.locks.Unrelated);a.Rig.Stunned=nil
--- Quick Attack preserves its hitbox lifetime and default stun, once-per-cast reward.
+
 Behavior.Abilities.QuickAttack.Callback(a);advance(.667);local quick=boxes[#boxes]
 assert(quick.options.Damage==25 and quick.options.Time==.25)
 quick.options.Connections.Hit(v.Rig);quick.options.Connections.Hit(v.Rig)
@@ -341,7 +340,7 @@ assert(statuses.items[#statuses.items].data.Duration==2 and a.MArtistCast)
 advance(.083);assert(a.MArtistCast and not quick.cancelled)
 advance(.201);assert(not a.MArtistCast and quick.cancelled)
 assert(rewards==3,'one reward per cast, including reconstructed combo')
--- Disappearing victim and caster death release locks/anchors and cancel all pending hits.
+
 Behavior.Abilities.Combo.Callback(a);advance(.383);boxes[#boxes].options.Connections.Hit(v.Rig)
 v.Rig.Parent=nil;v.Rig.AncestryChanged:Fire(v.Rig,nil)
 assert(not a.MArtistCast and not a.Rig.PrimaryPart.Anchored and not v.Rig.PrimaryPart.Anchored)

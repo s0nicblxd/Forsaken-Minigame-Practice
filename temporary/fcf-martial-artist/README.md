@@ -19,7 +19,3 @@ For the existing character: stop Play, select its root (#MArtist or #MArtist2) i
 Installer makes MArtistFCF_Backup folders in ServerStorage. To restore select that backup folder, run Restore-MartialArtist-FCF.command.luau, save and restart Play. Keep the backup. Source writes are preflighted and roll back on failure. Ready model was rebuilt from original chunks with only two Source values replaced.
 
 Studio testing is required for replication, ragdoll physics, asset permissions and the specific FCF build used by your friend. No complete original third-move server implementation was supplied.
-
-## Validation performed
-
-All delivered source/installer scripts compile. Standalone Luau tests cover Config execution, server-only dispatch, all combo stages and single-target follow-ups, rewards once per cast, Quick Attack hitbox lifetime, unavailable animations, misses, interruption/death/removal cleanup, paired-store install, repeat application, restore, preflight refusal and injected Source failure rollback. Binary verification checks that all original model chunks/properties remain identical except the two replaced Source string values. No Studio or multiplayer session was available for runtime verification.

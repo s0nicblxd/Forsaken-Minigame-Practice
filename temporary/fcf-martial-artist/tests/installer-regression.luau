@@ -85,7 +85,6 @@ local function fixture()
  selection={c};return cfg,b,cfg2,b2
 end
 local function install()
--- Select the imported Martial Artist root model/folder in Explorer, then run while stopped.
 assert(game:GetService("RunService"):IsStudio() and not game:GetService("RunService"):IsRunning(),"Stop Play first.")
 local selected=game:GetService("Selection"):Get()
 assert(#selected==1,"Select ONE Martial Artist character root in Explorer.")
@@ -136,7 +135,6 @@ local Config = {
 	}
 }
 
--- Explicit port fallbacks: source model omits these values. Stun duration is reconstructed.
 Config.SlashStunTime=2
 Config.Sounds.Slash=Config.Sounds.GashingWoundHit1
 Config.ScarfAnimation=script:FindFirstChild("ScarfAnimation")
@@ -146,7 +144,6 @@ Config.MArtistFCFPort="1.0.0"
 return Config
 ]========]
 local behaviorSource=[========[
--- FCF compatibility port. Third move uses the supplied Combo hit timings, not recovered server code.
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
 local Modules=game.ReplicatedStorage.Modules
@@ -183,7 +180,7 @@ local function play(state,rig,id)
  end
 end
 local function lock(actor,key,value)
- -- FCF has named disablers; do not overwrite unrelated ability locks.
+ 
  if actor.DisableAbilities then actor:DisableAbilities(key,value)
  else actor.AbilityDisablers=actor.AbilityDisablers or {};actor.AbilityDisablers[key]=value or nil end
 end
@@ -247,7 +244,7 @@ local function createBox(state,options)
  return box
 end
 local function ignoreOthers(victim)
- -- FCF drops Target from hitbox options. Explicitly exclude other humanoid models instead.
+ 
  local ignore={}
  for _,object in workspace:GetDescendants()do
   if object:IsA("Humanoid") and object.Parent~=victim then table.insert(ignore,object.Parent)end
@@ -266,7 +263,7 @@ local function markGrab(state,victim)
  victim:PivotTo(state.actor.Rig:GetPivot())
 end
 local function flourish(state)
- -- Play the provided extra move attachments; no guessed persistent status or damage effects.
+ 
  local config=state.actor.Config
  for _,template in {config.KaioKen,config.EX}do
   if typeof(template)=="Instance" and root(state.actor.Rig)then
@@ -285,7 +282,7 @@ local function combo(actor,extra)
  local opening=play(state,actor.Rig,start)
  if extra then flourish(state)end
  later(state,.2,function()playSound(actor,"GashingWoundSwing")end)
- -- Confirmed older Combo timings/damage; intentionally reused for reconstructed extra move.
+ 
  for index,hit in {{.383,10},{1.083,15},{1.717,10}}do
   later(state,hit[1],function()
    if index>1 and not living(state.target)then return end
@@ -319,7 +316,7 @@ local function combo(actor,extra)
   if living(victim)then
    local ar,vr=root(actor.Rig),root(victim)
    victim:PivotTo(actor.Rig:GetPivot()*CFrame.new(0,0,-3))
-   -- Release before applying the finisher impulse; cleanup also releases both on any failure.
+   
    if state.anchors[vr]~=nil then vr.Anchored=state.anchors[vr];state.anchors[vr]=nil end
    if not vr.Anchored then vr.AssemblyLinearVelocity=ar.CFrame.LookVector*200 end
    local ragdollModule=Modules:FindFirstChild("Ragdolls")
@@ -356,11 +353,11 @@ local function quick(actor)
    end}
   })
  end)
- -- Keep the hitbox alive for its full .25s rather than releasing at .75s.
+ 
  later(state,.95,function()cleanup(state)end)
 end
 local function execute(actor,fn,...)
- if not RunService:IsServer()then return end -- Server owns combat and replicated animations.
+ if not RunService:IsServer()then return end 
  local args=table.pack(...)
  local ok,err=xpcall(function()fn(actor,table.unpack(args,1,args.n))end,debug.traceback)
  if not ok then warn("[Martial Artist] "..tostring(err));if actor.MArtistCast then cleanup(actor.MArtistCast)end end
@@ -446,8 +443,8 @@ assert(backup)
 local count=#game.ServerStorage:GetChildren();install();assert(#game.ServerStorage:GetChildren()==count)
 selection={backup};restore()
 assert(c.Source=='oldConfig'and b.Source=='oldBehavior'and c2.Source=='oldConfig2'and b2.Source=='oldBehavior2')
-c,b,c2,b2=fixture();failAt=writes+3 -- four backup clone Source copies precede mutations in this mock
--- The mock's Clone copies props directly: failure occurs during actual source commit.
+c,b,c2,b2=fixture();failAt=writes+3 
+
 local ok=pcall(install);assert(not ok)
 assert(c.Source=='oldConfig'and b.Source=='oldBehavior'and c2.Source=='oldConfig2'and b2.Source=='oldBehavior2')
 c,b,c2,b2=fixture();b2.ClassName='Folder';ok=pcall(install);assert(not ok and c.Source=='oldConfig')

@@ -43,7 +43,6 @@ local Config = {
 	}
 }
 
--- Explicit port fallbacks: source model omits these values. Stun duration is reconstructed.
 Config.SlashStunTime=2
 Config.Sounds.Slash=Config.Sounds.GashingWoundHit1
 Config.ScarfAnimation=script:FindFirstChild("ScarfAnimation")

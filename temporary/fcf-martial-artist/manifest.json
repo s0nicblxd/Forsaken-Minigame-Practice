@@ -1,11 +1,11 @@
 {
-  "Apply-MartialArtist-FCF.command.luau": "754932729b261a5bfd56b24b7e252c5882971969df7e9f2305f0b91db8c1904e",
-  "Behavior.luau": "b9ca856ba79bea7376f6d6e00af78d40ae1545dd5189dd42a4490d5624be3824",
-  "Config.luau": "a2e37fef156eaa4e9e939dab93f5d4e03d4bcc1b6f9ed4cac1600321d6073ad0",
-  "MartialArtist-FCF.rbxm": "be04afc4b8bb999951575c6997d5791625652ce69809fa37b98b2973ca307e93",
-  "README.md": "16f05038bfc1df0cf68d49b9adc8e4ecd6b0be4407de34cda780a388881b4c78",
+  "Apply-MartialArtist-FCF.command.luau": "0dc023bc1aed6a7f953513b47ee88586d207757a5374a4519251f503cb7d5f97",
+  "Behavior.luau": "305a9a7a90d122ddadd6cddd258e314a9548e65bb58d0d500241f363056af833",
+  "Config.luau": "839a1cc24900731db6f0c23c380db4aa8ae1abeeb15fc7bfd1b7087dc046263e",
+  "MartialArtist-FCF.rbxm": "5582e0db6e3f4545e88425af7c15940354de8d50584c3eebd94cd10c97f61bf9",
+  "README.md": "24ef32560d1fbc90818baa51e4078f71f15e030d752961a78802d9b35601ecc2",
   "Restore-MartialArtist-FCF.command.luau": "a35f586f7ce2e41b1d6ad4cbb8b3e20957a0eac3b2ed0ebc5f438657c089f261",
-  "tests/config-regression.luau": "4e3f65c17b16183b74cbb47f1b9c5db328930cc7b7c65af6c4fb0b1f2fa36cc2",
-  "tests/gameplay-regression.luau": "337090e0a0b7fa8653625e2a80b716140c9ccba5d2b43cf0180eec6b66f4a067",
-  "tests/installer-regression.luau": "bc512f0b6ff2ee4e020d8b8afb069d056f414914b6fbab92fe658ddd60e70a63"
+  "tests/config-regression.luau": "f2a3899da041e7a842445783b7aff888b376ba274e71782b5bf7947ce803aa2c",
+  "tests/gameplay-regression.luau": "d8d5cfd382e8e54204f233194f809accc353ac22bc4f122458ce3f7c3964dffd",
+  "tests/installer-regression.luau": "856e40effed04cffb29f213285d5a90f71e3490255aef2f86380a6d1038405ae"
 }
