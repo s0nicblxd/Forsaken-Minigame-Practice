@@ -1,0 +1,9 @@
+{
+  "Apply-Combat-Spawns.command.luau": "573b0bc09e30be5e755a361398034449e4feb5cc37eadae1ff3f18e1b5dc1b99",
+  "Controller.luau": "a1646a9a9dffbb5dad1a2f76df46938a96a9505bac0def429fca0ed815624f92",
+  "Driver.luau": "1697501c846fe3135fb84ae0c29280edae70e0da6f8733e68b264b1f809be37c",
+  "README.md": "3a0e44fcc666a1772314d6c36a21ec4ff81a9d7f91e96ee1f03c8e238c7de59f",
+  "Restore-Combat-Spawns.command.luau": "4aaf4f328cbcb084bbc9191343d665e77db34bc3c119fa22c05f3c7f7ed31eaa",
+  "tests/installer-regression.luau": "e8e14afe3d30356687a38bab830309df9bfb09a9753d3a56d1968f49a9219205",
+  "tests/runtime-regression.luau": "f98089d271430e974f9ab6f090cb0e9a061a23a69479c28a735fa7f4f3c0a553"
+}
