@@ -1,0 +1,17 @@
+return {
+    Ambient = Color3.new(0.6666666865348816,0.6666666865348816,0.6666666865348816),
+    Brightness = 0.0,
+    ColorShift_Bottom = Color3.new(0.0,0.0,0.0),
+    ColorShift_Top = Color3.new(0.0,0.0,0.0),
+    EnvironmentDiffuseScale = 1.0,
+    EnvironmentSpecularScale = 1.0,
+    GlobalShadows = true,
+    OutdoorAmbient = Color3.new(0.729411780834198,0.6000000238418579,0.364705890417099),
+    ShadowSoftness = 0.0,
+    ClockTime = 12,
+    GeographicLatitude = 0.0,
+    ExposureCompensation = 0.0,
+    FogColor = Color3.new(0.7529411911964417,0.7529411911964417,0.7529411911964417),
+    FogEnd = 100000.0,
+    FogStart = 0.0,
+}

@@ -1,0 +1,58 @@
+{
+  "lighting": {
+    "Ambient": [
+      0.6666666865348816,
+      0.6666666865348816,
+      0.6666666865348816
+    ],
+    "Brightness": 0.0,
+    "ColorShift_Bottom": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "ColorShift_Top": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "EnvironmentDiffuseScale": 1.0,
+    "EnvironmentSpecularScale": 1.0,
+    "GlobalShadows": true,
+    "OutdoorAmbient": [
+      0.729411780834198,
+      0.6000000238418579,
+      0.364705890417099
+    ],
+    "ShadowSoftness": 0.0,
+    "ClockTime": 12,
+    "GeographicLatitude": 0.0,
+    "ExposureCompensation": 0.0,
+    "FogColor": [
+      0.7529411911964417,
+      0.7529411911964417,
+      0.7529411911964417
+    ],
+    "FogEnd": 100000.0,
+    "FogStart": 0.0
+  },
+  "sky": {
+    "CelestialBodiesShown": false,
+    "MoonAngularSize": 0.0,
+    "MoonTextureId": "rbxasset://sky/moon.jpg",
+    "SkyboxBk": "rbxassetid://458016711",
+    "SkyboxDn": "rbxassetid://458016826",
+    "SkyboxFt": "rbxassetid://458016532",
+    "SkyboxLf": "rbxassetid://458016655",
+    "SkyboxRt": "rbxassetid://458016782",
+    "SkyboxUp": "rbxassetid://458016792",
+    "SunAngularSize": 20.0,
+    "SunTextureId": "rbxasset://sky/sun.jpg",
+    "StarCount": 3000,
+    "SkyboxOrientation": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  }
+}

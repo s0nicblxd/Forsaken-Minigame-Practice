@@ -1,0 +1,9 @@
+{
+  "Apply-Combat-Lighting.command.luau": "9fbd0a4d91b12142cd2fd1a7f6de7a048d676065b7304529eb38e0de634919c0",
+  "Lighting.luau": "1cca41aa1e7c8b3f83cf528cc46e72a90f73244b1a63378c87f3e8c08464ced3",
+  "Properties.luau": "b4310a1db0adbdaf5da5101e732cae80df082fe8216bb7a320b7536a7dcf3739",
+  "README.md": "17adebd9431bae2ce4ca0744186b535976eeca54558b2663fdb7476cb0c9f992",
+  "Restore-Combat-Lighting.command.luau": "6d12fa40b40e6d5bb28828318f950b4f2ffe584c39aca6609f16b4e7877c6523",
+  "profile.json": "81db06708825d8e93bc4559bb432c0f0fa6dd142951c39336513163399031ff4",
+  "tests/lighting-regression.luau": "52a335a0974e10ca56cc821676afb97de3bdfe30b42f72dc2e54d980a91cc577"
+}
