@@ -1,0 +1,10 @@
+{
+  "ActorNetwork.luau": "aa169e5c3aa3b49e32707221e7254f65091bdd13330e97172e81eecadb032c71",
+  "Actors.luau": "12e79e27800747f534c8dd9710fce310407226a899751c54f64deb4ba80a2972",
+  "Disable-Cutscenes.command.luau": "2e1a1fcd59c1c49cd32fa58a353e132baad151920d455529f478d47e4c254bfe",
+  "README.md": "281bbbf07f67b8f6f86cfdf0709fdf3c07bb9da6877d9f5b241b24d0ecee5545",
+  "Restore-Cutscenes.command.luau": "44e0a09d09823e8a5420993190e13966d60f4a14bf257c832560ea0bbaa92888",
+  "RoundNetwork.luau": "fd55a6c21786d35b67356edefbdb558de5a4740601d8f64f563000c919afd709",
+  "tests/installer-regression.luau": "99e6b2a0b6c01aaf56a5228539aaa626535c5b9e91fa2993426649346aa0bc92",
+  "tests/runtime-regression.luau": "f4f4f60a2ed4acb809338fc371061cedd27ff3f523756372ee566486ec0075c9"
+}
