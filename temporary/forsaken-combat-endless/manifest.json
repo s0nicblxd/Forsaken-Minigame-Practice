@@ -1,0 +1,12 @@
+{
+  "Apply-Endless-Combat.command.luau": "ec3b3e7fc01a68e2d13f931b0b35beca2bbb34f56321c7526c56cc6e58a48f32",
+  "README.md": "a1fe4fa6ea5b51303ac3c4633e6756f2a16536c5be0c9fb1f824c8ccd79e5592",
+  "Restore-Endless-Combat.command.luau": "e9e3388e3b43052b7a11be4ac8865d128067ae32c8652996ceee4e217f5218db",
+  "sources/FCF/ReplicatedStorage/Systems/Player/Game/RoundTimeDisplay.luau": "b58a61324fc576d6a1f6ddbe19b85b3d8087a06b1b0ba8f4140123c520a83698",
+  "sources/FCF/ServerScriptService/Server/Systems/Core/RoundManager.luau": "d66d7a03f91f3ea0f59697054d50a5335cfaaf7c4cf9fb7d768efdbfd4efb95b",
+  "sources/FCT/ReplicatedStorage/Systems/Player/Game/RoundTimeDisplay.luau": "2ca76ea50b3d9fab4c8596970be8be4a583467c26447a1125191e0379c6e838c",
+  "sources/FCT/ServerScriptService/Server/Systems/Core/RoundManager.luau": "a1aa858d2eb17dac9baab7e37ac3f45f276f442fb5222e795fdb70568eaa9630",
+  "sources/shared/ServerScriptService/Server/Systems/Core/RoundManager/EndlessCombat.luau": "70c84947f26971b1e37963029c0394854b2a4b2797e7e16be835ff134b222ecc",
+  "tests/installer-regression.luau": "551aeb2f204ae3925e7fc8f6acb5058e9a206e1c26a29f7f9cd73329ea16b340",
+  "tests/runtime-regression.luau": "467cc8adbf29f64d7370bc845dda8230b658b697bdaf1a1e50f75a145389e9e8"
+}
