@@ -29,12 +29,8 @@ To restore: stop Play, select ServerStorage/CombatMenus_Backup_..., run **Restor
 
 Studio verification is required for actual rendering across resolutions, public asset availability, input focus, character-specific preview rigs and live server purchase/equip/setting responses. Local checks do not replace a playtest.
 
-## Local validation
+## HUD compatibility correction
 
-- Binary readback verifies one root, 1,667 imported instances, 29 exact adapted Sources, all included menu/preset trees and no excluded UI subtrees. Serialized UI layouts, fonts, textures and shared-string data are retained by the binary exporter; external instance references are cleared.
-- Every adapted donor module, private adapter and Command Bar script compiles with the Luau CLI.
-- Integration harness executes the actual SidebarHandler, Button, CurrencyDisplay, Settings + Bool template, UpdateLog and AFK client modules using the imported asset hierarchy. It covers registration before sidebar startup, menu switching/hiding, settings search/toggle/reset on existing values, AFK's existing endpoint, old changelog rendering and page selection, and hidden paid currency links.
-- Dependency/contract checks resolve native modules and verify that only existing EquipState, PurchaseContent, UpdateLogToLatest and UpdateSettings endpoints are requested. Favorites and server preview requests are absent. Existing preview builder Source is retained and Spectating changes exactly two sidebar references. Device helpers and base-price passthrough are exercised.
-- Installer harness uses the actual imported tree to verify current Settings connections are cloned unchanged, excluded UI is archived, private helpers are isolated from framework initialization, original trees restore by identity, repeat install is a no-op, and write failures/local edits are handled.
+Removing ServerList also requires making its two PlayerInfoDisplay calls optional. The main installer now guards both __resetAllState (entering combat) and __reinstateState (returning to the lobby). Existing installations should stop Play and run Repair-PlayerInfoDisplay.command.luau, save, then start a fresh playtest. It backs up and updates only the exact supported HUD Source. ServerList stays removed. All other HUD/side roster behavior is retained.
 
-Full Shop/Inventory startup with every real character, viewport/media loading, resolution/console/mobile rendering and live server responses are not simulated by these local tests. These require a fresh Studio playtest. Do not treat the harness as a pixel-rendering or multiplayer test.
+HUD regression tests execute the actual toggleInfo function across lobby/killer/survivor transitions with ServerList absent, present and missing individual optional methods. The complete repaired HUD Source and corrected command scripts compile. The fresh installer includes this fix, backs up its prior HUD Source and restores it transactionally. The earlier installation can use the standalone repair without reimporting the model.

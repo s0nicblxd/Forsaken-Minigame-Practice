@@ -14,6 +14,8 @@ local backup=game:GetService("Selection"):Get()[1]
 assert(backup and backup.Name:match("^CombatMenus_Backup_"),"Select the CombatMenus_Backup folder in ServerStorage.")
 local spectating=backup.Spectating.Value
 assert(spectating and fingerprint(spectating.Source)==backup:GetAttribute("InstalledSpectating"),"Spectating was edited. Nothing restored.")
+local hud=backup:FindFirstChild("HUD")and backup.HUD.Value
+if hud then assert(fingerprint(hud.Source)==backup:GetAttribute("InstalledHUD"),"HUD was edited. Nothing restored.")end
 local helpers=backup.Helpers.Value
 assert(helpers and helpers.Parent==game.ReplicatedStorage.Modules,"Menu compatibility helpers moved/missing. Nothing restored.")
 local records={}
@@ -28,8 +30,10 @@ for _,record in backup:GetChildren()do
  end
 end
 local currentSource=spectating.Source
+local currentHUD=hud and hud.Source
 local ok,err=pcall(function()
  spectating.Source=backup.BeforeSpectating.Value
+ if hud then hud.Source=backup.BeforeHUD.Value end
  for _,item in records do
   if item.installed then item.installed.Parent=nil end
   if item.old then item.old.Parent=item.parent end
@@ -37,6 +41,7 @@ local ok,err=pcall(function()
 end)
 if not ok then
  spectating.Source=currentSource
+ if hud then hud.Source=currentHUD end
  for _,item in records do if item.old then item.old.Parent=item.record end;if item.installed then item.installed.Parent=item.parent end end
  error("Menu restore rolled back: "..tostring(err))
 end

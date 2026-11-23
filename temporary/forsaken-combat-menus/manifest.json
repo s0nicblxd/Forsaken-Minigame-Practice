@@ -1,9 +1,11 @@
 {
-  "Apply-Combat-Menus.command.luau": "2486116b6f9d85f8ba2872c0710c5ff5633ba8416de2d80dd5d7e84f7e5f7287",
+  "Apply-Combat-Menus.command.luau": "cf38ec8a158709d2f5bcb757cb5d9e414f86c8f5652f0365a709c8e4c3bba2fa",
   "CombatMenusPort.rbxm": "36f4b7c3bae4e24ca7bbbdced9103630e804204b9065be2fb35e2cb3a5571179",
   "Device.luau": "f65e1f6bd435063a2937a940244b9bb8f606dd7eee7056570adcb830cbba0534",
-  "README.md": "4a92782b2adc1f6193db9bcfa488320ce207a23348ee7bf78b42356b8a88bcaf",
-  "Restore-Combat-Menus.command.luau": "47773c8aad9e300c7d903790eea08df47502e6552b1467aa183096704efe2d29",
+  "PlayerInfoDisplay.luau": "f1272edc6de8d6a6fea02cf769955051b8027d9288a19bbcc0b2a4a4c185ae92",
+  "README.md": "b961b3736871f6e112d62223eb1e1db0ea34b789ed35e99b936cd415ae47ff41",
+  "Repair-PlayerInfoDisplay.command.luau": "042ee859564ab68304c3fac62e4b6c245732d8cdf0e2babebd8d19b55cde4c4e",
+  "Restore-Combat-Menus.command.luau": "28e3aa22a9bcf9d80e23ce76d8123191b2a604feb3784d692f34cf0790828baa",
   "ShopSale.luau": "d911ec9be4732313d9d78aec013b2f1cf636c39b4eed0d6643ee200e082831dd",
   "Spectating.luau": "b03ea9d9d49eeeb4ea780f92104f2e60759217391ebecd01371375f740f6e1fc",
   "sources/ReplicatedStorage/Systems/Player/UI/Menus/Achievements.luau": "c541bd1cabd4c81952e33e7b412bfa883ee67435e1d3ce40fe9f47ef4550e2c5",
@@ -36,6 +38,7 @@
   "sources/ReplicatedStorage/Systems/Player/UI/SidebarHandler/Classes/CurrencyDisplay.luau": "6b2bb60d326600fa6b082a01fabe2dbc542a27caf22971c73df2455b8a1ec067",
   "sources/ReplicatedStorage/Systems/Player/UI/SidebarHandler.luau": "e2132a3c50a081045bc970ee2998c0099a310142c234c143cc0d90bd6791b5c1",
   "tests/contracts-regression.luau": "ca84b5eca1fc8a7b4b20bdac7659b24ddb8060bdadb5d04437cfea7cf4c18352",
-  "tests/installer-regression.luau": "20d67231e7ebee535ea7319a54b6f5c4aee2204f381ec0c7f447d6b131fec5d9",
+  "tests/hud-regression.luau": "3b376f669efd606674e0ade8592e0f3a3f9cd8c2f480b6e60c5f7aeb56f79811",
+  "tests/installer-regression.luau": "a510d093a30f451900288babfe74c3a2083521f7624996e522abbbd009b80092",
   "tests/runtime-regression.luau": "8514bfa77b42e7b88aa75eac504ae6e8b389c4e65c78e6af29e428eabaab8dc1"
 }
