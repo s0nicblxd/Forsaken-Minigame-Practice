@@ -94,7 +94,7 @@ function Controller.Start()
    local player=findPlayer(hit)
    if player then Controller.TrySpawn(player,role,pad)end
   end))
-  local prompt=assert(pad:FindFirstChild("CombatRolePrompt"),"Role prompt missing")
+  local prompt=assert(pad:FindFirstChild("ProximityPrompt"),"Role prompt missing")
   table.insert(Controller.connections,prompt.Triggered:Connect(function(player)Controller.TrySpawn(player,role,pad)end))
  end
  local function added(player)player.RespawnLocation=spawn end

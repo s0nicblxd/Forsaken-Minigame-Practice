@@ -1,6 +1,6 @@
 # FCT imported Combat map — role pad/spawn repair
 
-For the supplied **FCTnewmap!.rbxl**. Stop Play, run **Apply-Combat-Spawns.command.luau** in Studio Command Bar, save, then start a new playtest. Use the imported lobby Killer/Survivor pads by touching them or using their proximity prompt. Your currently equipped character and skin are selected through the native Actors:CreateActor(player, role) path.
+For the supplied **FCTnewmap!.rbxl**. Stop Play, run **Apply-Combat-Spawns.command.luau** in Studio Command Bar, save, then start a new playtest. Use the imported lobby Killer/Survivor pads by touching them or pressing F on their original Interact prompt. Your currently equipped character and skin are selected through the native Actors:CreateActor(player, role) path.
 
 ## Found in the upload
 
@@ -13,7 +13,7 @@ For the supplied **FCTnewmap!.rbxl**. Stop Play, run **Apply-Combat-Spawns.comma
 
 Moves the imported Map and Lobby into Workspace.Map.Ingame and puts the imported SpawnPoints under Workspace.Map.Ingame.Map.SpawnPoints, matching the native Maps module's arena layout. The original Workspace.Map.Lobby and all geometry/world positions are retained. Empty MapImport wrappers are retained. No map objects are deleted.
 
-Enables touch on the role pads, disables their empty placeholder scripts, and adds server-driven touch + proximity prompt handling. Markers are anchored, non-colliding, non-touchable and non-queryable. Their names, positions and orientations are preserved. Makes the imported lobby SpawnLocation the sole enabled Workspace SpawnLocation and neutral; players' runtime RespawnLocation points to it. Native death/respawn stays with PlayerManager. No custom automatic respawn or arena-return teleport is added.
+Enables touch on the role pads, disables their empty placeholder scripts, and connects the original Forsaken styled F Interact prompts plus server-driven touch handling. Markers are anchored, non-colliding, non-touchable and non-queryable. Their names, positions and orientations are preserved. Makes the imported lobby SpawnLocation the sole enabled Workspace SpawnLocation and neutral; players' runtime RespawnLocation points to it. Native death/respawn stays with PlayerManager. No custom automatic respawn or arena-return teleport is added.
 
 The controller requires loaded/live lobby players close to the pad, debounces across both pads, and rejects already active actors. It does not let an active fighter reset health/switch roles by touching a pad. Reset/die and respawn in the lobby to choose again. It does not bypass equipped-character selection or edit access rules.
 
@@ -27,6 +27,8 @@ Stop Play, select the CombatSpawns_Backup folder in ServerStorage, run **Restore
 
 Studio testing is required for actual touch contacts, physics/rig clearance, chosen character asset permissions, multiplayer replication and death/respawn. The new script does not repair errors inside an equipped character's own Config or Behavior.
 
-## Local validation
+## Forsaken prompt correction
 
-Delivered runtime and Command Bar scripts compile with Luau. Runtime harness checks native equipped-character calls, touch/proximity input, loaded/live/distance validation, cross-pad busy locks, cooldowns, active-actor rejection, no-floor refusal before creation, error recovery, player cleanup, scaled/normal R6 ground clearance and actor replication pivots. Installer harness checks duplicate Spawn Model/SpawnLocation names, world-position preservation, canonical layout, exact property/parent restore, idempotence, conflicting hierarchy/local edit refusal and rollback after an injected controller Source write failure. Actual physics, character media and multiplayer replication require Studio testing.
+If the earlier spawn repair is already installed, stop Play, run **Repair-Forsaken-Spawn-Prompts.command.luau**, save and start a fresh playtest. It wires the existing ProximityPrompt on each pad to the spawn controller, uses Custom style and the existing Styled theme with F / Interact, and archives the extra Roblox CombatRolePrompt outside Workspace. Touch spawning stays connected. It does not replace any shared prompt renderer or asset. A CombatPrompts_Backup folder stores the previous controller, prompt properties and archived popup instances. To undo this correction select that folder and run Restore-Forsaken-Spawn-Prompts.command.luau before restoring the original spawn repair. Fresh installations with the updated main installer reuse the original prompts directly.
+
+Local validation: main install/restore and runtime spawn tests pass with original prompt reuse. Prompt correction tests cover custom Styled/F/Interact settings, removal of the duplicate default popup, no new replacement prompt, repeat application, restore and source-write rollback/edit refusal. All delivered scripts compile. Actual rendering and input still require a fresh Studio playtest.

@@ -1,9 +1,12 @@
 {
-  "Apply-Combat-Spawns.command.luau": "573b0bc09e30be5e755a361398034449e4feb5cc37eadae1ff3f18e1b5dc1b99",
-  "Controller.luau": "a1646a9a9dffbb5dad1a2f76df46938a96a9505bac0def429fca0ed815624f92",
+  "Apply-Combat-Spawns.command.luau": "a88335a2783df45799e44e5fbb98aea16d1df54be5028691c05bfd9d37b2d731",
+  "Controller.luau": "85ca8fe30c4c678a9cd989d1441789389b150723040c54afd6b65e86491040cc",
   "Driver.luau": "1697501c846fe3135fb84ae0c29280edae70e0da6f8733e68b264b1f809be37c",
-  "README.md": "3a0e44fcc666a1772314d6c36a21ec4ff81a9d7f91e96ee1f03c8e238c7de59f",
+  "README.md": "88730904b7ab841fb9da5534d6c2425d8581a42c6d6ef202eaa8806bbb64e65b",
+  "Repair-Forsaken-Spawn-Prompts.command.luau": "15e8121b94125334dd084f3152fd7a85110975ce0f71924b5647f4e50d7e36d3",
   "Restore-Combat-Spawns.command.luau": "4aaf4f328cbcb084bbc9191343d665e77db34bc3c119fa22c05f3c7f7ed31eaa",
-  "tests/installer-regression.luau": "e8e14afe3d30356687a38bab830309df9bfb09a9753d3a56d1968f49a9219205",
-  "tests/runtime-regression.luau": "f98089d271430e974f9ab6f090cb0e9a061a23a69479c28a735fa7f4f3c0a553"
+  "Restore-Forsaken-Spawn-Prompts.command.luau": "f749c3c1b1aab66425a34a25ee5fd021fa3d4e82d006c08a0683133a4949c96c",
+  "tests/installer-regression.luau": "358d62f27daecc1afee5e4a71a34e3668d0c756befca7fc8bd6ccb11c8ffe1c6",
+  "tests/prompt-regression.luau": "18e6da78660f02c568b6214bb193e853bf513e754553fa44f0df605f4413c896",
+  "tests/runtime-regression.luau": "716bba73cafc278274f48eeb2d4c86ee629d41530b104d04b7746f3d56a16e53"
 }

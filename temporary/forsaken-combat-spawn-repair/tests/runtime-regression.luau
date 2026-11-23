@@ -37,7 +37,7 @@ node('Spawn','Model',lobby);local spawn=node('Spawn','SpawnLocation',lobby)
 local pads={}
 for _,role in {'Killer','Survivor'}do
  local pad=node(role,'Part',lobby);pad.Position=Vector3.new(0,650,0);pad.Size=Vector3.new(4,1,4);pad.Touched=signal()
- local prompt=node('CombatRolePrompt','ProximityPrompt',pad);prompt.Triggered=signal();pads[role]=pad
+ local prompt=node('ProximityPrompt','ProximityPrompt',pad);prompt.Triggered=signal();pads[role]=pad
  local group=node(role..'s','Folder',spawns)
  for i=1,3 do local marker=node('TeleportZone','Part',group);marker.Position=Vector3.new(i*10,211,0);marker.Size=Vector3.new(6,1,6);marker.CFrame=CFrame.new(marker.Position)end
 end
@@ -175,7 +175,7 @@ function Controller.Start()
    local player=findPlayer(hit)
    if player then Controller.TrySpawn(player,role,pad)end
   end))
-  local prompt=assert(pad:FindFirstChild("CombatRolePrompt"),"Role prompt missing")
+  local prompt=assert(pad:FindFirstChild("ProximityPrompt"),"Role prompt missing")
   table.insert(Controller.connections,prompt.Triggered:Connect(function(player)Controller.TrySpawn(player,role,pad)end))
  end
  local function added(player)player.RespawnLocation=spawn end
@@ -197,8 +197,8 @@ assert(calls==1 and actors.CurrentActors[a].ActorType=='Killer')
 local killer=actors.CurrentActors[a]
 assert(math.abs(killer.Rig.PrimaryPart.Position.Y-203.9)<.0001,'scaled rig ground clearance')
 assert(killer.ClientV==Vector3.zero and killer.Rig.PrimaryPart.AssemblyLinearVelocity==Vector3.zero)
-now=3;pads.Survivor:FindFirstChild('CombatRolePrompt').Triggered:Fire(a);assert(calls==1,'active actors cannot health-reset or role switch')
-pads.Survivor:FindFirstChild('CombatRolePrompt').Triggered:Fire(b)
+now=3;pads.Survivor:FindFirstChild('ProximityPrompt').Triggered:Fire(a);assert(calls==1,'active actors cannot health-reset or role switch')
+pads.Survivor:FindFirstChild('ProximityPrompt').Triggered:Fire(b)
 assert(calls==2 and actors.CurrentActors[b].ActorType=='Survivor'and math.abs(b.Character.PrimaryPart.Position.Y-203.15)<.0001)
 local c=player('Three');players.PlayerAdded:Fire(c);assert(c.RespawnLocation==spawn)
 c.Character.PrimaryPart.Position=Vector3.new(100,650,0);assert(not Controller.TrySpawn(c,'Killer',pads.Killer)and calls==2)

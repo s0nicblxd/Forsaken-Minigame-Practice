@@ -84,6 +84,7 @@ local function fixture()
  local spawns=child(imported,'SpawnPoints')
  for _,role in {'Killer','Survivor'}do
   local pad=child(lobby,role,'Part');pad.CanTouch=false
+  local native=child(pad,'ProximityPrompt','ProximityPrompt');native.Enabled=true
   local script=child(pad,'Become'..role,'Script');script.Disabled=false
   script.Source='-- Saved by UniversalSynSaveInstance (Join to Copy Games) https://discord.gg/wx4ThpAsmw\n\n-- [FilteringEnabled] Server Scripts are IMPOSSIBLE to save'
   local markers=child(spawns,role..'s')
@@ -190,7 +191,7 @@ function Controller.Start()
    local player=findPlayer(hit)
    if player then Controller.TrySpawn(player,role,pad)end
   end))
-  local prompt=assert(pad:FindFirstChild("CombatRolePrompt"),"Role prompt missing")
+  local prompt=assert(pad:FindFirstChild("ProximityPrompt"),"Role prompt missing")
   table.insert(Controller.connections,prompt.Triggered:Connect(function(player)Controller.TrySpawn(player,role,pad)end))
  end
  local function added(player)player.RespawnLocation=spawn end
@@ -232,6 +233,8 @@ local pads={}
 for _,role in {"Killer","Survivor"}do
  local pad=assert(lobby:FindFirstChild(role),"Missing role pad: "..role)
  assert(pad:IsA("BasePart")and not pad:FindFirstChild("CombatRolePrompt"),"Unexpected role pad/prompt. Nothing changed.")
+ local native=pad:FindFirstChild("ProximityPrompt")
+ assert(native and native:IsA("ProximityPrompt"),"Original Forsaken prompt missing. Nothing changed.")
  local old=pad:FindFirstChild("Become"..role)
  assert(old and old:IsA("Script")and old.Source==oldPadSource,"Role pad script has local edits. Nothing changed; send its source to preserve them.")
  local markers=spawns:FindFirstChild(role.."s");local count=0
@@ -249,6 +252,7 @@ local function property(target,name,value)if target[name]~=value then table.inse
 move(arena,ingame);move(lobby,ingame);move(spawns,arena)
 for _,entry in pads do
  property(entry.pad,"CanTouch",true)
+ property(entry.pad.ProximityPrompt,"Enabled",true)
  property(entry.old,"Disabled",true)
  for _,marker in entry.markers:GetChildren()do
   if marker:IsA("BasePart")then
@@ -273,11 +277,6 @@ backup.Parent=game.ServerStorage
 local ok,err=pcall(function()
  for _,item in moves do item.target.Parent=item.after end
  for _,item in properties do item.target[item.key]=item.after end
- for _,entry in pads do
-  local prompt=Instance.new("ProximityPrompt");table.insert(created,prompt)
-  prompt.Name="CombatRolePrompt";prompt.ActionText="Play as "..entry.role;prompt.ObjectText="Equipped "..entry.role
-  prompt.HoldDuration=.15;prompt.MaxActivationDistance=8;prompt.RequiresLineOfSight=false;prompt.Parent=entry.pad
- end
  local runtime=Instance.new("Script");table.insert(created,runtime);runtime.Name="CombatSpawnPads";runtime.Disabled=true
  runtime.Source=driverSource
  local module=Instance.new("ModuleScript");module.Name="Controller";module.Parent=runtime;module.Source=controllerSource
@@ -347,7 +346,7 @@ assert(f.arena.Parent==f.ingame and f.lobby.Parent==f.ingame and f.spawns.Parent
 assert(f.spawn.Enabled and not f.oldSpawn.Enabled)
 assert(f.sss.CombatSpawnPads.Controller.Source:find('TrySpawn',1,true))
 for _,role in {'Killer','Survivor'}do
- local pad=f.lobby:FindFirstChild(role);assert(pad.CanTouch and pad:FindFirstChild('CombatRolePrompt')and pad:FindFirstChild('Become'..role).Disabled)
+ local pad=f.lobby:FindFirstChild(role);assert(pad.CanTouch and pad:FindFirstChild('ProximityPrompt')and pad:FindFirstChild('Become'..role).Disabled)
  for i,marker in f.spawns:FindFirstChild(role..'s'):GetChildren()do assert(marker.CFrame=='original_'..role..i and not marker.CanCollide and not marker.CanQuery)end
 end
 local backup
