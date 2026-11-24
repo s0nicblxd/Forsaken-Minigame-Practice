@@ -1,3 +1,4 @@
+local CarryVisuals=require(script.Parent.CarryVisuals)
 
 
 local RunService = game:GetService("RunService")
@@ -449,27 +450,8 @@ local function cl_updateBuildingActivityBars(p17) -- line: 1077
 		end
 	end
 end
-local function updateBuildingCarryVisual(p18) -- line: 1101
-	local PlayerAura = p18:FindFirstChild("PlayerAura")
-
-	if not PlayerAura then
-		return
-	end
-
-	if p18:GetAttribute("Carrying") then
-		PlayerAura.FillColor = Color3.fromRGB(153, 134, 48)
-		PlayerAura.OutlineColor = Color3.fromRGB(255, 220, 50)
-
-		if p18:GetAttribute("OwnerName") == tostring(game.Players.LocalPlayer) then
-			PlayerAura.Enabled = false
-
-			return
-		end
-	else
-		PlayerAura.Enabled = true
-		PlayerAura.FillColor = Color3.fromRGB(102, 134, 102)
-		PlayerAura.OutlineColor = Color3.fromRGB(191, 255, 191)
-	end
+local function updateBuildingCarryVisual(building)
+ CarryVisuals.Update(building)
 end
 
 t1.Abilities = {
@@ -642,6 +624,7 @@ function t1.Created(_, p26) -- line: 1527
 			local Part = Instance.new("Part")
 
 			Part.CanCollide = false
+            Part.CanQuery=false;Part.CanTouch=false
 			Part.Anchored = true
 			Part.Transparency = 1
 			Part.Position = Vector3.new(0, -100, 0)
@@ -681,7 +664,8 @@ function t1.Created(_, p26) -- line: 1527
 				p26.BuildingVisualTroves[child] = v144
 				task.spawn(function() -- line: 1641
 					-- upvalues: child (copy), updateBuildingCarryVisual (copy)
-					if child:WaitForChild("PlayerAura", 10) then
+					updateBuildingCarryVisual(child)
+                    if child:WaitForChild("PlayerAura", 10) then
 						updateBuildingCarryVisual(child)
 					end
 				end)
@@ -716,7 +700,15 @@ function t1.Created(_, p26) -- line: 1527
 					end
 				end
 
+				syncRadiusPositions()
 				v144:Connect(Root:GetPropertyChangedSignal("Position"), syncRadiusPositions)
+                v144:Connect(child:GetAttributeChangedSignal("Destroyed"),function()
+                    if child:GetAttribute("Destroyed")then
+                        v144:Destroy()
+                        if p26.BuildingVisualTroves then p26.BuildingVisualTroves[child]=nil end
+                    end
+                end)
+
 				v144:Connect(child:GetAttributeChangedSignal("EffectRadiusSize"), function() -- line: 1668
 					-- upvalues: child (copy), v149 (copy)
 					if child:GetAttribute("Destroyed") or child:GetAttribute("Carrying") then
@@ -825,6 +817,14 @@ function t1.Created(_, p26) -- line: 1527
 	initClientSentryAiming(p26)
 	p26.Buildings = {}
 	p26.CarryVisualTroves = p26.CarryVisualTroves or {}
+    local function refreshCarryOutlines()
+        for _,building in workspace.Map.Ingame:GetChildren()do
+            if building.Name=="BuildermanSentry"or building.Name=="BuildermanDispenser"then updateBuildingCarryVisual(building)end
+        end
+    end
+    task.defer(refreshCarryOutlines)
+    p26.BuilderViewerConnection=game.Players.LocalPlayer.CharacterAdded:Connect(function()task.defer(refreshCarryOutlines)end)
+
 	p26.CarryVisualConnection = workspace.Map.Ingame.ChildAdded:Connect(function(child) -- line: 1737
 		-- upvalues: p26 (copy), trove (copy), updateBuildingCarryVisual (copy)
 		if child.Name:find("Builderman") then
@@ -843,7 +843,8 @@ function t1.Created(_, p26) -- line: 1527
 			p26.CarryVisualTroves[child] = v153
 			task.spawn(function() -- line: 1748
 				-- upvalues: child (copy), updateBuildingCarryVisual (copy)
-				if child:WaitForChild("PlayerAura", 10) then
+				updateBuildingCarryVisual(child)
+                    if child:WaitForChild("PlayerAura", 10) then
 					updateBuildingCarryVisual(child)
 				end
 			end)
@@ -1009,6 +1010,7 @@ end
 function t1.Destroyed(_, p40) -- line: 1873
 	-- upvalues: cl_tweenCarryFOV (copy), Network (copy)
 	p40.BuilderConstructionVisual=nil
+ if p40.BuilderViewerConnection then p40.BuilderViewerConnection:Disconnect();p40.BuilderViewerConnection=nil end
 	if p40.CarryVisualConnection then
 		p40.CarryVisualConnection:Disconnect()
 		p40.CarryVisualConnection = nil

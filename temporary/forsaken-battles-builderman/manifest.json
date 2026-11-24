@@ -1,9 +1,11 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "character": "Builderman",
-  "placementDelay": 1.15,
+  "placementDelay": 1,
   "donorInstances": 72,
   "sentryAsset": "Retained current complete Sentry because UPD Sentry is empty",
   "sharedModulesChanged": false,
-  "studioPlaytested": false
+  "studioPlaytested": false,
+  "constructionWindup": 1.25,
+  "carryAttachment": "Rigid weld"
 }

@@ -78,7 +78,8 @@ local t1 = {
 		PutDown = "rbxassetid://90904147606168"
 	},
 	CarryRange = 7,
- CarryPlacementDuration = 1.15,
+ CarryPlacementDuration = 1,
+ ConstructionWindup = 1.25,
  MoveCooldown = 0,
 	CarryWalkspeed = 0.9,
 	CarryFOVMultiplier = 1.2,

@@ -1,6 +1,21 @@
 # Forsaken: Battles — Builderman rework
 
-Reconstructs the UPD's missing server-side construction/Carry logic on the existing FCT actor framework, retaining the donor client UI and visuals where compatible. Carry placement takes **1.15 seconds**, as requested.
+Reconstructs the UPD's missing server-side construction/Carry logic on the existing FCT actor framework, retaining the donor client UI and visuals where compatible. Carry placement takes **1 second**, as requested.
+
+## Existing installation: polish repair (v1.1)
+
+Stop Play and run the entire `Repair-Builderman-Polish.command.luau` in the Command Bar. Save and start a fresh playtest. **No model reimport or full reinstall is needed.** The repair updates the existing Server/Client Sources, adds the CarryVisuals helper, and changes the placement timing in Config while preserving unrelated Config edits such as animation IDs. A `BuildermanPolish_Backup_*` folder supports rollback with `Restore-Builderman-Polish.command.luau`.
+
+This revision fixes:
+
+- Replacement building circles get their initial coordinates immediately; they no longer wait for pickup/movement. Destroyed circles are cleaned up promptly.
+- Normal construction has the original **1.25s visual windup**, within its unchanged six-second total duration.
+- Carry uses a **rigid weld to the character root**, instead of teleporting the model ten times per second. Carried parts are non-colliding and massless; the building's movement state machine is disabled so it cannot fight the carrier's physics.
+- Pickup temporarily locks movement for the existing **0.75s Sentry / 0.5s Dispenser** pickup windows, independently of animation playback. Normal 10% Carry slowdown follows afterward.
+- Placement locks movement, sprinting and abilities for **1 second**. The building reactivates and the locks clear at that deadline. Destruction/death also clears the locks.
+- A yellow outline appears for **every survivor, including the owner**, only while carrying. Killers do not receive it. A dedicated local Highlight prevents an asynchronous or absent ordinary aura from hiding the effect; the prior normal aura state is restored on drop.
+
+The full installer below includes these fixes for new installations. If restoring an older full-port backup after applying this repair, restore the polish repair first so its Source checks match.
 
 ## Install
 
@@ -17,7 +32,7 @@ The current Builderman Config and Behavior Sources are checked before installati
 
 ### Construction and replacement
 
-- Normal construction remains **6 seconds** for Sentry and Dispenser.
+- Normal construction remains **6 seconds** for Sentry and Dispenser, including the **1.25s visual startup delay**.
 - Casting construction does not start a cooldown. Replacing your previous building destroys it without a destruction cooldown or payout.
 - The Sentry ability is locked for **10 seconds after a successful shot**; Dispenser is locked for **10 seconds after actual healing**. Activity is represented in the donor icon lock/recharge UI.
 - A Sentry destroyed by a killer starts **35 seconds** of cooldown; a Dispenser starts **30 seconds**. The native hitbox's `RecentAttacker` and timestamp, recorded before health deduction, identify the attacker. Untagged/environmental removal, replacement and owner cleanup do not count as killer destruction. Fresh tagged killer damage that destroys a carried building also starts the appropriate cooldown.
@@ -38,8 +53,8 @@ The current Builderman Config and Behavior Sources are checked before installati
 - The server selects **your own completed building within 7 studs**; client-provided targets/positions are not accepted.
 - Pickup has the donor debounce: 0.75s for Sentry and 0.5s for Dispenser.
 - Movement is reduced by **10%**, sprinting is disabled, and the donor carrying FOV/animation presentation is used.
-- The building remains in the world, becomes non-colliding and inactive, and follows the configured pickup offset. Existing health and contribution totals remain intact.
-- Pressing Carry again validates placement and puts the same building down. It becomes active **1.15s later**, independently of animation availability. Timing is checked every frame rather than being delayed by the slower effects loop.
+- The building remains in the world, becomes non-colliding, massless and inactive, and follows the configured pickup offset using a rigid weld. Existing health and contribution totals remain intact.
+- Pressing Carry again validates placement and puts the same building down. It becomes active **1s later**, independently of animation availability. Timing is checked every frame rather than being delayed by the slower effects loop.
 - A single health change of **10 or more damage** while carrying destroys that building and releases Carry/sprint/FOV state.
 - Carry/Place stays available while holding a building; it is not locked just because there is no separate nearby pickup candidate. Placement failure retains the carried building.
 - Owner death/despawn cleans up buildings, loops, movement multipliers, ability locks and connections.
@@ -52,12 +67,15 @@ The retained older Sentry rig may need animation-ID adjustment if the donor's ne
 
 ## Validation
 
-All command scripts and installed Sources compile with Luau. Four standalone mock-based suites pass:
+All command scripts and installed Sources compile with Luau. Seven standalone mock-based suites pass:
 
-1. Actual server callbacks: normal construction, free replacement, activity locks, damage/slowness stacking, Carry ownership/inactivity, 1.15s placement, killer-only cooldowns, carried damage destruction, interruption, placement rejection and cleanup.
+1. Actual server callbacks: normal construction, free replacement, activity locks, damage/slowness stacking, Carry ownership/inactivity, 1s placement, killer-only cooldowns, carried damage destruction, interruption, placement rejection and cleanup.
 2. Full installer: old Sentry/rig preservation, donor asset integration, idempotence, exact restore, Source preparation rollback, local-edit protection.
 3. Shared ability wrapper: independent callback routing and third-slot Carry/Place with no native charge consumption.
 4. Actual donor Carry callbacks: missing animations, icon/name/FOV/sprint restoration, state cleanup and warnings.
+5. Carry highlight: owner/other survivors, killer exclusion, ordinary-aura independence, deduplication and restoration.
+6. Targeted polish installer: preservation of Config media edits, version/Source guards, idempotence, exact restore and each Source-write failure rollback.
+7. Actual range setup: initial circle coordinates before any position-change event, with later position synchronization.
 
 A binary model round-trip verifies all 72 instances and local joint references, confirms the empty donor Sentry, and confirms executable donor Sources are stripped.
 
