@@ -197,9 +197,11 @@ local function scooter(a)
  end
  model.PrimaryPart=handle
  model:PivotTo(torso.CFrame)
- local joint=model:FindFirstChild("ScooterJoint",true)
- if joint and joint:IsA("Motor6D")then joint.Part0=torso;joint.Part1=handle
- else joint=Instance.new("Motor6D");joint.Name="ScooterJoint";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle end
+ local oldJoint=model:FindFirstChild("ScooterJoint",true)
+ if oldJoint then oldJoint:Destroy()end
+ local joint=Instance.new("Weld")
+ joint.Name="ElliotScooterMount";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle
+ joint.C1=CFrame.new()
  local base=a.Config.RushHourScooterOffset or CFrame.new()
  local geometry={}
  for _,part in model:GetDescendants()do
@@ -207,11 +209,23 @@ local function scooter(a)
    table.insert(geometry,{relative=handle.CFrame:ToObjectSpace(part.CFrame),half=part.Size*.5})
   end
  end
+ if not a.Config.RushHourScooterOffset and #geometry>0 then
+  local minimum=Vector3.new(math.huge,math.huge,math.huge)
+  local maximum=Vector3.new(-math.huge,-math.huge,-math.huge)
+  for _,shape in geometry do
+   for x=-1,1,2 do for y=-1,1,2 do for z=-1,1,2 do
+    local point=shape.relative:PointToWorldSpace(Vector3.new(x*shape.half.X,y*shape.half.Y,z*shape.half.Z))
+    minimum=Vector3.new(math.min(minimum.X,point.X),math.min(minimum.Y,point.Y),math.min(minimum.Z,point.Z))
+    maximum=Vector3.new(math.max(maximum.X,point.X),math.max(maximum.Y,point.Y),math.max(maximum.Z,point.Z))
+   end end end
+  end
+  base=CFrame.new(-(minimum.X+maximum.X)*.5,0,-(minimum.Z+maximum.Z)*.5)
+ end
  local params=RaycastParams.new()
  params.FilterType=Enum.RaycastFilterType.Include
  params.FilterDescendantsInstances={workspace.Map}
  params.IgnoreWater=true
- model.Name="ElliotRushScooter";model.Parent=a.Rig
+ model.Name="ElliotRushScooter";model:SetAttribute("ElliotMountVersion","RigidCentered");model.Parent=a.Rig
  local connection
  local function updateMount()
   if not model.Parent or not torso.Parent then

@@ -86,6 +86,7 @@ local function frame(pos)return setmetatable({Position=pos,RightVector=v(1,0,0),
 function cm.__mul(a,b)return frame(a.Position+b.Position)end
 function cf:ToObjectSpace(other)return frame(other.Position-self.Position)end
 function cf:VectorToObjectSpace(value)return value end
+function cf:PointToWorldSpace(value)return self.Position+value end
 local CFrame={new=function(x,y,z)return frame(type(x)=="table"and x or v(x or 0,y or 0,z or 0))end}
 local Vector3={new=v}
 local RaycastParams={new=function()return {}end}
@@ -102,7 +103,7 @@ end
 function Methods:PivotTo(value)self.Pivot=value end
 local template=Instance.new("Model")
 local handle=child(template,"ScooterHandle","Part");handle.Transparency=1;handle.CFrame=CFrame.new()
-local body=child(template,"Scooter","MeshPart");body.Transparency=1;body.LocalTransparencyModifier=1;body.CFrame=CFrame.new(0,-1.25,0);body.Size=v(2,3.6,4)
+local body=child(template,"Scooter","MeshPart");body.Transparency=1;body.LocalTransparencyModifier=1;body.CFrame=CFrame.new(1.5,-1.25,-.75);body.Size=v(2,3.6,4)
 local joint=child(template,"ScooterJoint","Motor6D");joint.C0="old offset";joint.C1="preserved inverse"
 local rig=child(workspace,"Elliot","Model");local root=child(rig,"HumanoidRootPart","Part");root.Position=v(0,3,0);root.CFrame=frame(root.Position);rig.PrimaryPart=root
 local torso=child(rig,"Torso","Part");torso.CFrame=CFrame.new(0,-500,0)
@@ -133,9 +134,11 @@ local function scooter(a)
  end
  model.PrimaryPart=handle
  model:PivotTo(torso.CFrame)
- local joint=model:FindFirstChild("ScooterJoint",true)
- if joint and joint:IsA("Motor6D")then joint.Part0=torso;joint.Part1=handle
- else joint=Instance.new("Motor6D");joint.Name="ScooterJoint";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle end
+ local oldJoint=model:FindFirstChild("ScooterJoint",true)
+ if oldJoint then oldJoint:Destroy()end
+ local joint=Instance.new("Weld")
+ joint.Name="ElliotScooterMount";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle
+ joint.C1=CFrame.new()
  local base=a.Config.RushHourScooterOffset or CFrame.new()
  local geometry={}
  for _,part in model:GetDescendants()do
@@ -143,11 +146,23 @@ local function scooter(a)
    table.insert(geometry,{relative=handle.CFrame:ToObjectSpace(part.CFrame),half=part.Size*.5})
   end
  end
+ if not a.Config.RushHourScooterOffset and #geometry>0 then
+  local minimum=Vector3.new(math.huge,math.huge,math.huge)
+  local maximum=Vector3.new(-math.huge,-math.huge,-math.huge)
+  for _,shape in geometry do
+   for x=-1,1,2 do for y=-1,1,2 do for z=-1,1,2 do
+    local point=shape.relative:PointToWorldSpace(Vector3.new(x*shape.half.X,y*shape.half.Y,z*shape.half.Z))
+    minimum=Vector3.new(math.min(minimum.X,point.X),math.min(minimum.Y,point.Y),math.min(minimum.Z,point.Z))
+    maximum=Vector3.new(math.max(maximum.X,point.X),math.max(maximum.Y,point.Y),math.max(maximum.Z,point.Z))
+   end end end
+  end
+  base=CFrame.new(-(minimum.X+maximum.X)*.5,0,-(minimum.Z+maximum.Z)*.5)
+ end
  local params=RaycastParams.new()
  params.FilterType=Enum.RaycastFilterType.Include
  params.FilterDescendantsInstances={workspace.Map}
  params.IgnoreWater=true
- model.Name="ElliotRushScooter";model.Parent=a.Rig
+ model.Name="ElliotRushScooter";model:SetAttribute("ElliotMountVersion","RigidCentered");model.Parent=a.Rig
  local connection
  local function updateMount()
   if not model.Parent or not torso.Parent then
@@ -177,15 +192,17 @@ local model,connection=scooter(actor)
 assert(model and model.Parent==rig)
 assert(model.Scooter.Transparency==0 and model.Scooter.LocalTransparencyModifier==0)
 assert(model.ScooterHandle.Transparency==1)
-assert(model.ScooterJoint.Part0==root and model.ScooterJoint.Part1==model.ScooterHandle,"must not follow animated torso")
-assert(model.ScooterJoint.C1=="preserved inverse")
-assert(math.abs(model.ScooterJoint.C0.Position.Y-.11)<1e-6,"wrong ground clearance")
+assert(model.ScooterHandle.ElliotScooterMount.Part0==root and model.ScooterHandle.ElliotScooterMount.Part1==model.ScooterHandle,"must not follow animated torso")
+assert(not model:FindFirstChild("ScooterJoint"))
+assert(model.ScooterHandle.ElliotScooterMount:IsA("Weld"))
+assert(model.ScooterHandle.ElliotScooterMount.C0.Position.X==-1.5 and model.ScooterHandle.ElliotScooterMount.C0.Position.Z==.75)
+assert(math.abs(model.ScooterHandle.ElliotScooterMount.C0.Position.Y-.11)<1e-6,"wrong ground clearance")
 for i=1,30 do heartbeat:Fire()end
-assert(math.abs(model.ScooterJoint.C0.Position.Y-.11)<1e-6,"clearance accumulated each frame")
+assert(math.abs(model.ScooterHandle.ElliotScooterMount.C0.Position.Y-.11)<1e-6,"clearance accumulated each frame")
 floorHeight=.5;heartbeat:Fire()
-assert(math.abs(model.ScooterJoint.C0.Position.Y-.61)<1e-6,"floor rise not handled")
+assert(math.abs(model.ScooterHandle.ElliotScooterMount.C0.Position.Y-.61)<1e-6,"floor rise not handled")
 hit=false;root.Position=v(0,8,0);root.CFrame=frame(root.Position);heartbeat:Fire()
-assert(model.ScooterJoint.C0.Position.Y==0,"airborne mount retained stale floor lift")
+assert(model.ScooterHandle.ElliotScooterMount.C0.Position.Y==0,"airborne mount retained stale floor lift")
 assert(template.Scooter.Transparency==1 and not model.Scooter.CanCollide and model.Scooter.Massless)
 assert(actor.Animations==nil)
 actor.ElliotRush={scooter=model,mountConnection=connection}

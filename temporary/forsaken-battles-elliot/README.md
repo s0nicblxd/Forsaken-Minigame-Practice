@@ -33,6 +33,14 @@ The scooter now mounts to HumanoidRootPart instead of the animated torso. Its vi
 
 Runtime checks cover ground clearance, raised floor, repeated-update stability, airborne reset, root attachment, visibility and cleanup. Final wheel placement and riding pose still require Studio testing with the actual mesh and animations.
 
+## Latest: rigid, geometry-centered mount
+
+Use `Repair-Elliot-Scooter-Center.command.luau` for existing installs, in Edit mode, then save and restart Play. It includes the previous repairs and accepts their known Server versions. No asset reimport is needed.
+
+The character-to-handle Motor6D is replaced with a Weld so riding animations cannot add a hidden Transform to the mount. The model's visible part bounds are measured in handle space and their horizontal center is placed under HumanoidRootPart. The internal scooter-body weld remains intact. Ground clearance, cleanup, visibility and Happy-expression behavior are retained. `RushHourScooterOffset` remains available for custom rigs. This centers the scooter geometry; Elliot's final seated pose still depends on his riding animation.
+
+The mount test includes an intentionally off-center body mesh and verifies its X/Z correction, rigid joint type, absence of the animated mount, ground clearance, raised-floor response, lack of accumulated offsets, airborne reset and cleanup.
+
 ## Mechanics
 
 - **Pizza Throw:** 34s cooldown, 0.5s release, 2s ability lock, 60 throw force, 15s lifetime. The existing pizza part is cloned and thrown with server-owned physics.
