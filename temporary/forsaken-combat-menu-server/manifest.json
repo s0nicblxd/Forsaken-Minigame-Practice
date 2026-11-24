@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "modifiedModules": [
+    "ReplicatedStorage/Systems/Player/UI/Menus/Inventory",
+    "ReplicatedStorage/Systems/Player/UI/Menus/Inventory/Tabs/Killers",
+    "ReplicatedStorage/Systems/Player/UI/Menus/Inventory/Tabs/Survivors",
+    "ServerScriptService/Server/Systems/Data/PlayerData",
+    "ReplicatedStorage/Systems/Player/UI/Menus/Shop/Classes/RigBuilder",
+    "ServerScriptService/Server/Systems/Shopping/AssetSystems",
+    "ReplicatedStorage/Modules/Actors"
+  ],
+  "addedModule": "ServerScriptService/Server/Systems/Shopping/CombatMenuBackend",
+  "requires": "Refreshed Combat Menus port; current FCTnewmap build with no-cutscene Actors patch",
+  "studioPlaytested": false
+}
