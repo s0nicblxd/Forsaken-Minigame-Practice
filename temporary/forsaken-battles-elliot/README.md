@@ -13,6 +13,12 @@ No replacement character rig is necessary. The current Elliot folder is cloned s
 
 If a Source fingerprint check refuses installation, send that current module. Nothing is changed before all checks pass. A unique `ServerStorage/ElliotPort_Backup_*` folder stores the original Elliot and shared module Sources. Live-write failures roll back.
 
+## Scooter visibility repair for existing installs
+
+If the scooter model appears under Elliot during Rush Hour but is invisible, stop Play and run `Repair-Elliot-Scooter.command.luau` in the Command Bar. Save and start a fresh playtest. No asset reimport or full reinstall is necessary.
+
+The donor scooter mesh and handle are both saved with Transparency 1. The repaired Server module makes the scooter mesh visible when spawning it, while retaining the invisible handle, authored joint offsets, and non-colliding massless setup. Visibility does not require riding animations. The full installer includes the same fix for new installs. The repair checks the existing Server Source and creates a separate `ElliotScooter_Backup_*` folder.
+
 ## Mechanics
 
 - **Pizza Throw:** 34s cooldown, 0.5s release, 2s ability lock, 60 throw force, 15s lifetime. The existing pizza part is cloned and thrown with server-owned physics.
@@ -35,12 +41,13 @@ The scooter is attached using the donor joint offsets and animated with the supp
 
 ## Validation
 
-All installed Sources and command scripts compile with Luau. Four runtime suites pass:
+All installed Sources and command scripts compile with Luau. Five runtime suites pass:
 
 - Server callbacks: empowerment/charge use, duration/Exhausted, activation/escape payouts and duplicate/dead-killer rejection, Order Up, stacking calculations, actual projectile/pickup/overtime path, 5-damage cancellation, clone filtering, projectile lifetime and cleanup.
 - Transactional installer: source checks, asset preservation, idempotence, exact restore, all preparation/live Source-write failure points.
 - Exhausted: repeated refresh, level changes, removal and stamina multipliers.
 - Client animations: throw/start/loop/end, unavailable tracks and interrupted delayed callbacks.
+- Scooter creation: invisible donor mesh becomes visible without animations, handle remains hidden, original offsets and attachment are retained, and the template is unchanged.
 
 A binary model round-trip also confirms all 14 donor instances, original scooter mesh/texture, timer/particles and valid local joint/object references. Tests use Roblox API mocks; the game still needs Studio testing.
 

@@ -187,7 +187,11 @@ local function scooter(a)
  local torso=a.Rig:FindFirstChild("Torso")or a.Rig.PrimaryPart
  if not handle or not torso then model:Destroy();return end
  for _,object in model:GetDescendants()do
-  if object:IsA("BasePart")then object.Anchored=false;object.CanCollide=false;object.CanTouch=false;object.CanQuery=false;object.Massless=true
+  if object:IsA("BasePart")then
+   object.Anchored=false;object.CanCollide=false;object.CanTouch=false;object.CanQuery=false;object.Massless=true
+   if object~=handle and (object.Name=="Scooter"or object:IsA("MeshPart"))then
+    object.Transparency=0;object.LocalTransparencyModifier=0
+   end
   elseif object:IsA("LuaSourceContainer")then object:Destroy()end
  end
  model.PrimaryPart=handle
