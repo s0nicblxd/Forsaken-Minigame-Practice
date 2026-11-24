@@ -69,6 +69,8 @@ local function scooter(a)
  local joint=model:FindFirstChild("ScooterJoint",true)
  if joint and joint:IsA("Motor6D")then joint.Part0=torso;joint.Part1=handle
  else joint=Instance.new("Motor6D");joint.Name="ScooterJoint";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle end
+ -- Center the riding attachment; the donor's lateral preview offset displaces the scooter.
+ joint.C0=a.Config.RushHourScooterOffset or CFrame.new()
  model.Name="ElliotRushScooter";model.Parent=a.Rig
  return model
 end
@@ -219,6 +221,7 @@ function Server.RushHour(a)
  rush.scooter=scooter(a)
  a:DisableAbilities("ElliotRush",true,a.Config.RushHourAbilityDisabledFor)
  sound(a,"RushHourStart")
+ if a.ChangeExpression then a:ChangeExpression("Happy",a.Config.RushHourSpeedDuration)end
  Statuses:ApplyStatus(a.Rig,"Speed",{Level=rush.level,Duration=a.Config.RushHourSpeedDuration,NoStack={"HitSpeedBonus"}})
  reward(a,"Used")
  task.delay(a.Config.RushHourSpeedDuration,function()

@@ -199,6 +199,8 @@ local function scooter(a)
  local joint=model:FindFirstChild("ScooterJoint",true)
  if joint and joint:IsA("Motor6D")then joint.Part0=torso;joint.Part1=handle
  else joint=Instance.new("Motor6D");joint.Name="ScooterJoint";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle end
+ -- Center the riding attachment; the donor's lateral preview offset displaces the scooter.
+ joint.C0=a.Config.RushHourScooterOffset or CFrame.new()
  model.Name="ElliotRushScooter";model.Parent=a.Rig
  return model
 end
@@ -349,6 +351,7 @@ function Server.RushHour(a)
  rush.scooter=scooter(a)
  a:DisableAbilities("ElliotRush",true,a.Config.RushHourAbilityDisabledFor)
  sound(a,"RushHourStart")
+ if a.ChangeExpression then a:ChangeExpression("Happy",a.Config.RushHourSpeedDuration)end
  Statuses:ApplyStatus(a.Rig,"Speed",{Level=rush.level,Duration=a.Config.RushHourSpeedDuration,NoStack={"HitSpeedBonus"}})
  reward(a,"Used")
  task.delay(a.Config.RushHourSpeedDuration,function()
@@ -387,6 +390,7 @@ local function actor(name,folder,pos)
  a.Player.Name=name
  function a:IncrementCharges(_,delta,max)self.Behavior.Abilities.RushHour.CurrentCharges=math.clamp(self.Behavior.Abilities.RushHour.CurrentCharges+delta,0,max)end
  function a:DisableAbilities()end
+ function a:ChangeExpression(name,duration)self.Expression={name,duration}end
  function a:GetPivot()return CFrame.new()end
  Actors.CurrentActors[a.Player]=a
  return a,hum
@@ -397,6 +401,7 @@ local killer=actor("Slasher",killers,20)
 a.Behavior.Abilities.RushHour.CurrentCharges=3
 local result=Server.RushHour(a)
 assert(result.Empowered and result.Level==3 and a.Behavior.Abilities.RushHour.CurrentCharges==0)
+assert(a.Expression[1]=="Happy"and a.Expression[2]==4)
 assert(Statuses.calls[#Statuses.calls].name=="Speed"and Statuses.calls[#Statuses.calls].data.Duration==4)
 local function advance(dt)
  now+=dt

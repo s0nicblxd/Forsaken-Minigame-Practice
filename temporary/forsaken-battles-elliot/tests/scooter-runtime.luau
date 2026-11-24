@@ -83,6 +83,7 @@ local body=child(template,"Scooter","MeshPart");body.Transparency=1;body.LocalTr
 local joint=child(template,"ScooterJoint","Motor6D");joint.C0="donor offset";joint.C1="donor inverse offset"
 local rig=child(workspace,"Elliot","Model");local torso=child(rig,"Torso","Part");torso.CFrame="torso frame"
 local actor={Rig=rig,Config={UsesScooter=true,Instances={CustomScooter=template}}}
+local CFrame={new=function()return "centered riding offset"end}
 local function scooter(a)
  if a.Config.UsesScooter==false then return end
  local template=a.Config.Instances and a.Config.Instances.CustomScooter
@@ -104,6 +105,8 @@ local function scooter(a)
  local joint=model:FindFirstChild("ScooterJoint",true)
  if joint and joint:IsA("Motor6D")then joint.Part0=torso;joint.Part1=handle
  else joint=Instance.new("Motor6D");joint.Name="ScooterJoint";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle end
+ -- Center the riding attachment; the donor's lateral preview offset displaces the scooter.
+ joint.C0=a.Config.RushHourScooterOffset or CFrame.new()
  model.Name="ElliotRushScooter";model.Parent=a.Rig
  return model
 end
@@ -113,7 +116,7 @@ assert(model and model.Parent==rig and model.Name=="ElliotRushScooter")
 assert(model.Scooter.Transparency==0 and model.Scooter.LocalTransparencyModifier==0,"donor mesh still hidden")
 assert(model.ScooterHandle.Transparency==1,"invisible handle exposed")
 assert(model.ScooterJoint.Part0==torso and model.ScooterJoint.Part1==model.ScooterHandle)
-assert(model.ScooterJoint.C0=="donor offset"and model.ScooterJoint.C1=="donor inverse offset")
+assert(model.ScooterJoint.C0=="centered riding offset"and model.ScooterJoint.C1=="donor inverse offset")
 assert(not model.Scooter.Anchored and not model.Scooter.CanCollide and model.Scooter.Massless)
 assert(template.Scooter.Transparency==1,"template modified")
 assert(actor.Animations==nil,"test must not supply animations")

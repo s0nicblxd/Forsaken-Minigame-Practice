@@ -19,6 +19,12 @@ If the scooter model appears under Elliot during Rush Hour but is invisible, sto
 
 The donor scooter mesh and handle are both saved with Transparency 1. The repaired Server module makes the scooter mesh visible when spawning it, while retaining the invisible handle, authored joint offsets, and non-colliding massless setup. Visibility does not require riding animations. The full installer includes the same fix for new installs. The repair checks the existing Server Source and creates a separate `ElliotScooter_Backup_*` folder.
 
+## Riding alignment and expression repair
+
+For the current installed port, stop Play and run `Repair-Elliot-Riding.command.luau`, save, then start a fresh playtest. No model import is required. This also includes the earlier visibility correction, so either pre-repair Server version is supported.
+
+The donor joint's lateral/backward offset is replaced with a centered attachment. The internal scooter weld and C1 are retained. A skin can override `RushHourScooterOffset` with a CFrame if its rig needs a different fit. The native Happy expression is requested for the full Rush Hour speed duration (4s); native hurt/death expression handling remains in charge of interruptions. Final riding pose still depends on the riding animations.
+
 ## Mechanics
 
 - **Pizza Throw:** 34s cooldown, 0.5s release, 2s ability lock, 60 throw force, 15s lifetime. The existing pizza part is cloned and thrown with server-owned physics.
