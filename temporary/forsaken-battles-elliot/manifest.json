@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "character": "Elliot",
+  "pizzaCooldown": 34,
+  "donorInstances": 14,
+  "studioPlaytested": false,
+  "unconfigured": [
+    "Rush Hour activation reward payout",
+    "Rush Hour escaped-killer reward trigger and payout"
+  ]
+}
