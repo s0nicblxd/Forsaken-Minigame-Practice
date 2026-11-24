@@ -1,0 +1,68 @@
+# Forsaken: Battles — Builderman rework
+
+Reconstructs the UPD's missing server-side construction/Carry logic on the existing FCT actor framework, retaining the donor client UI and visuals where compatible. Carry placement takes **1.15 seconds**, as requested.
+
+## Install
+
+1. Stop Play and save a copy of your place.
+2. Insert `BuildermanUPD.rbxm` into **ServerStorage**, keeping the name **BuildermanUPD**.
+3. Copy the entire `Apply-Builderman-Rework.command.luau` into Studio's Command Bar and run it in Edit mode.
+4. Save, then start a fresh playtest and select Builderman normally.
+
+The current Builderman Config and Behavior Sources are checked before installation. Unknown local changes cause a refusal without modifying the character. The installer clones the current character folder, retaining its rig/other children, and replaces Config/Behavior with the new modules and assets. No shared gameplay modules are modified. A `ServerStorage/BuildermanPort_Backup_*` folder holds the original character; preparation failures leave the original untouched.
+
+**Sentry asset fallback:** the latest UPD export contains an empty Sentry model. The installer deliberately preserves the complete Sentry from the current Builderman Config. The UPD Dispenser, warnings, highlight and mini-turret emote assets are present. The downloaded model contains 72 donor instances, with original executable Sources stripped.
+
+## Behavior
+
+### Construction and replacement
+
+- Normal construction remains **6 seconds** for Sentry and Dispenser.
+- Casting construction does not start a cooldown. Replacing your previous building destroys it without a destruction cooldown or payout.
+- The Sentry ability is locked for **10 seconds after a successful shot**; Dispenser is locked for **10 seconds after actual healing**. Activity is represented in the donor icon lock/recharge UI.
+- A Sentry destroyed by a killer starts **35 seconds** of cooldown; a Dispenser starts **30 seconds**. The native hitbox's `RecentAttacker` and timestamp, recorded before health deduction, identify the attacker. Untagged/environmental removal, replacement and owner cleanup do not count as killer destruction. Fresh tagged killer damage that destroys a carried building also starts the appropriate cooldown.
+- Damage to Builderman during normal construction cancels it and removes the unfinished building. Direct damage to an unfinished building also cancels it; killer-tagged building damage starts the destruction cooldown.
+- Ground, wall, obstacle and building-spacing checks run on the server. Replacing a building ignores that same building during placement validation. Invalid construction sends a warning through a port-specific event because the native ActorHandler does not forward Cancelled results to its normal client callback.
+
+### Building effects
+
+- Sentry: **30 HP**, **3 damage/second**, Slowness II for 1s, reduced to Slowness I when more than one living Builderman is active. Targets living killer actors with line of sight.
+- Dispenser: **15 HP**, **1 HP/second** to injured living survivor actors, excluding the native Clanker flag. Full-health targets do not refresh the activity lock.
+- The donor treats these Config range fields as **diameters**: SentryDamageRadius 65 gives a **32.5-stud** targeting radius; DispenserHealingRadius 16 gives an **8-stud** healing radius. Placement fields 125/60 similarly give 62.5/30-stud spacing radii. This preserves the donor client calculations and circles rather than accidentally doubling reach.
+- Sentry range falls by 16 percentage points of its base per additional active Sentry, with a minimum radius of 8 studs. Carried/unfinished/destroyed buildings do not apply effects.
+- Existing building-destruction/contribution rewards use the native reward API when a killer destroys the building. Replacement and owner cleanup do not issue those rewards.
+
+### Carry
+
+- Uses the third ability slot, with the donor **Carry / Place** icons and names.
+- The server selects **your own completed building within 7 studs**; client-provided targets/positions are not accepted.
+- Pickup has the donor debounce: 0.75s for Sentry and 0.5s for Dispenser.
+- Movement is reduced by **10%**, sprinting is disabled, and the donor carrying FOV/animation presentation is used.
+- The building remains in the world, becomes non-colliding and inactive, and follows the configured pickup offset. Existing health and contribution totals remain intact.
+- Pressing Carry again validates placement and puts the same building down. It becomes active **1.15s later**, independently of animation availability. Timing is checked every frame rather than being delayed by the slower effects loop.
+- A single health change of **10 or more damage** while carrying destroys that building and releases Carry/sprint/FOV state.
+- Carry/Place stays available while holding a building; it is not locked just because there is no separate nearby pickup candidate. Placement failure retains the carried building.
+- Owner death/despawn cleans up buildings, loops, movement multipliers, ability locks and connections.
+
+## Presentation and limits
+
+The UPD client provides building ranges, nearby-building selection, placement warnings, activity locks, placed labels, Sentry aiming, carrying FOV, and model visibility changes. Character and building animation IDs are retained. Missing tracks do not hold movement locks or prevent construction/placement completion.
+
+The retained older Sentry rig may need animation-ID adjustment if the donor's newer animations do not match it. Model alignment, build/carry visuals, media permissions and live multiplayer replication still require a Studio playtest. The server portion is a reconstruction; the client export does not contain the original server implementation. Older skin-specific flat SentryTemplate/DispenserTemplate overrides are honored, but skins have not been individually ported or visually tested.
+
+## Validation
+
+All command scripts and installed Sources compile with Luau. Four standalone mock-based suites pass:
+
+1. Actual server callbacks: normal construction, free replacement, activity locks, damage/slowness stacking, Carry ownership/inactivity, 1.15s placement, killer-only cooldowns, carried damage destruction, interruption, placement rejection and cleanup.
+2. Full installer: old Sentry/rig preservation, donor asset integration, idempotence, exact restore, Source preparation rollback, local-edit protection.
+3. Shared ability wrapper: independent callback routing and third-slot Carry/Place with no native charge consumption.
+4. Actual donor Carry callbacks: missing animations, icon/name/FOV/sprint restoration, state cleanup and warnings.
+
+A binary model round-trip verifies all 72 instances and local joint references, confirms the empty donor Sentry, and confirms executable donor Sources are stripped.
+
+In Studio, test both buildings with a killer nearby; wait 10s after activity; replace a building; have the killer destroy it; carry/place both kinds; take 10 damage while carrying; attempt an invalid placement; die and respawn. Confirm the retained turret's animation compatibility.
+
+## Restore
+
+Stop Play, select the appropriate `BuildermanPort_Backup_*` folder in ServerStorage and run `Restore-Builderman-Rework.command.luau`. It restores the original Builderman folder. Save and restart Play. Restore checks all installed Sources and refuses to discard later edits.

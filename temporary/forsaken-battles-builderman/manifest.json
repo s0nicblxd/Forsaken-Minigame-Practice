@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "character": "Builderman",
+  "placementDelay": 1.15,
+  "donorInstances": 72,
+  "sentryAsset": "Retained current complete Sentry because UPD Sentry is empty",
+  "sharedModulesChanged": false,
+  "studioPlaytested": false
+}
