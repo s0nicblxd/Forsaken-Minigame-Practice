@@ -64,7 +64,7 @@ local function fresh()
 end
 
 local nativeTypeof=typeof
-local function typeof(value)if type(value)=="table"and value._props then return "Instance"end;return nativeTypeof(value)end
+local function typeof(value)if type(value)=="table"and value._cf then return "CFrame"end;if type(value)=="table"and value._props then return "Instance"end;return nativeTypeof(value)end
 local function signal()
  local entries={}
  return {Connect=function(_,callback)
@@ -86,14 +86,15 @@ function vmt.__add(a,b)return v(a.X+b.X,a.Y+b.Y,a.Z+b.Z)end
 function vmt.__sub(a,b)return v(a.X-b.X,a.Y-b.Y,a.Z-b.Z)end
 function vmt.__mul(a,b)return v(a.X*b,a.Y*b,a.Z*b)end
 local cfm={}
-local function cf(pos)return setmetatable({Position=pos,RightVector=v(1,0,0),UpVector=v(0,1,0),LookVector=v(0,0,-1)},cfm)end
+local function cf(pos)return setmetatable({_cf=true,Position=pos,RightVector=v(1,0,0),UpVector=v(0,1,0),LookVector=v(0,0,-1)},cfm)end
 function cfm.__index(a,key)
+ if key=="GetComponents"then return function(self)return self.Position.X,self.Position.Y,self.Position.Z,1,0,0,0,1,0,0,0,1 end end
  if key=="Rotation"then return cf(v(0,0,0))end
  if key=="ToObjectSpace"then return function(self,other)return cf(other.Position-self.Position)end end
 end
 function cfm.__mul(a,b)return cf(a.Position+b.Position)end
 local Vector3={new=v}
-local CFrame={new=function(x,y,z)return cf(type(x)=="table"and x or v(x or 0,y or 0,z or 0))end}
+local CFrame={new=function(x,y,z)return cf(type(x)=="table"and x or v(x or 0,y or 0,z or 0))end,lookAt=function(position)return cf(position)end}
 local RaycastParams={new=function()return {}end};local OverlapParams={new=function()return {}end}
 local Enum={RaycastFilterType={Exclude=1}}
 local Color3={new=function()return {}end}
@@ -298,15 +299,25 @@ local function destroy(a,state,killer)
  for _,part in state.model:GetDescendants()do if part:IsA("BasePart")then part.CanCollide=false;part.CanQuery=false;part.Transparency=1 end end
  Debris:AddItem(state.model,2)
 end
-local function placement(a,kind,ignore)
+local function requestedFacing(a,frame)
  local root=a.Rig.PrimaryPart
- local target=root.CFrame*CFrame.new(0,0,-a.Config[kind.."PositionOffset"])
+ if typeof(frame)~="CFrame"then return root.CFrame end
+ for _,value in {frame:GetComponents()}do if value~=value or math.abs(value)==math.huge then return root.CFrame end end
+ if (frame.Position-root.Position).Magnitude>6 then return root.CFrame end
+ local look=Vector3.new(frame.LookVector.X,0,frame.LookVector.Z)
+ if look.Magnitude<.01 then return root.CFrame end
+ return CFrame.lookAt(frame.Position,frame.Position+look)
+end
+local function placement(a,kind,ignore,frame)
+ local root=a.Rig.PrimaryPart
+ local facing=frame or root.CFrame
+ local target=facing*CFrame.new(0,0,-a.Config[kind.."PositionOffset"])
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.RespectCanCollide=true
  params.FilterDescendantsInstances={workspace.Players,ignore or a.Rig}
  local floor=workspace:Raycast(target.Position+Vector3.new(0,1,0),Vector3.new(0,-6,0),params)
  if not floor or floor.Normal.Y<.65 then return nil,"midair"end
  if floor.Instance.Name=="Conveyor"then return nil,"collision"end
- if workspace:Raycast(root.Position,target.Position-root.Position,params)then return nil,"facingWall"end
+ if workspace:Raycast(facing.Position,target.Position-facing.Position,params)then return nil,"facingWall"end
  for _,state in buildings do
   if state.model~=ignore and state.phase~="destroyed"and state.phase~="carry"and state.model.Parent then
    local radius=a.Config[state.kind.."PlacementRadius"]/2
@@ -320,9 +331,10 @@ local function placement(a,kind,ignore)
  end
  return CFrame.new(target.Position.X,floor.Position.Y,target.Position.Z)*target.Rotation
 end
-local function groundPivot(model,cf)
+local function groundPivot(model,cf,cachedLift)
  local root=model.PrimaryPart
  local lowest=math.huge
+ if cachedLift then model:PivotTo(cf*CFrame.new(0,cachedLift,0));return cachedLift end
  for _,part in model:GetDescendants()do
   if part:IsA("BasePart")and part.Transparency<1 then
    local rel=root.CFrame:ToObjectSpace(part.CFrame)
@@ -332,7 +344,9 @@ local function groundPivot(model,cf)
   end
  end
  if lowest==math.huge then lowest=-root.Size.Y*.5 end
- model:PivotTo(cf*CFrame.new(0,-lowest+.03,0))
+ local lift=-lowest+.03
+ model:PivotTo(cf*CFrame.new(0,lift,0))
+ return lift
 end
 local function ready(a,state)
  if state.phase=="destroyed"or not active(a)then return end
@@ -341,16 +355,17 @@ local function ready(a,state)
  if a.BuilderCast==state then a.BuilderCast=nil;unlockCast(a);result(a,"success")end
  if state.loop then state.loop:Destroy();state.loop=nil end
  stopTrack(state.animation)
+ if state.placedCF then groundPivot(state.model,state.placedCF,state.groundLift)end
  setState(state,"active");state.activeAt=clock()
  state.animation=track(a,state,"Idle")
  state.loop=sound(a,state.kind.."Idle",state.model.PrimaryPart,true)
 end
-local function construct(a,kind)
+local function construct(a,kind,frame)
  if not active(a)or a.BuilderCast or a.BuilderPlacing or a.CarryingBuilding then return {Cancelled=true,Reason="carrying"}end
  local old=a.Buildings[kind]
  if old and Rules.ActivityRemaining(old.model:GetAttribute("LastActiveTime"),clock())>0 then return {Cancelled=true,Reason="recentActivity"}end
  if a:IsOnCooldown(kind)then return {Cancelled=true,Reason="cooldown"}end
- local cf,reason=placement(a,kind,old and old.model)
+ local cf,reason=placement(a,kind,old and old.model,requestedFacing(a,frame))
  if not cf then return {Cancelled=true,Reason=reason}end
  if old then destroy(a,old,false)end
  local model=(a.Config[kind.."Template"]or a.Config.Instances[kind.."Template"]):Clone()
@@ -365,8 +380,8 @@ local function construct(a,kind)
  for _,part in model:GetDescendants()do
   if part:IsA("BasePart")then part:SetAttribute("BuilderOriginalCollide",part.CanCollide);part:SetAttribute("BuilderOriginalMassless",part.Massless);part.CanQuery=true end
  end
- groundPivot(model,cf)
- local state={model=model,kind=kind,phase="building",completeAt=clock()+a.Config[kind.."ConstructionDuration"],revealAt=clock()+a.Config.ConstructionWindup,transparencies={}}
+ local groundLift=groundPivot(model,cf)
+ local state={groundLift=groundLift,placedCF=cf,model=model,kind=kind,phase="building",completeAt=clock()+a.Config[kind.."ConstructionDuration"],revealAt=clock()+a.Config.ConstructionWindup,transparencies={}}
  a.Buildings[kind]=state;buildings[model]=state;a.BuilderCast=state
  setState(state,"building")
  for _,part in model:GetDescendants()do
@@ -411,7 +426,9 @@ local function move(a)
   local cf,reason=placement(a,state.kind,state.model)
   if not cf then return reason end
   clearCarry(a)
-  groundPivot(state.model,cf)
+  stopTrack(state.animation)
+  groundPivot(state.model,cf,state.groundLift)
+  state.placedCF=cf
   setState(state,"placing");state.completeAt=clock()+a.Config.CarryPlacementDuration
   a.BuilderPlacing=state
   a.BuilderPlaceSpeed=Util:CreateSpeedMultiplier(a.Rig,0,"BuildermanPlacement")
@@ -538,9 +555,9 @@ function Server.Created(_,a)
   if a.CarryingBuilding then local canPlace=placement(a,a.CarryingBuilding.kind,a.CarryingBuilding.model)~=nil;emit(a,"UpdateCanPlace",canPlace)end
  end))
 end
-function Server.Use(a,kind)
+function Server.Use(a,kind,frame)
  if kind=="Move"then return move(a)end
- local response=construct(a,kind)
+ local response=construct(a,kind,frame)
  if response and response.Cancelled then emit(a,"ConstructionRejected",response.Reason)end
  return response
 end
@@ -616,8 +633,13 @@ step(.8);assert(not a.BuilderPickupSpeed and not a.AbilityDisablers.BuildermanPi
 assert(a.BuilderClosest==a.CarryingBuilding,"Carry lost Place availability")
 assert(carryModel.PivotCalls==carryPivots and carryModel.PrimaryPart.Massless and not carryModel.PrimaryPart.Anchored,"Carry is still teleport-driven or physically heavy")
 assert(Server.Use(helper,"Move")=="noBuilding","could carry someone else's building")
+local restingLift=a.CarryingBuilding.groundLift
+local carriedBody=a.CarryingBuilding.model.Body
+carriedBody.CFrame=a.CarryingBuilding.model.PrimaryPart.CFrame*CFrame.new(0,-8,0)
+carriedBody.Position=carriedBody.CFrame.Position
 local placed=Server.Use(a,"Move");assert(placed==false and not a.CarryingBuilding and not a.BuilderCarrySpeed)
 assert(a.Buildings.Sentry.phase=="placing")
+assert(math.abs(a.Buildings.Sentry.model.PrimaryPart.Position.Y-restingLift)<1e-6,"animated carry pose changed the ground height")
 assert(a.BuilderPlaceSpeed and a.BuilderPlaceSpeed.Value==0 and a.AbilityDisablers.BuildermanPlacement)
 step(.99);assert(a.Buildings.Sentry.phase=="placing"and a.BuilderPlaceSpeed)
 step(.02);assert(a.Buildings.Sentry.phase=="active"and not a.BuilderPlaceSpeed and not a.AbilityDisablers.BuildermanPlacement)
@@ -648,6 +670,13 @@ grounded=true
 assert(not Server.Use(c,"Sentry").Cancelled);step(6)
 local rewards=#Actors.rewards
 Server.Destroyed(nil,c);assert(not c.Buildings.Sentry and not c.Cooldowns.Sentry and #Actors.rewards==rewards,"cleanup rewarded or charged a cooldown")
+local clickOwner=actor("Builderman",survivors,v(600,3,0));Server.Created(nil,clickOwner)
+assert(not Server.Use(clickOwner,"Sentry",CFrame.new(602,3,0)).Cancelled)
+assert(clickOwner.Buildings.Sentry.model.PrimaryPart.Position.X==602,"click-time pose was ignored")
+step(6)
+assert(not Server.Use(clickOwner,"Sentry",CFrame.new(9000,3,0)).Cancelled)
+assert(clickOwner.Buildings.Sentry.model.PrimaryPart.Position.X==600,"remote accepted a distant pose")
+Server.Destroyed(nil,clickOwner)
 Server.Destroyed(nil,a);Server.Destroyed(nil,helper)
 assert(heartbeat:Count()==0,"owner heartbeat leak")
 assert(Rules.EffectRadius(a.Config,"Sentry",1)==32.5 and Rules.EffectRadius(a.Config,"Dispenser",1)==8)

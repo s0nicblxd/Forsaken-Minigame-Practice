@@ -2,6 +2,18 @@
 
 Reconstructs the UPD's missing server-side construction/Carry logic on the existing FCT actor framework, retaining the donor client UI and visuals where compatible. Carry placement takes **1 second**, as requested.
 
+## Latest: grounded placement and immediate input (v1.2)
+
+For a Builderman port already on v1.1, stop Play and run `Repair-Builderman-Placement.command.luau` in the Command Bar, save, and start a fresh playtest. **No model reimport is required.** Config and asset models are untouched. The repair checks and backs up Builderman's Server/Client plus the shared ActorNetwork/ActorHandler Sources. Known Haste and no-cutscene ActorNetwork variants are supported; their existing behavior is preserved.
+
+- Placement caches the building's resting ground lift before construction/Carry animations, then reuses it on drop and activation. It no longer measures the animated Carry pose to decide how high the building should sit.
+- Builderman construction now predicts its movement lock locally when the ability request is made, clearing horizontal velocity and stopping movement without waiting for the server round trip.
+- The request includes the click-time CFrame. Only Builderman Sentry/Dispenser callbacks receive it. The server requires finite CFrame components, a position within six studs of its current character position, and a usable horizontal facing; otherwise it falls back to the server pose. Normal ground/wall/spacing checks still apply.
+- An accepted construction keeps the local lock until completion. Rejection, character cleanup, or an ignored-request timeout releases it.
+- Other characters and the Carry slot continue through the ordinary request path. Existing Haste cooldown visuals and no-cutscene changes are retained.
+
+The backup is named `BuildermanPlacement_Backup_*`. To undo this repair, select it in ServerStorage and run `Restore-Builderman-Placement.command.luau`. Restore this revision before older polish/full-port backups, since each checks the Sources it installed. The full installer also includes the latest input-routing changes for new installs and backs up/restores those shared modules.
+
 ## Existing installation: polish repair (v1.1)
 
 Stop Play and run the entire `Repair-Builderman-Polish.command.luau` in the Command Bar. Save and start a fresh playtest. **No model reimport or full reinstall is needed.** The repair updates the existing Server/Client Sources, adds the CarryVisuals helper, and changes the placement timing in Config while preserving unrelated Config edits such as animation IDs. A `BuildermanPolish_Backup_*` folder supports rollback with `Restore-Builderman-Polish.command.luau`.
@@ -24,7 +36,7 @@ The full installer below includes these fixes for new installations. If restorin
 3. Copy the entire `Apply-Builderman-Rework.command.luau` into Studio's Command Bar and run it in Edit mode.
 4. Save, then start a fresh playtest and select Builderman normally.
 
-The current Builderman Config and Behavior Sources are checked before installation. Unknown local changes cause a refusal without modifying the character. The installer clones the current character folder, retaining its rig/other children, and replaces Config/Behavior with the new modules and assets. No shared gameplay modules are modified. A `ServerStorage/BuildermanPort_Backup_*` folder holds the original character; preparation failures leave the original untouched.
+The current Builderman Config and Behavior Sources are checked before installation. Unknown local changes cause a refusal without modifying the character. The installer clones the current character folder, retaining its rig/other children, and replaces Config/Behavior with the new modules and assets. The shared ActorNetwork and ActorHandler receive a Builderman-only construction request hook; their other logic is retained. A `ServerStorage/BuildermanPort_Backup_*` folder holds the original character; preparation failures leave the original untouched.
 
 **Sentry asset fallback:** the latest UPD export contains an empty Sentry model. The installer deliberately preserves the complete Sentry from the current Builderman Config. The UPD Dispenser, warnings, highlight and mini-turret emote assets are present. The downloaded model contains 72 donor instances, with original executable Sources stripped.
 
@@ -67,7 +79,7 @@ The retained older Sentry rig may need animation-ID adjustment if the donor's ne
 
 ## Validation
 
-All command scripts and installed Sources compile with Luau. Seven standalone mock-based suites pass:
+All command scripts and installed Sources compile with Luau. Ten standalone mock-based suites pass:
 
 1. Actual server callbacks: normal construction, free replacement, activity locks, damage/slowness stacking, Carry ownership/inactivity, 1s placement, killer-only cooldowns, carried damage destruction, interruption, placement rejection and cleanup.
 2. Full installer: old Sentry/rig preservation, donor asset integration, idempotence, exact restore, Source preparation rollback, local-edit protection.
@@ -76,6 +88,11 @@ All command scripts and installed Sources compile with Luau. Seven standalone mo
 5. Carry highlight: owner/other survivors, killer exclusion, ordinary-aura independence, deduplication and restoration.
 6. Targeted polish installer: preservation of Config media edits, version/Source guards, idempotence, exact restore and each Source-write failure rollback.
 7. Actual range setup: initial circle coordinates before any position-change event, with later position synchronization.
+8. Click-time input: immediate zero multiplier/horizontal stop, captured pose, repeat/cooldown guards, unrelated-slot pass-through, ignored-request timeout and completion cleanup.
+9. Placement repair installer: shared Source variants, Config preservation, idempotence, exact restore, all live-write failures and shared-edit refusal.
+10. Actual UI request closure: Builderman-only snapshot forwarding, blocked prediction abort and ordinary character/Carry requests unchanged.
+
+The server suite also distorts the carried model pose before placement and checks that the original resting lift is retained. It verifies a nearby click-time pose is used and a distant pose falls back to the server position.
 
 A binary model round-trip verifies all 72 instances and local joint references, confirms the empty donor Sentry, and confirms executable donor Sources are stripped.
 

@@ -252,8 +252,35 @@ local function safeAnimation(actor,name,playing)
  local track=actor.Animations and actor.Animations[name]
  if track then pcall(function()if playing then track:Play(.1)else track:Stop(.1)end end)end
 end
+local function releaseInputFreeze(actor)
+ actor.BuilderInputPending=nil
+ if actor.BuilderInputFreeze then actor.BuilderInputFreeze:Destroy();actor.BuilderInputFreeze=nil end
+end
+function t1.BeforeAbilityRequest(actor,kind)
+ if kind~="Sentry"and kind~="Dispenser"then return nil end
+ local rig=actor.Rig
+ local root=rig and rig.PrimaryPart
+ local hum=rig and rig:FindFirstChildOfClass("Humanoid")
+ if not root or not hum or hum.Health<=0 or root.Anchored or actor.BuilderInputPending or actor.BuilderConstructionVisual or rig:GetAttribute("BuildermanCarrying")or rig:GetAttribute("Ragdolling")or rig:GetAttribute("Stunned")then return false end
+ local cooldown=actor.Cooldowns and actor.Cooldowns[kind]
+ if cooldown and cooldown.Duration>cooldown.TimePast then return false end
+ local building=actor.Buildings and actor.Buildings[kind]
+ if building and getBuildingRecentActivityRemaining(building)>0 then return false end
+ local frame=root.CFrame
+ local token={}
+ actor.BuilderInputPending=token
+ actor.BuilderInputFreeze=Util:CreateSpeedMultiplier(rig,0,"BuildermanInputFreeze")
+ local velocity=root.AssemblyLinearVelocity
+ root.AssemblyLinearVelocity=Vector3.new(0,velocity.Y,0)
+ hum:Move(Vector3.new(0,0,0))
+ task.delay(1.5,function()
+  if actor.BuilderInputPending==token and not actor.BuilderConstructionVisual then releaseInputFreeze(actor)end
+ end)
+ return frame
+end
 local function constructBuildingOnClient(actor,kind,response)
  if type(response)=="table"and response.Cancelled then
+  releaseInputFreeze(actor)
   Util:CreateWarning("BuildermanWarning",t2[response.Reason]or t2.unknown,actor.Config.Instances.WarningTemplate)
   return
  end
@@ -272,6 +299,7 @@ local function constructBuildingOnClient(actor,kind,response)
    task.wait(.05)
   end
   progress:Destroy()
+  releaseInputFreeze(actor)
   if actor.BuilderConstructionVisual==token then
    actor.BuilderConstructionVisual=nil
    safeAnimation(actor,"ConstructStart",false);safeAnimation(actor,"ConstructLoop",false)
@@ -894,7 +922,7 @@ function t1.Created(_, p26) -- line: 1527
 		v159.Charges.Text = not v157 and "" or "PLACED"
 	end)
     Network:SetConnection(p26.Player.Name.."ConstructionRejected","REMOTE_EVENT",function(reason)
-        if p26.Player==game.Players.LocalPlayer then Util:CreateWarning("BuildermanWarning",t2[reason]or t2.unknown,p26.Config.Instances.WarningTemplate)end
+        if p26.Player==game.Players.LocalPlayer then releaseInputFreeze(p26);Util:CreateWarning("BuildermanWarning",t2[reason]or t2.unknown,p26.Config.Instances.WarningTemplate)end
     end)
 	Network:SetConnection(`{ p26.Player.Name }UpdateCanPlace`, "REMOTE_EVENT", function(b4: boolean) -- line: 1783
 		-- upvalues: Util (copy)
@@ -1010,6 +1038,7 @@ end
 function t1.Destroyed(_, p40) -- line: 1873
 	-- upvalues: cl_tweenCarryFOV (copy), Network (copy)
 	p40.BuilderConstructionVisual=nil
+ releaseInputFreeze(p40)
  if p40.BuilderViewerConnection then p40.BuilderViewerConnection:Disconnect();p40.BuilderViewerConnection=nil end
 	if p40.CarryVisualConnection then
 		p40.CarryVisualConnection:Disconnect()

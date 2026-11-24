@@ -64,7 +64,7 @@ local function fresh()
 end
 
 local nativeTypeof=typeof
-local function typeof(value)if type(value)=="table"and value._props then return "Instance"end;return nativeTypeof(value)end
+local function typeof(value)if type(value)=="table"and value._cf then return "CFrame"end;if type(value)=="table"and value._props then return "Instance"end;return nativeTypeof(value)end
 local function signal()
  local entries={}
  return {Connect=function(_,callback)

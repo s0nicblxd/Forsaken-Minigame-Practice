@@ -1,11 +1,16 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "character": "Builderman",
   "placementDelay": 1,
   "donorInstances": 72,
   "sentryAsset": "Retained current complete Sentry because UPD Sentry is empty",
-  "sharedModulesChanged": false,
+  "sharedModulesChanged": [
+    "ReplicatedStorage/Systems/Player/Networks/ActorNetwork",
+    "ServerScriptService/Server/Systems/Core/ActorHandler"
+  ],
   "studioPlaytested": false,
   "constructionWindup": 1.25,
-  "carryAttachment": "Rigid weld"
+  "carryAttachment": "Rigid weld",
+  "placementUsesCachedRestingHeight": true,
+  "constructionCapturesClickFacing": true
 }

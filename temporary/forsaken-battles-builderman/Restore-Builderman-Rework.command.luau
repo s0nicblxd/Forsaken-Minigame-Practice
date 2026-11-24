@@ -21,5 +21,15 @@ table.sort(rows)
 assert(table.concat(rows,"|")==backup:GetAttribute("InstalledSources"),"Builderman Sources edited since installation. Nothing changed.")
 assert(installed.Parent==find("ReplicatedStorage/Assets/Survivors"),"Installed Builderman moved. Nothing changed.")
 local parent=installed.Parent
+local changes={}
+for _,record in backup:GetChildren()do
+ if record.Name:match("^Shared_")then
+  local target=assert(record.Target.Value)
+  assert(fingerprint(target.Source)==record:GetAttribute("Installed"),"Shared module edited since installation: "..target:GetFullName()..". Nothing changed.")
+  table.insert(changes,{target=target,before=record.Before.Value,current=target.Source})
+ end
+end
+local ok,err=pcall(function()for _,change in changes do change.target.Source=change.before end end)
+if not ok then for _,change in changes do if change.target.Source~=change.current then change.target.Source=change.current end end;error("Restore rolled back: "..tostring(err))end
 original.Parent=parent;installed:Destroy();backup:Destroy()
 print("[Builderman] Restored original character. Save and restart Play.")
