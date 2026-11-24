@@ -70,7 +70,7 @@ local function scooter(a)
 end
 local function reward(a,kind)
  if not a.Player or not a.Player:IsA("Player")then return end
- -- Original payout tables are absent from the client export: optional explicit overrides only.
+ -- FB payouts supplied by the user; rewards are granted by the server.
  local settings=a.Config.RushHourRewards and a.Config.RushHourRewards[kind]
  a.Rig:SetAttribute("ElliotRush"..kind,(a.Rig:GetAttribute("ElliotRush"..kind)or 0)+1)
  if settings then
@@ -222,6 +222,7 @@ function Server.RushHour(a)
   releaseRush(a)
   if active(a)and empowered then
    Statuses:ApplyStatus(a.Rig,"Exhausted",{Level=level,Duration=a.Config.RushHourExhaustedDuration})
+   if alive(killer.Rig)and team(killer.Rig,"Killers")and not nearest(a)then reward(a,"Escaped")end
   end
  end)
  return {Level=rush.level,Empowered=empowered,Duration=a.Config.RushHourSpeedDuration}

@@ -25,9 +25,11 @@ If a Source fingerprint check refuses installation, send that current module. No
 - **Presentation:** donor scooter mesh/texture/joints attached during Rush Hour, optional startup/loop/end animations, reddish Rush Hour range tint, health-colored injured-survivor auras, floating pizza lifetime counter, green plus particles and pizza auras. Missing/unavailable animation tracks do not prevent the ability callbacks from finishing. Media IDs still require permissions in your experience.
 - Projectiles, scooter models and owned connections are cleaned up on death/despawn. Pickup is checked server-side without trusting a client-reported target.
 
-## Remaining source gaps
+## Rush Hour rewards
 
-The two newly announced Rush Hour currency/EXP rewards are **not enabled**: the donor omits their payout amounts and authoritative escape condition. Successful activation increments the server-owned `ElliotRushUsed` rig attribute. The optional `Config.RushHourRewards.Used` table can supply explicit native `IncrementActorStats` fields once the intended payout is known. The escaped-killer payout still needs its actual trigger and amounts; no guessed distance/time reward is applied.
+The user-selected FB payouts are **$2 / 10 XP** for activation and **$5 / 18 XP** for escaping with Rush Hour, with no additional malice. These use the existing server reward API and its normal server restrictions.
+
+The original escape condition is absent from the UPD export, so this port uses a documented reconstruction: Rush Hour must start empowered; at the end of its 4s Speed duration Elliot must still be alive and no living killer may be within 85 studs. The original nearby killer must still be a living killer actor, so its death or removal cannot award an escape. The escape payout can occur only once per activation. An unempowered activation receives only the activation payout. Values are configured in `Config.RushHourRewards`.
 
 The scooter is attached using the donor joint offsets and animated with the supplied IDs. Its alignment, animation permissions and final appearance need a Studio playtest; they cannot be visually validated by standalone Luau tests.
 
@@ -35,7 +37,7 @@ The scooter is attached using the donor joint offsets and animated with the supp
 
 All installed Sources and command scripts compile with Luau. Four runtime suites pass:
 
-- Server callbacks: empowerment/charge use, duration/Exhausted, Order Up, stacking calculations, actual projectile/pickup/overtime path, 5-damage cancellation, clone filtering, projectile lifetime and cleanup.
+- Server callbacks: empowerment/charge use, duration/Exhausted, activation/escape payouts and duplicate/dead-killer rejection, Order Up, stacking calculations, actual projectile/pickup/overtime path, 5-damage cancellation, clone filtering, projectile lifetime and cleanup.
 - Transactional installer: source checks, asset preservation, idempotence, exact restore, all preparation/live Source-write failure points.
 - Exhausted: repeated refresh, level changes, removal and stamina multipliers.
 - Client animations: throw/start/loop/end, unavailable tracks and interrupted delayed callbacks.

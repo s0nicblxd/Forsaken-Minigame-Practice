@@ -4,8 +4,15 @@
   "pizzaCooldown": 34,
   "donorInstances": 14,
   "studioPlaytested": false,
-  "unconfigured": [
-    "Rush Hour activation reward payout",
-    "Rush Hour escaped-killer reward trigger and payout"
-  ]
+  "rewards": {
+    "activation": {
+      "money": 2,
+      "xp": 10
+    },
+    "escape": {
+      "money": 5,
+      "xp": 18
+    }
+  },
+  "escapeRule": "Reconstructed: empowered activation ends alive, original killer still alive, and no living killer within 85 studs"
 }

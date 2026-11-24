@@ -80,7 +80,8 @@ local now=0;local tasks={}
 local task={delay=function(delay,callback)table.insert(tasks,{at=now+delay,callback=callback})end}
 local heartbeat=signal()
 local runService={Heartbeat=heartbeat}
-local Actors={CurrentActors={},IncrementActorStats=function()end}
+local rewards={}
+local Actors={CurrentActors={},IncrementActorStats=function(_,player,payload)table.insert(rewards,payload)end}
 local Statuses={calls={}}
 function Statuses:ApplyStatus(rig,name,data)table.insert(self.calls,{rig=rig,name=name,data=data})end
 local Util={}
@@ -199,7 +200,7 @@ local function scooter(a)
 end
 local function reward(a,kind)
  if not a.Player or not a.Player:IsA("Player")then return end
- -- Original payout tables are absent from the client export: optional explicit overrides only.
+ -- FB payouts supplied by the user; rewards are granted by the server.
  local settings=a.Config.RushHourRewards and a.Config.RushHourRewards[kind]
  a.Rig:SetAttribute("ElliotRush"..kind,(a.Rig:GetAttribute("ElliotRush"..kind)or 0)+1)
  if settings then
@@ -351,6 +352,7 @@ function Server.RushHour(a)
   releaseRush(a)
   if active(a)and empowered then
    Statuses:ApplyStatus(a.Rig,"Exhausted",{Level=level,Duration=a.Config.RushHourExhaustedDuration})
+   if alive(killer.Rig)and team(killer.Rig,"Killers")and not nearest(a)then reward(a,"Escaped")end
   end
  end)
  return {Level=rush.level,Empowered=empowered,Duration=a.Config.RushHourSpeedDuration}
@@ -370,7 +372,7 @@ end)()
 local players=child(workspace,"Players");local survivors=child(players,"Survivors");local killers=child(players,"Killers")
 local map=child(workspace,"Map");child(map,"Ingame")
 local function config()
- return {UsesScooter=false,OrderUpBonus=2,OrderUpBonusMax=10,HealingPercentDebuffCap=90,HealingPercentDebuffFirstElliot=40,HealingPercentDebuffPerElliot=18,
+ return {UsesScooter=false,RushHourRewards={Used={Money=2,EXP=10,KillerChance=0},Escaped={Money=5,EXP=18,KillerChance=0}},OrderUpBonus=2,OrderUpBonusMax=10,HealingPercentDebuffCap=90,HealingPercentDebuffFirstElliot=40,HealingPercentDebuffPerElliot=18,
  PizzaHealingAmount=5,PizzaHealingProgressively=15,PizzaHealingProgressivelyTime=4,PizzaAbilityDisabledFor=2,PizzaThrowTimeToThrow=.5,
  PizzaThrowForce=60,PizzaLifetime=15,PizzaHitboxSize=2,PizzaPingDistance=200,PizzaPingDuration=25,RushHourKillerRange=85,RushHourSpeedDuration=4,RushHourExhaustedDuration=4,RushHourAbilityDisabledFor=.1,Instances={},Sounds={}}
 end
@@ -400,6 +402,23 @@ local function advance(dt)
 end
 advance(4)
 assert(not a.ElliotRush and Statuses.calls[#Statuses.calls].name=="Exhausted"and Statuses.calls[#Statuses.calls].data.Level==3)
+assert(#rewards==1 and rewards[1].Money==2 and rewards[1].EXP==10,"activation payout or false escape")
+a.Behavior.Abilities.RushHour.CurrentCharges=2
+killer.Rig.PrimaryPart.Position=v(20)
+Server.RushHour(a)
+killer.Rig.PrimaryPart.Position=v(500)
+advance(4)
+assert(#rewards==3 and rewards[3].Money==5 and rewards[3].EXP==18,"escape payout missing")
+local payoutCount=#rewards
+advance(4);assert(#rewards==payoutCount,"duplicate escape payout")
+a.Behavior.Abilities.RushHour.CurrentCharges=1
+killer.Rig.PrimaryPart.Position=v(20)
+Server.RushHour(a)
+killer.Rig.Humanoid.Health=0
+advance(4)
+assert(#rewards==payoutCount+1,"dead killer counted as escape")
+killer.Rig.Humanoid.Health=80
+a.Behavior.Abilities.RushHour.CurrentCharges=0
 local calls=#Statuses.calls
 assert(Server.RushHour(a).Cancelled and #Statuses.calls==calls)
 a.Behavior.Abilities.RushHour.CurrentCharges=2;killer.Rig.PrimaryPart.Position=v(500)

@@ -1073,7 +1073,7 @@ local t1 = {
 		CustomScooter = script.ElliotScooter
 	},
 	UsesScooter = true,
- RushHourRewards = {},
+ RushHourRewards = {Used={Money=2,EXP=10,KillerChance=0},Escaped={Money=5,EXP=18,KillerChance=0}},
 	Health = 80,
 	Speed = 12,
 	InjuredSurvivorAuraDuration = 12,
@@ -1323,7 +1323,7 @@ local function scooter(a)
 end
 local function reward(a,kind)
  if not a.Player or not a.Player:IsA("Player")then return end
- -- Original payout tables are absent from the client export: optional explicit overrides only.
+ -- FB payouts supplied by the user; rewards are granted by the server.
  local settings=a.Config.RushHourRewards and a.Config.RushHourRewards[kind]
  a.Rig:SetAttribute("ElliotRush"..kind,(a.Rig:GetAttribute("ElliotRush"..kind)or 0)+1)
  if settings then
@@ -1475,6 +1475,7 @@ function Server.RushHour(a)
   releaseRush(a)
   if active(a)and empowered then
    Statuses:ApplyStatus(a.Rig,"Exhausted",{Level=level,Duration=a.Config.RushHourExhaustedDuration})
+   if alive(killer.Rig)and team(killer.Rig,"Killers")and not nearest(a)then reward(a,"Escaped")end
   end
  end)
  return {Level=rush.level,Empowered=empowered,Duration=a.Config.RushHourSpeedDuration}
@@ -1876,4 +1877,4 @@ if not ok then
  error("[Elliot] Rolled back: "..tostring(err))
 end
 print("[Elliot] Installed 34s Pizza Throw, stacking/healing rework, three-charge Rush Hour, scooter, timer/particles and Exhausted. Save and restart Play. Backup: "..backup.Name)
-print("[Elliot] Original Rush Hour payout/escape rules are absent from the client export; automatic new currency rewards remain unconfigured. See README.")
+print("[Elliot] FB rewards: Rush Hour $2/10 XP; escape $5/18 XP. Escape uses the documented server-side 85-stud rule.")

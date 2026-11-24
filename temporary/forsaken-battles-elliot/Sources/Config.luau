@@ -27,7 +27,7 @@ local t1 = {
 		CustomScooter = script.ElliotScooter
 	},
 	UsesScooter = true,
- RushHourRewards = {},
+ RushHourRewards = {Used={Money=2,EXP=10,KillerChance=0},Escaped={Money=5,EXP=18,KillerChance=0}},
 	Health = 80,
 	Speed = 12,
 	InjuredSurvivorAuraDuration = 12,
