@@ -76,21 +76,52 @@ local function signal()
 end
 
 fresh()
-function Methods:PivotTo(cf)self.Pivot=cf end
+local vector={};local vm={__index=vector}
+local function v(x,y,z)return setmetatable({X=x,Y=y,Z=z},vm)end
+function vm.__add(a,b)return v(a.X+b.X,a.Y+b.Y,a.Z+b.Z)end
+function vm.__sub(a,b)return v(a.X-b.X,a.Y-b.Y,a.Z-b.Z)end
+function vm.__mul(a,b)return v(a.X*b,a.Y*b,a.Z*b)end
+local cf={};local cm={__index=cf}
+local function frame(pos)return setmetatable({Position=pos,RightVector=v(1,0,0),UpVector=v(0,1,0),LookVector=v(0,0,-1)},cm)end
+function cm.__mul(a,b)return frame(a.Position+b.Position)end
+function cf:ToObjectSpace(other)return frame(other.Position-self.Position)end
+function cf:VectorToObjectSpace(value)return value end
+local CFrame={new=function(x,y,z)return frame(type(x)=="table"and x or v(x or 0,y or 0,z or 0))end}
+local Vector3={new=v}
+local RaycastParams={new=function()return {}end}
+local Enum={RaycastFilterType={Include=1}}
+local heartbeat=signal();local RunService={Heartbeat=heartbeat}
+local map=child(workspace,"Map")
+local floorHeight=0
+local hit=true
+function workspace:Raycast(origin,direction,params)
+ assert(params.FilterDescendantsInstances[1]==map and params.FilterType==1)
+ assert(direction.Y==-8)
+ return hit and {Position=v(0,floorHeight,0)}or nil
+end
+function Methods:PivotTo(value)self.Pivot=value end
 local template=Instance.new("Model")
-local handle=child(template,"ScooterHandle","Part");handle.Transparency=1
-local body=child(template,"Scooter","MeshPart");body.Transparency=1;body.LocalTransparencyModifier=1
-local joint=child(template,"ScooterJoint","Motor6D");joint.C0="donor offset";joint.C1="donor inverse offset"
-local rig=child(workspace,"Elliot","Model");local torso=child(rig,"Torso","Part");torso.CFrame="torso frame"
+local handle=child(template,"ScooterHandle","Part");handle.Transparency=1;handle.CFrame=CFrame.new()
+local body=child(template,"Scooter","MeshPart");body.Transparency=1;body.LocalTransparencyModifier=1;body.CFrame=CFrame.new(0,-1.25,0);body.Size=v(2,3.6,4)
+local joint=child(template,"ScooterJoint","Motor6D");joint.C0="old offset";joint.C1="preserved inverse"
+local rig=child(workspace,"Elliot","Model");local root=child(rig,"HumanoidRootPart","Part");root.Position=v(0,3,0);root.CFrame=frame(root.Position);rig.PrimaryPart=root
+local torso=child(rig,"Torso","Part");torso.CFrame=CFrame.new(0,-500,0)
 local actor={Rig=rig,Config={UsesScooter=true,Instances={CustomScooter=template}}}
-local CFrame={new=function()return "centered riding offset"end}
+local function releaseRush(a)
+ local rush=a.ElliotRush
+ if not rush then return end
+ a.ElliotRush=nil
+ if rush.mountConnection then rush.mountConnection:Disconnect()end
+ if rush.scooter then rush.scooter:Destroy()end
+ if a.Rig and a.Rig.Parent then a.Rig:SetAttribute("ElliotRushing",nil)end
+end
 local function scooter(a)
  if a.Config.UsesScooter==false then return end
  local template=a.Config.Instances and a.Config.Instances.CustomScooter
  if not template or not template:IsA("Model")then return end
  local model=template:Clone()
  local handle=model:FindFirstChild("ScooterHandle")or model.PrimaryPart
- local torso=a.Rig:FindFirstChild("Torso")or a.Rig.PrimaryPart
+ local torso=a.Rig:FindFirstChild("HumanoidRootPart")or a.Rig.PrimaryPart
  if not handle or not torso then model:Destroy();return end
  for _,object in model:GetDescendants()do
   if object:IsA("BasePart")then
@@ -105,19 +136,59 @@ local function scooter(a)
  local joint=model:FindFirstChild("ScooterJoint",true)
  if joint and joint:IsA("Motor6D")then joint.Part0=torso;joint.Part1=handle
  else joint=Instance.new("Motor6D");joint.Name="ScooterJoint";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle end
- -- Center the riding attachment; the donor's lateral preview offset displaces the scooter.
- joint.C0=a.Config.RushHourScooterOffset or CFrame.new()
+ local base=a.Config.RushHourScooterOffset or CFrame.new()
+ local geometry={}
+ for _,part in model:GetDescendants()do
+  if part:IsA("BasePart")and part~=handle and part.Transparency<1 then
+   table.insert(geometry,{relative=handle.CFrame:ToObjectSpace(part.CFrame),half=part.Size*.5})
+  end
+ end
+ local params=RaycastParams.new()
+ params.FilterType=Enum.RaycastFilterType.Include
+ params.FilterDescendantsInstances={workspace.Map}
+ params.IgnoreWater=true
  model.Name="ElliotRushScooter";model.Parent=a.Rig
- return model
+ local connection
+ local function updateMount()
+  if not model.Parent or not torso.Parent then
+   if connection then connection:Disconnect()end
+   return
+  end
+  local mount=torso.CFrame*base
+  local bottom=math.huge
+  for _,shape in geometry do
+   local cf=mount*shape.relative
+   local half=shape.half
+   local extent=math.abs(cf.RightVector.Y)*half.X+math.abs(cf.UpVector.Y)*half.Y+math.abs(cf.LookVector.Y)*half.Z
+   bottom=math.min(bottom,cf.Position.Y-extent)
+  end
+  local floor=workspace:Raycast(torso.Position+Vector3.new(0,2,0),Vector3.new(0,-8,0),params)
+  local lift=0
+  if floor and bottom<math.huge then lift=math.max(0,floor.Position.Y+.06-bottom)end
+  local localLift=torso.CFrame:VectorToObjectSpace(Vector3.new(0,lift,0))
+  joint.C0=CFrame.new(localLift)*base
+ end
+ updateMount()
+ connection=RunService.Heartbeat:Connect(updateMount)
+ return model,connection
 end
 
-local model=scooter(actor)
-assert(model and model.Parent==rig and model.Name=="ElliotRushScooter")
-assert(model.Scooter.Transparency==0 and model.Scooter.LocalTransparencyModifier==0,"donor mesh still hidden")
-assert(model.ScooterHandle.Transparency==1,"invisible handle exposed")
-assert(model.ScooterJoint.Part0==torso and model.ScooterJoint.Part1==model.ScooterHandle)
-assert(model.ScooterJoint.C0=="centered riding offset"and model.ScooterJoint.C1=="donor inverse offset")
-assert(not model.Scooter.Anchored and not model.Scooter.CanCollide and model.Scooter.Massless)
-assert(template.Scooter.Transparency==1,"template modified")
-assert(actor.Animations==nil,"test must not supply animations")
-print("PASS actual scooter creation: hidden donor mesh becomes visible without animations, handle remains hidden, authored offsets and attachment retained")
+local model,connection=scooter(actor)
+assert(model and model.Parent==rig)
+assert(model.Scooter.Transparency==0 and model.Scooter.LocalTransparencyModifier==0)
+assert(model.ScooterHandle.Transparency==1)
+assert(model.ScooterJoint.Part0==root and model.ScooterJoint.Part1==model.ScooterHandle,"must not follow animated torso")
+assert(model.ScooterJoint.C1=="preserved inverse")
+assert(math.abs(model.ScooterJoint.C0.Position.Y-.11)<1e-6,"wrong ground clearance")
+for i=1,30 do heartbeat:Fire()end
+assert(math.abs(model.ScooterJoint.C0.Position.Y-.11)<1e-6,"clearance accumulated each frame")
+floorHeight=.5;heartbeat:Fire()
+assert(math.abs(model.ScooterJoint.C0.Position.Y-.61)<1e-6,"floor rise not handled")
+hit=false;root.Position=v(0,8,0);root.CFrame=frame(root.Position);heartbeat:Fire()
+assert(model.ScooterJoint.C0.Position.Y==0,"airborne mount retained stale floor lift")
+assert(template.Scooter.Transparency==1 and not model.Scooter.CanCollide and model.Scooter.Massless)
+assert(actor.Animations==nil)
+actor.ElliotRush={scooter=model,mountConnection=connection}
+releaseRush(actor)
+assert(heartbeat:Count()==0 and not model.Parent and actor.ElliotRush==nil)
+print("PASS root-mounted scooter: ground clearance, raised floor, stable repeated updates, airborne reset, visible body/hidden handle, no animations required and release cleanup")

@@ -25,6 +25,14 @@ For the current installed port, stop Play and run `Repair-Elliot-Riding.command.
 
 The donor joint's lateral/backward offset is replaced with a centered attachment. The internal scooter weld and C1 are retained. A skin can override `RushHourScooterOffset` with a CFrame if its rig needs a different fit. The native Happy expression is requested for the full Rush Hour speed duration (4s); native hurt/death expression handling remains in charge of interruptions. Final riding pose still depends on the riding animations.
 
+## Scooter floor-clearance repair
+
+For an existing installation, stop Play, run `Repair-Elliot-Scooter-Ground.command.luau` in the Command Bar, save, and restart Play. No asset import is needed. It supports all three earlier Server versions and includes the previous visibility and Happy-expression fixes.
+
+The scooter now mounts to HumanoidRootPart instead of the animated torso. Its visible part bounds are measured relative to the handle. During Rush Hour, a downward raycast against `Workspace.Map` computes a small upward clearance correction; the value is recomputed from the base mount each frame, so it does not accumulate. With no floor hit it follows the root without retaining a stale lift. The correction affects only the cosmetic scooter. Rush-end/death cleanup disconnects the mount updater. The ground fitting is a reconstruction; the donor client export does not contain the original scooter binding/vibration implementation.
+
+Runtime checks cover ground clearance, raised floor, repeated-update stability, airborne reset, root attachment, visibility and cleanup. Final wheel placement and riding pose still require Studio testing with the actual mesh and animations.
+
 ## Mechanics
 
 - **Pizza Throw:** 34s cooldown, 0.5s release, 2s ability lock, 60 throw force, 15s lifetime. The existing pizza part is cloned and thrown with server-owned physics.

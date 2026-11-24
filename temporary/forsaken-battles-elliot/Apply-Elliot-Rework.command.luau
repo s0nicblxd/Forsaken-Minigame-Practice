@@ -1298,6 +1298,7 @@ local function releaseRush(a)
  local rush=a.ElliotRush
  if not rush then return end
  a.ElliotRush=nil
+ if rush.mountConnection then rush.mountConnection:Disconnect()end
  if rush.scooter then rush.scooter:Destroy()end
  if a.Rig and a.Rig.Parent then a.Rig:SetAttribute("ElliotRushing",nil)end
 end
@@ -1307,7 +1308,7 @@ local function scooter(a)
  if not template or not template:IsA("Model")then return end
  local model=template:Clone()
  local handle=model:FindFirstChild("ScooterHandle")or model.PrimaryPart
- local torso=a.Rig:FindFirstChild("Torso")or a.Rig.PrimaryPart
+ local torso=a.Rig:FindFirstChild("HumanoidRootPart")or a.Rig.PrimaryPart
  if not handle or not torso then model:Destroy();return end
  for _,object in model:GetDescendants()do
   if object:IsA("BasePart")then
@@ -1322,10 +1323,41 @@ local function scooter(a)
  local joint=model:FindFirstChild("ScooterJoint",true)
  if joint and joint:IsA("Motor6D")then joint.Part0=torso;joint.Part1=handle
  else joint=Instance.new("Motor6D");joint.Name="ScooterJoint";joint.Part0=torso;joint.Part1=handle;joint.Parent=handle end
- -- Center the riding attachment; the donor's lateral preview offset displaces the scooter.
- joint.C0=a.Config.RushHourScooterOffset or CFrame.new()
+ local base=a.Config.RushHourScooterOffset or CFrame.new()
+ local geometry={}
+ for _,part in model:GetDescendants()do
+  if part:IsA("BasePart")and part~=handle and part.Transparency<1 then
+   table.insert(geometry,{relative=handle.CFrame:ToObjectSpace(part.CFrame),half=part.Size*.5})
+  end
+ end
+ local params=RaycastParams.new()
+ params.FilterType=Enum.RaycastFilterType.Include
+ params.FilterDescendantsInstances={workspace.Map}
+ params.IgnoreWater=true
  model.Name="ElliotRushScooter";model.Parent=a.Rig
- return model
+ local connection
+ local function updateMount()
+  if not model.Parent or not torso.Parent then
+   if connection then connection:Disconnect()end
+   return
+  end
+  local mount=torso.CFrame*base
+  local bottom=math.huge
+  for _,shape in geometry do
+   local cf=mount*shape.relative
+   local half=shape.half
+   local extent=math.abs(cf.RightVector.Y)*half.X+math.abs(cf.UpVector.Y)*half.Y+math.abs(cf.LookVector.Y)*half.Z
+   bottom=math.min(bottom,cf.Position.Y-extent)
+  end
+  local floor=workspace:Raycast(torso.Position+Vector3.new(0,2,0),Vector3.new(0,-8,0),params)
+  local lift=0
+  if floor and bottom<math.huge then lift=math.max(0,floor.Position.Y+.06-bottom)end
+  local localLift=torso.CFrame:VectorToObjectSpace(Vector3.new(0,lift,0))
+  joint.C0=CFrame.new(localLift)*base
+ end
+ updateMount()
+ connection=RunService.Heartbeat:Connect(updateMount)
+ return model,connection
 end
 local function reward(a,kind)
  if not a.Player or not a.Player:IsA("Player")then return end
@@ -1471,7 +1503,7 @@ function Server.RushHour(a)
  if empowered and not workspace:GetAttribute("ChargesDisabled")then charges(a,0)end
  local rush={level=empowered and level or 1,empowered=empowered}
  a.ElliotRush=rush;a.Rig:SetAttribute("ElliotRushing",true)
- rush.scooter=scooter(a)
+ rush.scooter,rush.mountConnection=scooter(a)
  a:DisableAbilities("ElliotRush",true,a.Config.RushHourAbilityDisabledFor)
  sound(a,"RushHourStart")
  if a.ChangeExpression then a:ChangeExpression("Happy",a.Config.RushHourSpeedDuration)end
