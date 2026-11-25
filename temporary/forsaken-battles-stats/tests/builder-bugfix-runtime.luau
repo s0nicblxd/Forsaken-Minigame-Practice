@@ -164,7 +164,7 @@ local TweenInfo={new=function()return {}end}
 Enum.ExplosionType={NoCraters=1}
 local TweenService={Create=function(_,object,info,props)return {Play=function()for key,value in props do object[key]=value end end}end}
 local serviceGetter=game.GetService
-function game:GetService(name)if name=="TweenService"then return TweenService end;return serviceGetter(self,name)end
+function game:GetService(name)if name=="TweenService"then return TweenService elseif name=="Players"then return {GetPlayers=function()return {}end}end;return serviceGetter(self,name)end
 local ss=child(game,"ServerScriptService");local server=child(ss,"Server");local systems=child(server,"Systems");local data=child(systems,"Data")
 local tracker=child(data,"CombatStatistics","ModuleScript");function tracker:RecordDamage()end
 function Methods:GetPlayingAnimationTracks()return {}end
@@ -350,12 +350,23 @@ local function requestedFacing(a,frame)
  if look.Magnitude<.01 then return root.CFrame end
  return CFrame.lookAt(frame.Position,frame.Position+look)
 end
+local function placementExclusions(a,ignore)
+ local excluded,seen={},{}
+ local function add(object)
+  if object and not seen[object]then seen[object]=true;table.insert(excluded,object)end
+ end
+ add(workspace:FindFirstChild("Players"));add(a.Rig);add(ignore)
+ for _,actor in Actors.CurrentActors do add(actor.Rig)end
+ for _,player in game:GetService("Players"):GetPlayers()do add(player.Character)end
+ return excluded
+end
 local function placement(a,kind,ignore,frame)
  local root=a.Rig.PrimaryPart
  local facing=frame or root.CFrame
  local target=facing*CFrame.new(0,0,-a.Config[kind.."PositionOffset"])
  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.RespectCanCollide=true
- params.FilterDescendantsInstances={workspace.Players,ignore or a.Rig}
+ local excluded=placementExclusions(a,ignore)
+ params.FilterDescendantsInstances=excluded
  local floor=workspace:Raycast(target.Position+Vector3.new(0,1,0),Vector3.new(0,-6,0),params)
  if not floor or floor.Normal.Y<.65 then return nil,"midair"end
  if floor.Instance.Name=="Conveyor"then return nil,"collision"end
@@ -367,7 +378,7 @@ local function placement(a,kind,ignore,frame)
   end
  end
  local overlap=OverlapParams.new();overlap.FilterType=Enum.RaycastFilterType.Exclude;overlap.RespectCanCollide=true
- overlap.FilterDescendantsInstances={workspace.Players,ignore or a.Rig}
+ overlap.FilterDescendantsInstances=excluded
  for _,part in workspace:GetPartBoundsInBox(CFrame.new(target.Position.X,floor.Position.Y+1.75,target.Position.Z),Vector3.new(2.5,2.5,2.5),overlap)do
   if part~=floor.Instance and(part.Transparency<.9 or part.Name=="UnplacableArea")then return nil,"collision"end
  end

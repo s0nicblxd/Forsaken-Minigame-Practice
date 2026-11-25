@@ -6,6 +6,12 @@ Apply after the latest Builderman placement repair and Elliot scooter-centering 
 
 The installer checks all seven existing Sources before changing anything. It adds `ServerScriptService.Server.Systems.Data.CombatStatistics` with its private Schema module, updates the native Stats template, and backs up the original Sources/template/Friendly Fire default under `ServerStorage/FBStats_Backup_*`. Preparation or live Source-write failures leave/restore the previous state. Unknown Source changes are preserved by refusing installation; send the named module for a matching installer.
 
+## Existing stats installation: character placement filter
+
+Run `Repair-Builderman-Character-Filter.command.luau` in Edit mode, save and restart Play. No assets or full stats reinstall are needed. The repair keeps a `BuilderPlacementFilter_Backup_*` folder containing the previous Builderman Server Source.
+
+The previous code already excluded `Workspace.Players`. This repair additionally excludes Builderman's actual rig, every rig in the actor registry, every current Player.Character and the carried/replaced building. Both placement raycasts and the obstacle-overlap query use the same captured list, covering survivor/killer models temporarily outside the normal container. Walls and other genuine map obstructions still block placement. The targeted test verifies those cases; final placement still needs a Studio check.
+
 ## Builderman and Elliot fixes
 
 - Dropping a machine stops its building animation tracks immediately, restores its authored joint C0/C1 values and clears animation transforms before grounded placement. The world machine no longer plays the raised PutDown pose during the one-second owner movement lock. Builderman's own placement animation remains. The previous cached resting-height placement, windup, Carry, movement locks and survivor-only outline fixes are retained.
