@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "features": [
+    "Saved combat stats",
+    "Role-kill player card",
+    "Forced Friendly Fire",
+    "Grounded building rest pose",
+    "Cosmetic destruction explosions",
+    "Decimal pizza timer"
+  ],
+  "schemaFields": 14,
+  "legacyDataPreserved": true,
+  "studioPlaytested": false,
+  "requires": [
+    "Builderman 1.2 placement repair",
+    "Latest Elliot scooter centering repair",
+    "Refreshed menus"
+  ]
+}
