@@ -6,11 +6,15 @@ Apply after the latest Builderman placement repair and Elliot scooter-centering 
 
 The installer checks all seven existing Sources before changing anything. It adds `ServerScriptService.Server.Systems.Data.CombatStatistics` with its private Schema module, updates the native Stats template, and backs up the original Sources/template/Friendly Fire default under `ServerStorage/FBStats_Backup_*`. Preparation or live Source-write failures leave/restore the previous state. Unknown Source changes are preserved by refusing installation; send the named module for a matching installer.
 
-## Existing stats installation: character placement filter
+## Existing stats installation: placement filter and invalid-placement movement
 
-Run `Repair-Builderman-Character-Filter.command.luau` in Edit mode, save and restart Play. No assets or full stats reinstall are needed. The repair keeps a `BuilderPlacementFilter_Backup_*` folder containing the previous Builderman Server Source.
+Run `Repair-Builderman-Character-Filter.command.luau` in Edit mode, save and restart Play. No asset import or full stats reinstall is needed. The repair updates Builderman's Server/Client and adds the local PlacementPreview helper. It supports both the original stats Server and the already-filtered Server. A `BuilderPlacementFilter_Backup_*` folder preserves the previous Sources; select that folder and run `Restore-Builderman-Character-Filter.command.luau` to undo the combined repair.
 
-The previous code already excluded `Workspace.Players`. This repair additionally excludes Builderman's actual rig, every rig in the actor registry, every current Player.Character and the carried/replaced building. Both placement raycasts and the obstacle-overlap query use the same captured list, covering survivor/killer models temporarily outside the normal container. Walls and other genuine map obstructions still block placement. The targeted test verifies those cases; final placement still needs a Studio check.
+The previous server code already excluded `Workspace.Players`. The stronger list also excludes Builderman's actual rig, all registered actor rigs, all current Player.Character models and the carried/replaced building. Placement rays and the obstacle query share that list, including survivor/killer models temporarily outside their normal container. Walls and genuine map obstacles still block placement.
+
+Before the input freeze, the client now predicts ground/wall/spacing/obstacle validity using the same exclusions. A predicted invalid spot displays its existing warning and returns without creating a slowdown, clearing velocity or issuing a movement command. A predicted valid spot retains the immediate construction stop. The server independently revalidates the request; if the world changes during the round trip, its rejection releases the predicted lock.
+
+Runtime checks cover the exclusions, real wall rejection, local warning reasons, and unchanged movement on an invalid local prediction. Final visual placement still needs a Studio playtest.
 
 ## Builderman and Elliot fixes
 
