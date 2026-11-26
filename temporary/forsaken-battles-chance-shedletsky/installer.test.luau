@@ -7551,9 +7551,45 @@ local function find(path)
  for name in path:gmatch("[^/]+")do object=object:FindFirstChild(name);assert(object,"Missing "..path)end
  return object
 end
+local function setNumber(source,name,value,optional)
+ local count
+ source,count=("\n"..source):gsub("([\r\n]%s*"..name.."%s*=%s*)[%d%.]+(%s*[,;])",function(prefix,suffix)
+  return prefix..tostring(value)..suffix
+ end)
+ assert(count==1 or(optional and count==0),"Could not uniquely update Config field "..name..". Nothing changed.")
+ return source:sub(2),count
+end
+local function patchConfig(source,path)
+ if path:find("/Chance/Config",1,true)then
+  source=setNumber(source,"HealthMin",70)
+  source=setNumber(source,"HealthMax",110)
+  source=setNumber(source,"RerollBasePenalty",0)
+  local count
+  source,count=setNumber(source,"HealthClamp",120,true)
+  if count==0 then
+   source=source:gsub("([\r\n]%s*HealthMax%s*=%s*110%s*[,;])","%1\n    HealthClamp = 120,",1)
+  end
+  source=source:gsub("between 55 to 120","between 70 to 110"):gsub("beyond 130 HP","beyond 120 HP")
+ else
+  source=setNumber(source,"SlashWindupTime",0.55)
+  source=setNumber(source,"FriedChickenHealOvertimeAmount",25)
+  local count
+  source,count=setNumber(source,"SlashSlowDuration",1.4,true)
+  if count==0 then
+   source=source:gsub("([\r\n]%s*SlashWindupTime%s*=%s*0%.55%s*[,;])","%1\n    SlashSlowDuration = 1.4,",1)
+  end
+  source=source:gsub("v0%.SlashWindupTime %+ 1","v0.SlashSlowDuration")
+ end
+ return source
+end
 local changed={}
 for _,change in changes do
  change.object=find(change.path)
+ if change.path:match("/Config$")then
+  local actual=change.object.Source
+  change.after=patchConfig(actual,change.path)
+  change.before=actual
+ end
  assert(change.object.Source==change.before or change.object.Source==change.after,"Source differs from the supplied build: "..change.path..". Nothing changed.")
  if change.object.Source~=change.after then table.insert(changed,change)end
 end
@@ -12429,3 +12465,31 @@ v0.Abilities = {
 return v0;
 ]========])
 setup();game.ServerStorage.Assets.Survivors.Chance.Config.Source="edited";assert(not pcall(install));print("PASS eight-source installer, idempotence, rollback and mismatch rejection")
+
+setup()
+local rep=game.ReplicatedStorage.Assets.Survivors.Chance.Config
+local stored=game.ServerStorage.Assets.Survivors.Chance.Config
+local custom=rep.Source:gsub("92225688434461","999111222333")
+rep.Source=custom;stored.Source=custom
+install()
+assert(rep.Source:find("999111222333",1,true),"custom expression ID overwritten")
+assert(stored.Source:find("999111222333",1,true),"stored expression ID overwritten")
+assert(rep.Source:find("HealthMin = 70",1,true) and rep.Source:find("HealthClamp = 120",1,true))
+local once=rep.Source;install();assert(rep.Source==once,"custom Config was not idempotent")
+local saved=false
+for _,backup in game.ServerStorage:GetChildren()do
+ if backup.Name:match("^ChanceShedletskyBackup_")then
+  for _,entry in backup:GetChildren()do
+   if entry:IsA("StringValue")and entry.Value==custom then saved=true end
+  end
+ end
+end
+assert(saved,"custom Source was not backed up")
+setup()
+rep=game.ReplicatedStorage.Assets.Survivors.Chance.Config
+stored=game.ServerStorage.Assets.Survivors.Chance.Config
+rep.Source=custom;stored.Source=custom
+failAt=writes+3
+assert(not pcall(install))
+assert(rep.Source==custom and stored.Source==custom,"rollback lost custom IDs")
+print("PASS edited Configs: custom images preserved, balance patched, repeat-safe, actual Source backed up and restored on failure")

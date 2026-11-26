@@ -4858,9 +4858,45 @@ local function find(path)
  for name in path:gmatch("[^/]+")do object=object:FindFirstChild(name);assert(object,"Missing "..path)end
  return object
 end
+local function setNumber(source,name,value,optional)
+ local count
+ source,count=("\n"..source):gsub("([\r\n]%s*"..name.."%s*=%s*)[%d%.]+(%s*[,;])",function(prefix,suffix)
+  return prefix..tostring(value)..suffix
+ end)
+ assert(count==1 or(optional and count==0),"Could not uniquely update Config field "..name..". Nothing changed.")
+ return source:sub(2),count
+end
+local function patchConfig(source,path)
+ if path:find("/Chance/Config",1,true)then
+  source=setNumber(source,"HealthMin",70)
+  source=setNumber(source,"HealthMax",110)
+  source=setNumber(source,"RerollBasePenalty",0)
+  local count
+  source,count=setNumber(source,"HealthClamp",120,true)
+  if count==0 then
+   source=source:gsub("([\r\n]%s*HealthMax%s*=%s*110%s*[,;])","%1\n    HealthClamp = 120,",1)
+  end
+  source=source:gsub("between 55 to 120","between 70 to 110"):gsub("beyond 130 HP","beyond 120 HP")
+ else
+  source=setNumber(source,"SlashWindupTime",0.55)
+  source=setNumber(source,"FriedChickenHealOvertimeAmount",25)
+  local count
+  source,count=setNumber(source,"SlashSlowDuration",1.4,true)
+  if count==0 then
+   source=source:gsub("([\r\n]%s*SlashWindupTime%s*=%s*0%.55%s*[,;])","%1\n    SlashSlowDuration = 1.4,",1)
+  end
+  source=source:gsub("v0%.SlashWindupTime %+ 1","v0.SlashSlowDuration")
+ end
+ return source
+end
 local changed={}
 for _,change in changes do
  change.object=find(change.path)
+ if change.path:match("/Config$")then
+  local actual=change.object.Source
+  change.after=patchConfig(actual,change.path)
+  change.before=actual
+ end
  assert(change.object.Source==change.before or change.object.Source==change.after,"Source differs from the supplied build: "..change.path..". Nothing changed.")
  if change.object.Source~=change.after then table.insert(changed,change)end
 end

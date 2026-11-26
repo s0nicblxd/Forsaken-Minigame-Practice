@@ -2,7 +2,7 @@
 
 Targets the eight base-character Config/Behavior Sources in ReplicatedStorage and ServerStorage from FCTbuildrermanbuggy.rbxl. Updates gameplay within the existing compatible server/client behavior rather than replacing it with the incomplete donor behavior. Preserves models, skins, sounds, animations, and existing Vulnerable compatibility.
 
-Stop Play mode, save a copy of the place, run Apply-Chance-Shedletsky.command.luau in Studio's Command Bar, save, and start a fresh Play session. The installer checks all Sources before editing and backs up originals under ServerStorage. Restore-Chance-Shedletsky.command.luau restores the latest backup.
+Stop Play mode, save a copy of the place, run Apply-Chance-Shedletsky.command.luau in Studio's Command Bar, save, and start a fresh Play session. The installer patches only the relevant numerical fields and old description text in Configs, preserving custom expression IDs and unrelated edits. It checks Behavior Sources before editing and backs up the actual edited originals under ServerStorage. Restore-Chance-Shedletsky.command.luau restores the latest backup.
 
 ## Final values
 
@@ -18,3 +18,5 @@ The current source predates these balance values. UPD confirms Chance HealthMin=
 ## Validation
 
 Luau compilation of production modules and installers. Gameplay regression checks cover every base Chance roll for one through three charges, the independent 120 cap, full chicken overtime healing with an uneven final tick, damage thresholds, rig removal, and listener cleanup. Installer checks cover all eight targets, repeat runs, mismatched-source rejection, and rollback after a simulated Source write failure. Actual Studio play and visual verification remain necessary.
+
+Config-preservation regression checks additionally cover custom uploaded image IDs in both copies, repeat runs, backups of edited Sources, and rollback preserving those IDs.
