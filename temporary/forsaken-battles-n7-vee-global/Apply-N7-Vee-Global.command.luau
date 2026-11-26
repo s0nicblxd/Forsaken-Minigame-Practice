@@ -1842,12 +1842,21 @@ function Cloak.Stop(effect)if effect.ParticleCloak then effect.ParticleCloak()en
 return Cloak
 ]========]},{name=[========[
 ClientPolish]========],source=[========[
+local RunService=game:GetService("RunService")
 local Client={}
+local activeCleanup=nil
+local starting=false
+local function noop()end
 function Client.Start()
+ if not RunService:IsClient()then return noop end
+ if activeCleanup then return activeCleanup end
+ if starting then return noop end
  local Players=game:GetService("Players")
  local UIS=game:GetService("UserInputService")
  local GuiService=game:GetService("GuiService")
  local player=Players.LocalPlayer
+ if not player then return noop end
+ starting=true
  local playerGui=player:WaitForChild("PlayerGui")
  local connections={}
  local guarded=setmetatable({},{__mode="k"})
@@ -1919,10 +1928,19 @@ function Client.Start()
  end))
  table.insert(connections,UIS.WindowFocusReleased:Connect(release))
  table.insert(connections,player.CharacterRemoving:Connect(release))
- return function()
+ local alive=true
+ activeCleanup=function()
+  if not alive then return end
+  alive=false
+  activeCleanup=nil
   release()
   for _,connection in connections do connection:Disconnect()end
  end
+ starting=false
+ return activeCleanup
+end
+function Client.Destroy()
+ if activeCleanup then activeCleanup()end
 end
 return Client
 ]========]}}

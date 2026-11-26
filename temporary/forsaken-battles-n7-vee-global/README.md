@@ -63,3 +63,5 @@ Bloodhook fairness, Disarm timing, Azure grab timing and golem positioning were 
 All production Luau compiles. Regression checks execute the shared XP function, actual stun callbacks, n7 lifetime/tracker/reward helper, actual Helperbot wave lifecycle, actual support-input and Settings device filters, particle hiding/restoration, and the HUD recovery/clone-timer helper. Installer tests cover all 24 current Source targets, GUI templates, repeat runs, missing import rejection, unsupported Source rejection, and Source/UI/helper/setting rollback after a simulated write failure.
 
 Roblox Studio visual, touch, controller, asset-access and multiplayer testing remain necessary. The UI model is a template extraction, not a modified place file.
+
+ClientPolish lifecycle correction: shared-module startup exits on the server before accessing LocalPlayer, tolerates an absent client player, and reuses a single active client session. A dedicated Repair-ClientPolish.command.luau is available in ../forsaken-battles-client-polish-fix for previously installed copies; no HUD reimport is required.
